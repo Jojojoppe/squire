@@ -1,7 +1,12 @@
 bits 32
 
+; INCLUDES
+; --------
+%include "serial.inc"
+; --------
+
 %define KERNEL_virtualbase		0xc0000000
-%define KERNEL_pagenum			(KERNEL_virtualbase>>22)
+%define KERNEL_pagenum			768
 %define KERNEL_stacksize		0x4000
 %define KERNEL_PT				0xffc00000
 %define KERNEL_PD				0xfffff000
@@ -19,6 +24,10 @@ boot_PD:
 times (KERNEL_pagenum-1)		dd 0
 								dd 0x00000083			; First 4MB at 0xc0000000
 times (1024-KERNEL_pagenum-1)	dd 0
+
+; Strings
+; -------
+S_00							db "JOS - A simple OS written in assembly", 0x0a, 0x0d, 0x00
 
 ; -----------
 ; SECTION BSS
@@ -44,7 +53,7 @@ g_start:
 		cli
 		; Check if loaded by mboot compliant loader
 		; If not, hang
-		cmp		eax, 0xbadb002
+		cmp		eax, 0x2badb002
 		jne		hang
 
 		; Load page directory table and enable paging
@@ -67,11 +76,17 @@ g_start:
 		and		eax, 0xfffff000
 		or		eax, 0x00000003
 		mov		[boot_PD+4*1023], eax
-		invlpg	[0]						; Invalidate cache
+		; invlpg [0] ??
 
 		; Setup temporary kernel stack
 		mov		esp, boot_stack_top
 		mov		ebp, esp
+
+		; Initialize serial port
+		call	serial_init
+		; Write kernel name to tty
+		mov		eax, S_00
+		call	serial_outs
 
 hang:
 		cli
