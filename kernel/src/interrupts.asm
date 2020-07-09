@@ -220,7 +220,6 @@ _isr_panic_dz:
 		push	eax					; String
 		pushad
 		xor		eax, eax
-		mov		eax, 0xff00f0f0
 		mov		[esp+44], eax		; Error code
 		mov		eax, cr2
 		mov		[esp+40], eax		; cr2
@@ -229,7 +228,6 @@ _isr_panic_dz:
 		mov		eax, S_DZ
 		mov		[esp+32], eax		; String
 		call	panic
-		iret
 _isr_panic_db:
 		push	eax					; Placeholder for errorcode
 		push	eax					; Placeholder for cr2
@@ -244,7 +242,9 @@ _isr_panic_db:
 		mov		[esp+36], eax		; eip
 		mov		eax, S_DB
 		mov		[esp+32], eax		; String
-		call	panic
+		call	panic_soft
+		popad
+		add		esp, 4*4
 		iret
 _isr_panic_nmi:
 		push	eax					; Placeholder for errorcode
@@ -261,7 +261,6 @@ _isr_panic_nmi:
 		mov		eax, S_NMI
 		mov		[esp+32], eax		; String
 		call	panic
-		iret
 _isr_panic_br:
 		push	eax					; Placeholder for errorcode
 		push	eax					; Placeholder for cr2
@@ -276,7 +275,9 @@ _isr_panic_br:
 		mov		[esp+36], eax		; eip
 		mov		eax, S_BR
 		mov		[esp+32], eax		; String
-		call	panic
+		call	panic_soft
+		popad
+		add		esp, 4*4
 		iret
 _isr_panic_of:
 		push	eax					; Placeholder for errorcode
@@ -293,7 +294,6 @@ _isr_panic_of:
 		mov		eax, S_OF
 		mov		[esp+32], eax		; String
 		call	panic
-		iret
 _isr_panic_be:
 		push	eax					; Placeholder for errorcode
 		push	eax					; Placeholder for cr2
@@ -309,7 +309,6 @@ _isr_panic_be:
 		mov		eax, S_BE
 		mov		[esp+32], eax		; String
 		call	panic
-		iret
 _isr_panic_io:
 		push	eax					; Placeholder for errorcode
 		push	eax					; Placeholder for cr2
@@ -325,7 +324,6 @@ _isr_panic_io:
 		mov		eax, S_IO
 		mov		[esp+32], eax		; String
 		call	panic
-		iret
 _isr_panic_dn:
 		push	eax					; Placeholder for errorcode
 		push	eax					; Placeholder for cr2
@@ -341,7 +339,6 @@ _isr_panic_dn:
 		mov		eax, S_DN
 		mov		[esp+32], eax		; String
 		call	panic
-		iret
 _isr_panic_cs:
 		push	eax					; Placeholder for errorcode
 		push	eax					; Placeholder for cr2
@@ -357,7 +354,6 @@ _isr_panic_cs:
 		mov		eax, S_CS
 		mov		[esp+32], eax		; String
 		call	panic
-		iret
 _isr_panic_87:
 		push	eax					; Placeholder for errorcode
 		push	eax					; Placeholder for cr2
@@ -373,7 +369,6 @@ _isr_panic_87:
 		mov		eax, S_87
 		mov		[esp+32], eax		; String
 		call	panic
-		iret
 _isr_panic_mc:
 		push	eax					; Placeholder for errorcode
 		push	eax					; Placeholder for cr2
@@ -389,7 +384,6 @@ _isr_panic_mc:
 		mov		eax, S_MC
 		mov		[esp+32], eax		; String
 		call	panic
-		iret
 _isr_panic_si:
 		push	eax					; Placeholder for errorcode
 		push	eax					; Placeholder for cr2
@@ -405,7 +399,6 @@ _isr_panic_si:
 		mov		eax, S_SI
 		mov		[esp+32], eax		; String
 		call	panic
-		iret
 _isr_panic_vi:
 		push	eax					; Placeholder for errorcode
 		push	eax					; Placeholder for cr2
@@ -421,7 +414,6 @@ _isr_panic_vi:
 		mov		eax, S_VI
 		mov		[esp+32], eax		; String
 		call	panic
-		iret
 _isr_panic_tf:
 		push	eax					; Placeholder for errorcode
 		push	eax					; Placeholder for cr2
@@ -437,9 +429,6 @@ _isr_panic_tf:
 		mov		eax, S_TP
 		mov		[esp+32], eax		; String
 		call	panic
-		iret
-
-
 
 ; Panic ISR code
 ; --------------
@@ -455,8 +444,6 @@ _isr_panic_df:
 		mov		eax, S_DF
 		mov		[esp+32], eax
 		call	panic
-		sub		esp, 4
-		iret
 _isr_panic_ts:
 		push	eax					; Placeholder for cr2
 		push	eax					; Placeholder for eip
@@ -469,8 +456,6 @@ _isr_panic_ts:
 		mov		eax, S_TS
 		mov		[esp+32], eax
 		call	panic
-		sub		esp, 4
-		iret
 _isr_panic_sn:
 		push	eax					; Placeholder for cr2
 		push	eax					; Placeholder for eip
@@ -483,8 +468,6 @@ _isr_panic_sn:
 		mov		eax, S_SN
 		mov		[esp+32], eax
 		call	panic
-		sub		esp, 4
-		iret
 _isr_panic_ss:
 		push	eax					; Placeholder for cr2
 		push	eax					; Placeholder for eip
@@ -497,8 +480,6 @@ _isr_panic_ss:
 		mov		eax, S_SS
 		mov		[esp+32], eax
 		call	panic
-		sub		esp, 4
-		iret
 _isr_panic_gp:
 		push	eax					; Placeholder for cr2
 		push	eax					; Placeholder for eip
@@ -511,8 +492,6 @@ _isr_panic_gp:
 		mov		eax, S_GP
 		mov		[esp+32], eax
 		call	panic
-		sub		esp, 4
-		iret
 _isr_panic_pf:
 		push	eax					; Placeholder for cr2
 		push	eax					; Placeholder for eip
@@ -525,6 +504,7 @@ _isr_panic_pf:
 		mov		eax, S_PF
 		mov		[esp+32], eax
 		call	panic
+		; TODO write page fault handler
 		sub		esp, 4
 		iret
 _isr_panic_ac:
@@ -539,8 +519,6 @@ _isr_panic_ac:
 		mov		eax, S_AC
 		mov		[esp+32], eax
 		call	panic
-		sub		esp, 4
-		iret
 _isr_panic_se:
 		push	eax					; Placeholder for cr2
 		push	eax					; Placeholder for eip
@@ -553,6 +531,3 @@ _isr_panic_se:
 		mov		eax, S_SE
 		mov		[esp+32], eax
 		call	panic
-		sub		esp, 4
-		iret
-
