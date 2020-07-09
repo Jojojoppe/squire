@@ -59,8 +59,9 @@ global idt_set_interrupt
 idt_set_interrupt:
 		push	ebp
 		mov		ebp, esp
-		sub		esp, 4
+		sub		esp, 8
 		mov		[ebp-4], edi
+		mov		[ebp-8], eax
 
 		mov		edi, idt_base
 		shl		eax, 3
@@ -76,6 +77,7 @@ idt_set_interrupt:
 		mov		[edi + idtentry.type_attr], al
 
 		mov		edi, [ebp-4]
+		mov		eax, [ebp-8]
 		mov		esp, ebp
 		pop		ebp
 		ret

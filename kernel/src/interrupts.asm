@@ -192,16 +192,28 @@ _isr_empty:
 ; -----------------
 _isr_panic_no:
 		push	eax					; Placeholder for errorcode
+		push	eax					; Placeholder for cr2
+		push	eax					; Placeholder for eip
 		pushad
 		xor		eax, eax
-		mov		[esp+32], eax		; Error code
+		mov		[esp+40], eax		; Error code
+		mov		eax, cr2
+		mov		[esp+36], eax		; cr2
+		mov		eax, [esp+44]
+		mov		[esp+32], eax		; eip
 		call	panic
 		iret
 
 ; Panic ISR code
 ; --------------
 _isr_panic:
+		push	eax					; Placeholder for cr2
+		push	eax					; Placeholder for eip
 		pushad
+		mov		eax, cr2
+		mov		[esp+36], eax		; cr2
+		mov		eax, [esp+44]
+		mov		[esp+32], eax		; eip
 		call	panic
 		sub		esp, 4
 		iret

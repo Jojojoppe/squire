@@ -21,6 +21,8 @@ S_05			db 0x0a, 0x0d, "esi: ", 0
 S_06			db "  edi: ", 0
 S_07			db 0x0a, 0x0d, "esp: ", 0
 S_08			db "  ebp: ", 0
+S_09			db 0x0a, 0x0d, "eip: ", 0
+S_10			db "  cr2: ", 0
 
 ; -----------
 ; SECTION BSS
@@ -45,10 +47,11 @@ panic:
 		mov		eax, S_00
 		call	serial_outs
 		; Get error code
-		mov		eax, [ebp+10*4]
+		mov		eax, [ebp+12*4]
 		call	serial_outhex
 
 		; Print registers
+		; eax, ebx, ecx, edx
 		mov		eax, S_01
 		call	serial_outs
 		mov		eax, [ebp+9*4]
@@ -65,7 +68,7 @@ panic:
 		call	serial_outs
 		mov		eax, [ebp+7*4]
 		call	serial_outhex
-
+		; edi, esi
 		mov		eax, S_05
 		call	serial_outs
 		mov		eax, [ebp+3*4]
@@ -74,7 +77,7 @@ panic:
 		call	serial_outs
 		mov		eax, [ebp+2*4]
 		call	serial_outhex
-
+		; esp, ebp
 		mov		eax, S_07
 		call	serial_outs
 		mov		eax, [ebp+5*4]
@@ -82,6 +85,15 @@ panic:
 		mov		eax, S_08
 		call	serial_outs
 		mov		eax, [ebp+4*4]
+		call	serial_outhex
+		; eip, cr2
+		mov		eax, S_09
+		call	serial_outs
+		mov		eax, [ebp+10*4]
+		call	serial_outhex
+		mov		eax, S_10
+		call	serial_outs
+		mov		eax, [ebp+11*4]
 		call	serial_outhex
 
 .hang:

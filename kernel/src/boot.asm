@@ -69,7 +69,7 @@ g_start:
 		mov		cr0, eax				; Enable paging and read-only on user+kernel ring
 		; Move to higher half
 		lea		eax, [.start_high]
-		jmp		.start_high
+		jmp		eax
 .start_high:
 		; Disable first 4MB at 0x00000000
 		mov		dword [boot_PD], 0
@@ -78,7 +78,7 @@ g_start:
 		and		eax, 0xfffff000
 		or		eax, 0x00000003
 		mov		[boot_PD+4*1023], eax
-		; invlpg [0] ??
+		invlpg	[0]
 
 		; Setup temporary kernel stack
 		mov		esp, boot_stack_top
@@ -95,10 +95,6 @@ g_start:
 		; Write kernel name to tty
 		mov		eax, S_00
 		call	serial_outs
-
-		mov		eax, 5
-		mov		ebx, 0
-		div		ebx
 
 hang:
 		cli
