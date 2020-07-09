@@ -96,6 +96,7 @@ g_start:
 		mov		eax, S_00
 		call	serial_outs
 
+		mov		[0], eax
 hang:
 		cli
 		hlt

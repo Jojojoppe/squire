@@ -10,9 +10,9 @@ bits 32
 section .data
 ; ------------
 S_00			db 0x0a, 0x0d
-				db "KERNEL PANIC", 0x0a, 0x0d,
-				db  "------------", 0x0a, 0x0d,
-				db  "error code: ", 0
+				db "KERNEL PANIC: ", 0
+S_11			db "-------------", 0x0a, 0x0d,
+				db "error code: ", 0
 S_01			db 0x0a, 0x0d, "eax: ", 0
 S_02			db "  ebx: ", 0
 S_03			db 0x0a, 0x0d, "ecx: ", 0
@@ -46,8 +46,12 @@ panic:
 
 		mov		eax, S_00
 		call	serial_outs
+		mov		eax, [ebp+10*4]
+		call	serial_outs
+		mov		eax, S_11
+		call	serial_outs
 		; Get error code
-		mov		eax, [ebp+12*4]
+		mov		eax, [ebp+13*4]
 		call	serial_outhex
 
 		; Print registers
@@ -89,11 +93,11 @@ panic:
 		; eip, cr2
 		mov		eax, S_09
 		call	serial_outs
-		mov		eax, [ebp+10*4]
+		mov		eax, [ebp+11*4]
 		call	serial_outhex
 		mov		eax, S_10
 		call	serial_outs
-		mov		eax, [ebp+11*4]
+		mov		eax, [ebp+12*4]
 		call	serial_outhex
 
 .hang:
