@@ -96,3 +96,32 @@ serial_outs:
 		mov		esp, ebp
 		pop		ebp
 		ret
+
+; Out a hex number to serial
+;	eax:	number to print
+; -------------------------
+global serial_outhex
+serial_outhex:
+		push	ebp
+		mov		ebp, esp
+
+		mov		ecx, 8
+		rol		eax, 4
+.lp:
+		push	eax
+		push	ecx
+		mov		edx, .chars
+		and		eax, 0x0000000f
+		add		edx, eax
+		mov		al, [edx]
+		call	serial_out
+		pop		ecx
+		pop		eax
+		rol		eax, 4
+		dec		ecx
+		jnz		.lp
+
+		mov		esp, ebp
+		pop		ebp
+		ret
+.chars			db "0123456789ABCDEF"
