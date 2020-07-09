@@ -32,7 +32,6 @@ S_MC				db "machine check", 0x0a, 0x0d, 0
 S_SI				db "SIMD floating-point exception", 0x0a, 0x0d, 0
 S_VI				db "virtualization exception", 0x0a, 0x0d, 0
 S_SE				db "sequrity exception", 0x0a, 0x0d, 0
-S_TP				db "tripple fault", 0x0a, 0x0d, 0
 
 ; -----------
 ; SECTION BSS
@@ -152,10 +151,6 @@ interrupts_init:
 		inc		eax						; RESERVED
 		mov		ecx, _isr_empty
 		call	idt_set_interrupt
-		inc		eax						; Tripple Fault
-		mov		ecx, _isr_panic_tf
-		call	idt_set_interrupt
-
 
 		; Fill idt with empty isr's for hardware interrupts
 		mov		eax, 0x29
@@ -412,21 +407,6 @@ _isr_panic_vi:
 		mov		eax, [esp+48]
 		mov		[esp+36], eax		; eip
 		mov		eax, S_VI
-		mov		[esp+32], eax		; String
-		call	panic
-_isr_panic_tf:
-		push	eax					; Placeholder for errorcode
-		push	eax					; Placeholder for cr2
-		push	eax					; Placeholder for eip
-		push	eax					; String
-		pushad
-		xor		eax, eax
-		mov		[esp+44], eax		; Error code
-		mov		eax, cr2
-		mov		[esp+40], eax		; cr2
-		mov		eax, [esp+48]
-		mov		[esp+36], eax		; eip
-		mov		eax, S_TP
 		mov		[esp+32], eax		; String
 		call	panic
 
