@@ -1,0 +1,12 @@
+*.sym
+*.bin
+
+drive
+env
+mnt
+
+kernel/build
+kernel/kernel.bin
+kernel/LOC
+kernel/DISASS
+kernel/DEBUG.sym
