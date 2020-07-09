@@ -2,6 +2,8 @@ bits 32
 
 ; INCLUDES
 ; --------
+%include "gdt.inc"
+%include "interrupts.inc"
 %include "serial.inc"
 ; --------
 
@@ -27,7 +29,7 @@ times (1024-KERNEL_pagenum-1)	dd 0
 
 ; Strings
 ; -------
-S_00							db "JOS - A simple OS written in assembly", 0x0a, 0x0d, 0x00
+S_00							db 0x0a, 0x0d, "JOS - A simple OS written in assembly", 0x0a, 0x0d, 0x00
 
 ; -----------
 ; SECTION BSS
@@ -81,6 +83,12 @@ g_start:
 		; Setup temporary kernel stack
 		mov		esp, boot_stack_top
 		mov		ebp, esp
+
+		; Load GDT
+		call	gdt_install
+
+		; Initialize interrupts
+		call	interrupts_init
 
 		; Initialize serial port
 		call	serial_init
