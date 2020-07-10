@@ -65,7 +65,6 @@ pmm_init:
 		mov		edx, ecx
 		call	pmm_unuse
 
-
 		; To next region
 .next:
 		pop		ecx
@@ -77,6 +76,19 @@ pmm_init:
 		; Cleanup stack
 		add		esp, 12
 
+		; Set memory used by kernel as used
+		; Get kernel size
+		extern ld_kernel_end
+		extern ld_kernel_start
+		mov		eax, ld_kernel_end
+		sub		eax, ld_kernel_start
+		mov		edx, eax
+		shr		edx, 12
+		mov		eax, ld_kernel_start
+		shr		eax, 12
+		call	pmm_use
+
+		; Print free memory
 		mov		eax, S_FREE
 		call	serial_outs
 		mov		eax, [pmm_free]
@@ -113,6 +125,40 @@ pmm_unuse:
 		and		edx, 0x1f
 		bts		[eax], edx
 		add		dword [pmm_free], 4096
+		; To next page
+		inc		dword [ebp-4]
+		dec		ecx
+		jnz		.lp
+
+		mov		esp, ebp
+		pop		ebp
+		ret
+
+; Use address region
+;	eax:	page number
+;	edx:	amount of pages
+; --------------------
+global pmm_use
+pmm_use:
+		push	ebp
+		mov		ebp, esp
+		sub		esp, 8		; -4:	page number
+							; -8:	amount of pages
+		mov		[ebp-4], eax
+		mov		[ebp-8], edx
+
+		mov		ecx, edx
+.lp:
+		mov		edx, [ebp-4]
+		mov		eax, edx
+		; Get byte number of page
+		shr		eax, 5
+		; Get address of byte
+		add		eax, pmm_map_bottom
+		; get bit number of page in byte
+		and		edx, 0x1f
+		btc		[eax], edx
+		sub		dword [pmm_free], 4096
 		; To next page
 		inc		dword [ebp-4]
 		dec		ecx
