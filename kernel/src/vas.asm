@@ -276,3 +276,34 @@ vas_kbrk_add:
 		mov		esp, ebp
 		pop		ebp
 		ret
+
+; Add x pages for kernel after break
+;	eax:	amount of pages
+;	->eax:	starting virtual address of newly added pages
+; ----------------------------------
+global vas_kbrk_addx
+vas_kbrk_addx:
+		push	ebp
+		mov		ebp, esp
+		sub		esp, 4			; -4:	x
+		mov		[ebp-4], eax
+
+		mov		eax, [vas_k_brk]
+		push	eax
+
+		mov		ecx, [ebp-4]
+.lp:
+		; Get physical page
+		call	pmm_alloc
+		; Get break
+		mov		edx, [vas_k_brk]
+		call	vas_map
+		; Incease break
+		add		dword [vas_k_brk], 4096
+		dec		ecx
+		jnz		.lp
+
+		pop		eax
+		mov		esp, ebp
+		pop		ebp
+		ret
