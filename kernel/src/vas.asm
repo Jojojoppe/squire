@@ -293,6 +293,7 @@ vas_kbrk_addx:
 
 		mov		ecx, [ebp-4]
 .lp:
+		push	ecx
 		; Get physical page
 		call	pmm_alloc
 		; Get break
@@ -300,6 +301,7 @@ vas_kbrk_addx:
 		call	vas_map
 		; Incease break
 		add		dword [vas_k_brk], 4096
+		pop		ecx
 		dec		ecx
 		jnz		.lp
 

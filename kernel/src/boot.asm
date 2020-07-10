@@ -120,6 +120,25 @@ g_start:
 		; Initialize kmalloc
 		call	kmalloc_init
 
+		; Test kmalloc
+		mov		eax, 8
+		call	kmalloc
+		call	serial_outhex
+		mov		eax, S_RN
+		call	serial_outs
+
+		mov		eax, 0x4000
+		call	kmalloc
+		call	serial_outhex
+		mov		eax, S_RN
+		call	serial_outs
+
+		mov		eax, 8
+		call	kmalloc
+		call	serial_outhex
+		mov		eax, S_RN
+		call	serial_outs
+
 hang:
 		cli
 		hlt

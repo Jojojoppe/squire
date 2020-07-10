@@ -64,7 +64,6 @@ kmalloc_init:
 		add		edi, heap_block.data
 		mov		dword [edi + heap_chunk.length], 0x4000 - 16 - 8
 		mov		dword [edi + heap_chunk.flags], 1<<FLAGS_LAST
-
 		mov		esp, ebp
 		pop		ebp
 		ret
@@ -80,9 +79,13 @@ kmalloc:
 		sub		esp, 32		; -4:	number of bytes
 							; -8:	edi
 							; -12:	esi
+							; -16:	ebx
+							; -20:	start new block
+							; -24:	size new block
 		mov		[ebp-4], eax
 		mov		[ebp-8], edi
 		mov		[ebp-12], esi
+		mov		[ebp-16], ebx
 		
 		mov		edi, [HEAP_START]
 .traverseBlock:
@@ -102,18 +105,93 @@ kmalloc:
 		; Chunk right size
 		; Check if free
 		mov		ecx, [esi + heap_chunk.flags]
-		bts		ecx, FLAGS_USED
+		bt		ecx, FLAGS_USED
 		jc		.nextchunk
-		mov		[rsi + heap_chunk.flags], ecx
+		mov		[esi + heap_chunk.flags], ecx
 		; Chunk usable
 		; Check if there is enough space for another chunk
+		mov		eax, [esi + heap_chunk.length]
 		sub		eax, [ebp-4]
 		cmp		eax, 16
 		jl		.finish
 		; Ceate new chunk
-		; TODO finish 
+		mov		edx, esi
+		add		edx, 8
+		add		edx, [ebp-4]
+		; edx = start address of new chunk
+		mov		ebx, [esi + heap_chunk.flags]
+		and		ebx, ~(1<<FLAGS_USED)
+		mov		[edx + heap_chunk.flags], ebx
+		sub		eax, 8
+		mov		[edx + heap_chunk.length], eax
+		; Remove last flag
+		mov		ecx, [esi + heap_chunk.flags]
+		btc		ecx, FLAGS_LAST
+		mov		[esi + heap_chunk.flags], ecx
+		; Set size of chunk
+		mov		eax, [ebp-4]
+		mov		[esi + heap_chunk.length], eax
+.finish:
+		; Set used flag
+		xor		eax, eax
+		or		eax, 1<<FLAGS_USED
+		mov		[esi + heap_chunk.flags], eax
+		; TODO change biggest if needed
+		add		esi, heap_chunk.data
+		mov		eax, esi
+		jmp		.end
+.nextchunk:
+		; Check if last chunk
+		mov		ecx, [esi + heap_chunk.flags]
+		bt		ecx, FLAGS_LAST
+		jc		.nextblock
+		; There is a next chunk
+		mov		eax, [esi + heap_chunk.length]
+		add		eax, 8
+		add		esi, eax
+		jmp		.traverseChunk
+.nextblock:
+		; Check if last block
+		cmp		dword [edi + heap_block.next], 0
+		je		.newblock
+		; There is next block
+		mov		edi, [edi + heap_block.next]
+		jmp		.traverseBlock
+.newblock:
+		mov		eax, [ebp-4]
+		add		eax, 16+8
+		mov		edx, eax
+		and		edx, 0x3fff
+		mov		ebx, 0x4000
+		sub		ebx, edx		; Remainder on 16k boundary	
+		add		eax, ebx		; Amount of memory to allocate
+		; Allocate memory
+		mov		[ebp-24], eax
+		shr		eax, 12
+		push	edi
+		call	vas_kbrk_addx
+		mov		[ebp-20], eax
+		pop		ebx
+		; Memory allocated, starting at -20, size in -24, old block in ebx
+		mov		eax, [ebp-20]
+		mov		[ebx + heap_block.next], eax
+		
+		mov		edi, eax
+		mov		dword [edi + heap_block.next], 0
+		mov		eax, [ebp-24]
+		mov		dword [edi + heap_block.size], eax
+		sub		eax, 16+8
+		mov		dword [edi + heap_block.biggest], eax
 
+		; Create first chunk header in block
+		add		edi, heap_block.data
+		mov		dword [edi + heap_chunk.length], eax
+		mov		dword [edi + heap_chunk.flags], 1<<FLAGS_LAST
 
+		mov		edi, [ebp-20]
+		jmp		.traverseBlock
+
+.end:
 		mov		edi, [ebp-8]
 		mov		esi, [ebp-12]
 		mov		esp, ebp
