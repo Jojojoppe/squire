@@ -1,0 +1,1 @@
+extern mboot_get_mmap

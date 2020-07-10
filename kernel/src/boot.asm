@@ -5,6 +5,8 @@ bits 32
 %include "gdt.inc"
 %include "interrupts.inc"
 %include "serial.inc"
+%include "mboot.inc"
+%include "pmm.inc"
 ; --------
 
 %define KERNEL_virtualbase		0xc0000000
@@ -83,6 +85,10 @@ g_start:
 		; Setup temporary kernel stack
 		mov		esp, boot_stack_top
 		mov		ebp, esp
+		; Save mboot header address (ebx) on stack
+		sub		esp, 4
+		add		ebx, KERNEL_virtualbase
+		mov		[ebp-4], ebx
 
 		; Load GDT
 		call	gdt_install
@@ -95,6 +101,10 @@ g_start:
 		; Write kernel name to tty
 		mov		eax, S_00
 		call	serial_outs
+
+		; Initialize pmm
+		mov		eax, [ebp-4]
+		call	pmm_init
 
 hang:
 		cli
