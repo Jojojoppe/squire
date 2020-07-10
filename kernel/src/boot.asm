@@ -122,19 +122,29 @@ g_start:
 
 		; Test kmalloc
 		mov		eax, 8
-		call	kmalloc
+		call	kmalloc				; 18
 		call	serial_outhex
 		mov		eax, S_RN
 		call	serial_outs
 
-		mov		eax, 0x4000
+		mov		eax, 8
+		call	kmalloc				; 28
+		push	eax
+		call	serial_outhex
+		mov		eax, S_RN
+		call	serial_outs
+
+		pop		eax
+		call	kfree
+
+		mov		eax, 8				; 28
 		call	kmalloc
 		call	serial_outhex
 		mov		eax, S_RN
 		call	serial_outs
 
 		mov		eax, 8
-		call	kmalloc
+		call	kmalloc				; 38
 		call	serial_outhex
 		mov		eax, S_RN
 		call	serial_outs

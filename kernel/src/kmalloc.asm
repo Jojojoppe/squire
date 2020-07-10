@@ -86,7 +86,7 @@ kmalloc:
 		mov		[ebp-8], edi
 		mov		[ebp-12], esi
 		mov		[ebp-16], ebx
-		
+
 		mov		edi, [HEAP_START]
 .traverseBlock:
 		; Get free size in block
@@ -163,7 +163,7 @@ kmalloc:
 		mov		edx, eax
 		and		edx, 0x3fff
 		mov		ebx, 0x4000
-		sub		ebx, edx		; Remainder on 16k boundary	
+		sub		ebx, edx		; Remainder on 16k boundary
 		add		eax, ebx		; Amount of memory to allocate
 		; Allocate memory
 		mov		[ebp-24], eax
@@ -175,7 +175,7 @@ kmalloc:
 		; Memory allocated, starting at -20, size in -24, old block in ebx
 		mov		eax, [ebp-20]
 		mov		[ebx + heap_block.next], eax
-		
+
 		mov		edi, eax
 		mov		dword [edi + heap_block.next], 0
 		mov		eax, [ebp-24]
@@ -194,6 +194,87 @@ kmalloc:
 .end:
 		mov		edi, [ebp-8]
 		mov		esi, [ebp-12]
+		mov		esp, ebp
+		pop		ebp
+		ret
+
+; kfree
+;	eax:	address to free
+; -----
+global kfree
+kfree:
+		push	ebp
+		mov		ebp, esp
+		sub		esp, 8			; -4:	esi
+								; -8:	edi
+		mov		[ebp-4], esi
+		mov		[ebp-8], edi
+		mov		edi, eax
+
+		; Get chunk header from memory
+		sub		edi, 8
+		; Set chunk as free
+		mov		eax, [edi + heap_chunk.flags]
+		and		eax, ~(1<<FLAGS_USED)
+		mov		[edi + heap_chunk.flags], eax
+
+		; Traverse structure to find possible merges
+		mov		edi, [HEAP_START]
+.traverseBlock:	
+		mov		esi, heap_block.data
+		add		esi, edi
+		xor		edx, edx
+.traverseChunk:
+		mov		eax, [esi + heap_chunk.flags]
+		bt		eax, FLAGS_USED
+		jc		.nextchunk
+		; Chunk unused
+		; Check if there was a previous chunk
+		test	edx, edx
+		jz		.noprev
+		; There was a previous one
+		; MERGE!!
+		; Add length of chunk to previous one
+		mov		eax, [esi + heap_chunk.length]
+		add		eax, 8
+		add		[edx + heap_chunk.length], eax
+		; If current is last one, set last one of previous
+		; Done by copying flags
+		mov		eax, [esi + heap_chunk.flags]
+		mov		[edx + heap_chunk.flags], eax
+		; Check if new free size is bigger than stated in block header
+		mov		eax, [edi + heap_block.biggest]
+		cmp		[edx + heap_chunk.length], eax
+		jl		.nobiggest
+		; Edit biggest
+		mov		eax, [edx + heap_chunk.length]
+		mov		[edi + heap_block.biggest], eax
+.nobiggest:
+		mov		esi, edx
+		jmp		.nextchunk
+.noprev:
+		; No previous chunk, set current one as one
+		mov		edx, esi
+.nextchunk:
+		; Check if last chunk
+		mov		eax, [esi + heap_chunk.flags]
+		bt		eax, FLAGS_LAST
+		jc		.nextblock		
+		; Goto next chunk
+		mov		eax, [esi + heap_chunk.length]
+		add		eax, 8
+		add		esi, eax
+		jmp		.traverseChunk
+.nextblock:
+		; Check if last one
+		cmp		dword [edi + heap_block.next], 0
+		je		.end
+		; There is next block
+		mov		edi, [edi + heap_block.next]
+		jmp		.traverseBlock
+.end:
+		mov		esi, [ebp-4]
+		mov		edi, [ebp-8]
 		mov		esp, ebp
 		pop		ebp
 		ret
