@@ -8,6 +8,7 @@ bits 32
 %include "mboot.inc"
 %include "pmm.inc"
 %include "vas.inc"
+%include "kmalloc.inc"
 ; --------
 
 %define KERNEL_virtualbase		0xc0000000
@@ -115,6 +116,9 @@ g_start:
 		; Initialize kernel VAS
 		; kernel break is set at 4MiB. Heap starts after that
 		call	vas_init
+
+		; Initialize kmalloc
+		call	kmalloc_init
 
 hang:
 		cli
