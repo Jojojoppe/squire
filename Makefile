@@ -3,7 +3,7 @@
 .PHONY: all clean run reset clean mount umount kernel debug env runtty TODO
 
 # Normal list of actions
-all: drive kernel mount copy umount
+all: drive kernel mount copy umount TODO
 
 # Make drive
 drive:

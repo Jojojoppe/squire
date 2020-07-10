@@ -215,12 +215,13 @@ pmm_alloc:
 		; Check if there is any space left
 		test	eax, eax
 		jz		.next
-		mov		ebx, 31
+		xor		ebx, ebx
 .blp:
 		bt		eax, ebx
 		jc		.found
-		dec		ebx
-		jnz		.blp
+		inc		ebx
+		cmp		ebx, 32
+		jne		.blp
 .next:
 		add		edx, 4
 		dec		ecx
@@ -242,6 +243,7 @@ pmm_alloc:
 		shl		edx, 12
 		mov		eax, edx
 
+		mov		ebx, [ebp-4]
 		mov		esp, ebp
 		pop		ebp
 		ret

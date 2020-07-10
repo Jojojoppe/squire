@@ -7,6 +7,7 @@ bits 32
 %include "serial.inc"
 %include "mboot.inc"
 %include "pmm.inc"
+%include "vas.inc"
 ; --------
 
 %define KERNEL_virtualbase		0xc0000000
@@ -110,6 +111,8 @@ g_start:
 		; Initialize pmm
 		mov		eax, [ebp-4]
 		call	pmm_init
+		; Initialize kernel VAS
+		call	vas_init
 
 hang:
 		cli

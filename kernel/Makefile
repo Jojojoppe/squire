@@ -53,7 +53,8 @@ $(ASMOBJ): $(OUTPUTDIR)/%.asm.o: %.asm
 
 todolist:
 	echo + TODO list
-	-@for file in $(ALLFILES:Makefile=); do fgrep -n -H -e TODO $$file | sed -e 's/:[^:]*//2g' | sed -e 's/^..//' | awk '{print ">"$$1 }' ; fgrep -n -H -e TODO $$file | sed -e 's#.*TODO\(\)#\    #'; done; true
+	-@for file in $(ALLFILES:Makefile=); do fgrep -n -H -e TODO $$file ; done; true
+	#| sed -e 's/:[^:]*//2g' | sed -e 's/^..//' | awk '{print ">"$$1 }' ; fgrep -n -H -e TODO $$file | sed -e 's#.*TODO\(\)#\    #'; done; true
 
 clean:
 	rm -f $(ASMOBJ) $(ASMDFILES) $(COBJ) $(DFILES) kernel.bin DEBUG.sym DISASS
