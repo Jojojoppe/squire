@@ -18,6 +18,7 @@ section .data
 ; SECTION BSS
 section .bss
 ; -----------
+vas_k_brk						resd 1
 
 ; ------------
 ; SECTION TEXT
@@ -32,17 +33,9 @@ vas_init:
 		push	ebp
 		mov		ebp, esp
 
-		; Test map to kernel space
-		call	pmm_alloc
-		mov		edx, 0x4000
-		call	vas_map
-		mov		edx, 0x4000
-		mov		dword [edx], 0
-
-		mov		eax, 0x4000
-		call	vas_unmap
-		mov		edx, 0x4000
-		;mov		dword [edx], 0
+		; Set kernel break
+		extern ld_kernel_end
+		mov		dword [vas_k_brk], 0xc0400000
 
 		mov		esp, ebp
 		pop		ebp
@@ -154,7 +147,7 @@ vas_unmap:
 		add		edx, KERNEL_PT
 		xor		eax, eax
 		mov		[edx], eax
-		
+
 		; Invalidate cache
 		mov		eax, [ebp-8]
 		invlpg	[eax]
@@ -186,7 +179,6 @@ _vas_split:
 							; -16:	ebx
 		mov		[ebp-4], eax
 		mov		[ebp-16], ebx
-		; TODO create _vas_split
 
 		; Get a physical page to use as PT
 		call	pmm_alloc
@@ -217,7 +209,7 @@ _vas_split:
 		mov		[edx], eax
 		; To next PTE
 		add		edx, 4
-		add		ebx, 4096  
+		add		ebx, 4096
 		dec		ecx
 		jnz		.lp
 
@@ -256,6 +248,30 @@ _vas_create_pd:
 		add		edx, KERNEL_PD
 		or		eax, 0x3		; Present and R/W
 		mov		[edx], eax
+
+		mov		esp, ebp
+		pop		ebp
+		ret
+
+; Add page for kernel after break
+;	->eax:	starting virtual address of newly added page
+; -------------------------------
+global vas_kbrk_add
+vas_kbrk_add:
+		push	ebp
+		mov		ebp, esp
+
+		; Get physical page
+		call	pmm_alloc
+		; Get break
+		mov		edx, [vas_k_brk]
+		push	edx
+		call	vas_map
+
+		; Incease break
+		add		dword [vas_k_brk], 4096
+		pop		edx
+		mov		eax, edx
 
 		mov		esp, ebp
 		pop		ebp

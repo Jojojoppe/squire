@@ -38,6 +38,7 @@ S_00							db 0x0a, 0x0d,
 								db "+---------------|", 0x0a, 0x0d
 								db "| a microkernel |", 0x0a, 0x0d
 								db "+---------------+", 0x0a, 0x0d, 0
+S_RN							db 0x0a, 0x0d, 0
 
 ; -----------
 ; SECTION BSS
@@ -112,6 +113,7 @@ g_start:
 		mov		eax, [ebp-4]
 		call	pmm_init
 		; Initialize kernel VAS
+		; kernel break is set at 4MiB. Heap starts after that
 		call	vas_init
 
 hang:
