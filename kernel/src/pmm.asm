@@ -11,6 +11,7 @@ bits 32
 section .data
 ; ------------
 S_FREE					db "Free memory (bytes): ", 0
+S_USED					db "Used memory (bytes): ", 0
 S_RN					db 0x0a, 0x0d, 0
 
 ; -----------
@@ -76,6 +77,8 @@ pmm_init:
 		; Cleanup stack
 		add		esp, 12
 
+		mov		dword [pmm_used], 0
+
 		; Set memory used by kernel as used
 		; Get kernel size
 		extern ld_kernel_end
@@ -92,6 +95,12 @@ pmm_init:
 		mov		eax, S_FREE
 		call	serial_outs
 		mov		eax, [pmm_free]
+		call	serial_outdec
+		mov		eax, S_RN
+		call	serial_outs
+		mov		eax, S_USED
+		call	serial_outs
+		mov		eax, [pmm_used]
 		call	serial_outdec
 		mov		eax, S_RN
 		call	serial_outs
@@ -125,6 +134,7 @@ pmm_unuse:
 		and		edx, 0x1f
 		bts		[eax], edx
 		add		dword [pmm_free], 4096
+		sub		dword [pmm_used], 4096
 		; To next page
 		inc		dword [ebp-4]
 		dec		ecx
@@ -159,6 +169,7 @@ pmm_use:
 		and		edx, 0x1f
 		btc		[eax], edx
 		sub		dword [pmm_free], 4096
+		add		dword [pmm_used], 4096
 		; To next page
 		inc		dword [ebp-4]
 		dec		ecx
