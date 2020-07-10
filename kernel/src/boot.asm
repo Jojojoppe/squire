@@ -31,7 +31,12 @@ times (1024-KERNEL_pagenum-1)	dd 0
 
 ; Strings
 ; -------
-S_00							db 0x0a, 0x0d, "JOS - A simple OS written in assembly", 0x0a, 0x0d, 0x00
+S_00							db 0x0a, 0x0d,
+								db "+---------------+", 0x0a, 0x0d
+								db "|    SQUIRE     |", 0x0a, 0x0d
+								db "+---------------|", 0x0a, 0x0d
+								db "| a microkernel |", 0x0a, 0x0d
+								db "+---------------+", 0x0a, 0x0d, 0
 
 ; -----------
 ; SECTION BSS

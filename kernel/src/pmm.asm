@@ -13,6 +13,8 @@ section .data
 S_FREE					db "Free memory (bytes): ", 0
 S_USED					db "Used memory (bytes): ", 0
 S_RN					db 0x0a, 0x0d, 0
+S_REG					db "Region start: ", 0
+S_LEN					db 0x0a, 0x0d, "Region size: ", 0
 
 ; -----------
 ; SECTION BSS
@@ -57,6 +59,23 @@ pmm_init:
 		; Check if usable
 		test	ecx, ecx
 		jz		.next
+
+		push	edx
+		push	ecx
+
+		mov		eax, S_REG
+		call	serial_outs
+		mov		eax, [esp+4]
+		call	serial_outhex
+		mov		eax, S_LEN
+		call	serial_outs
+		mov		eax, [esp+8]
+		call	serial_outhex
+		mov		eax, S_RN
+		call	serial_outs
+
+		pop		ecx
+		pop		edx
 
 		shr		edx, 12
 		shr		ecx, 12
@@ -174,6 +193,54 @@ pmm_use:
 		inc		dword [ebp-4]
 		dec		ecx
 		jnz		.lp
+
+		mov		esp, ebp
+		pop		ebp
+		ret
+
+; Allocate physical page
+;	->eax:	physical page address
+; ---------------------
+global pmm_alloc
+pmm_alloc:
+		push	ebp
+		mov		ebp, esp
+		sub		esp, 4			; -4:	ebx
+		mov		[ebp-4], ebx
+
+		mov		edx, pmm_map_bottom
+		mov		ecx, 0x20000
+.lp:
+		mov		eax, [edx]
+		; Check if there is any space left
+		test	eax, eax
+		jz		.next
+		mov		ebx, 31
+.blp:
+		bt		eax, ebx
+		jc		.found
+		dec		ebx
+		jnz		.blp
+.next:
+		add		edx, 4
+		dec		ecx
+		jnz		.lp
+		; Shouldnt come here!!
+		; no memory left
+		int		0
+.found:
+		btc		eax, ebx
+		mov		[edx], eax
+		add		dword [pmm_used], 4096
+		sub		dword [pmm_free], 4096
+		; edx:ebx
+		sub		edx, pmm_map_bottom
+		shl		edx, 5
+		; edx contains page number base
+		add		edx, ebx
+		; edx contains page number
+		shl		edx, 12
+		mov		eax, edx
 
 		mov		esp, ebp
 		pop		ebp
