@@ -4,6 +4,7 @@ bits 32
 ; SECTION DATA
 section .data
 ; ------------
+S_RN			db 0x0a, 0x0d, 0
 
 ; -----------
 ; SECTION BSS
@@ -195,6 +196,41 @@ serial_outbase:
 		mov		eax, esi
 		call	serial_outs
 
+		mov		esp, ebp
+		pop		ebp
+		ret
+
+; Serial hexdump
+;	eax:	start address to dump
+;	edx:	length (multiple of 4!)
+; --------------
+global serial_hexdump
+serial_hexdump:
+		push	ebp
+		mov		ebp, esp
+		sub		esp, 4			; -4:	ebx
+		mov		[ebp-4], ebx
+
+		mov		ecx, edx
+		mov		edx, eax
+		and		ecx, ~0x3
+.lp:
+		push	edx
+		push	ecx
+		push	ebx
+		mov		eax, [edx]
+		call	serial_outhex
+		pop		ebx
+		pop		ecx
+		pop		edx
+		add		edx, 4
+		sub		ecx, 4
+		jnz		.lp
+
+		mov		eax, S_RN
+		call	serial_outs
+
+		mov		ebx, [ebp-4]
 		mov		esp, ebp
 		pop		ebp
 		ret

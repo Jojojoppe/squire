@@ -33,9 +33,16 @@ vas_init:
 		mov		ebp, esp
 
 		; Test map to kernel space
-		mov		eax, 0
-		mov		edx, 0xc0000000
+		call	pmm_alloc
+		mov		edx, 0x4000
 		call	vas_map
+		mov		edx, 0x4000
+		mov		dword [edx], 0
+
+		mov		eax, 0x4000
+		call	vas_unmap
+		mov		edx, 0x4000
+		;mov		dword [edx], 0
 
 		mov		esp, ebp
 		pop		ebp
@@ -78,7 +85,79 @@ vas_map:
 		jc		.split_pd
 
 .pd_ok:
-		int 0
+		; Set PT
+		mov		edx, [ebp-12]
+		shl		edx, 2
+		add		edx, KERNEL_PT
+		mov		eax, [ebp-4]
+		or		eax, 0x3
+		mov		[edx], eax
+
+		; Invalidate cache
+		mov		eax, [ebp-8]
+		invlpg	[eax]
+
+		mov		esp, ebp
+		pop		ebp
+		ret
+
+.create_pd:
+		; Get PD and create it
+		mov		eax, [ebp-16]
+		call	_vas_create_pd
+		jmp		.pd_ok
+.split_pd:
+		; Get PD and split
+		mov		eax, [ebp-16]
+		call	_vas_split
+		jmp		.pd_ok
+
+; Unmap physical page from VAS
+;	eax:	virtual address
+; -------------------
+global vas_unmap
+vas_unmap:
+		push	ebp
+		mov		ebp, esp
+		sub		esp, 24		; -4:	physical address
+							; -8:	virtual address
+							; -12:	PT
+							; -16:	PD
+							; -24:	PDE
+							; -28:	PTE
+		mov		[ebp-8], eax
+		mov		edx, eax
+		; Get PD and PT
+		shr		edx, 12
+		mov		[ebp-12], edx
+		shr		edx, 10
+		mov		[ebp-16], edx
+		; Get PDE
+		shl		edx, 2
+		add		edx, KERNEL_PD
+		mov		eax, [edx]
+		mov		[ebp-24], eax
+		; eax contains PDE
+
+		; Check if there is a used entry
+		bt		eax, 0
+		jnc		.create_pd
+		; There is a used entry
+		; Check if it is a 4MB page, if so it must be split
+		bt		eax, 7
+		jc		.split_pd
+
+.pd_ok:
+		; Set PT
+		mov		edx, [ebp-12]
+		shl		edx, 2
+		add		edx, KERNEL_PT
+		xor		eax, eax
+		mov		[edx], eax
+		
+		; Invalidate cache
+		mov		eax, [ebp-8]
+		invlpg	[eax]
 
 		mov		esp, ebp
 		pop		ebp
@@ -163,7 +242,21 @@ _vas_split:
 _vas_create_pd:
 		push	ebp
 		mov		ebp, esp
-		; TODO create _vas_create_pd
+		sub		esp, 8			; -4:	PD
+								; -8:	physical page
+		mov		[ebp-4], eax
+
+		; Get physical page for PT
+		call	pmm_alloc
+		mov		[ebp-8], eax
+
+		; Set PDE
+		mov		edx, [ebp-4]
+		shl		edx, 2
+		add		edx, KERNEL_PD
+		or		eax, 0x3		; Present and R/W
+		mov		[edx], eax
+
 		mov		esp, ebp
 		pop		ebp
 		ret

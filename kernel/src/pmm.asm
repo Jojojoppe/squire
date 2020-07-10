@@ -6,6 +6,8 @@ bits 32
 %include "serial.inc"
 ; --------
 
+%define KERNEL_virtualbase 0xc0000000
+
 ; ------------
 ; SECTION DATA
 section .data
@@ -106,7 +108,7 @@ pmm_init:
 		sub		eax, ld_kernel_start
 		mov		edx, eax
 		shr		edx, 12
-		mov		eax, ld_kernel_start
+		mov		eax, ld_kernel_start - KERNEL_virtualbase
 		shr		eax, 12
 		call	pmm_use
 
