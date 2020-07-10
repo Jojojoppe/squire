@@ -10,7 +10,7 @@ bits 32
 ; SECTION DATA
 section .data
 ; ------------
-S_FREE					db "Free memory: ", 0
+S_FREE					db "Free memory (bytes): ", 0
 S_RN					db 0x0a, 0x0d, 0
 
 ; -----------
@@ -80,7 +80,7 @@ pmm_init:
 		mov		eax, S_FREE
 		call	serial_outs
 		mov		eax, [pmm_free]
-		call	serial_outhex
+		call	serial_outdec
 		mov		eax, S_RN
 		call	serial_outs
 

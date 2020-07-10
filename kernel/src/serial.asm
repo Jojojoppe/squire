@@ -125,3 +125,76 @@ serial_outhex:
 		pop		ebp
 		ret
 .chars			db "0123456789ABCDEF"
+
+; Out a dec number to serial
+;	eax:	number to print
+; -------------------------
+global serial_outdec
+serial_outdec:
+		push	ebp
+		mov		ebp, esp
+		sub		esp, 4+36		; -4:	esi
+								; -8:	ebx
+								; -12:	destination string
+		mov		[ebp-4], esi
+		mov		[ebp-8], ebx
+
+		mov		dword [ebp-12], 0
+		lea		esi, [ebp-12]
+		mov		ebx, 10			; Base 10
+.convert:
+		xor		edx, edx
+		div		ebx
+		add		edx, '0'
+		cmp		edx, '9'
+		jbe		.store
+		add		edx, 'A'-'0'-10
+.store:
+		dec		esi
+		mov		[esi], dl
+		and		eax, eax
+		jnz		.convert
+
+		mov		eax, esi
+		call	serial_outs
+
+		mov		esp, ebp
+		pop		ebp
+		ret
+
+; Out a number to serial with base
+;	eax:	number to print
+;	edx:	base
+; --------------------------------
+global serial_outbase
+serial_outbase:
+		push	ebp
+		mov		ebp, esp
+		sub		esp, 4+36		; -4:	esi
+								; -8:	ebx
+								; -12:	destination string
+		mov		[ebp-4], esi
+		mov		[ebp-8], ebx
+
+		mov		dword [ebp-12], 0
+		lea		esi, [ebp-12]
+		mov		ebx, edx
+.convert:
+		xor		edx, edx
+		div		ebx
+		add		edx, '0'
+		cmp		edx, '9'
+		jbe		.store
+		add		edx, 'A'-'0'-10
+.store:
+		dec		esi
+		mov		[esi], dl
+		and		eax, eax
+		jnz		.convert
+
+		mov		eax, esi
+		call	serial_outs
+
+		mov		esp, ebp
+		pop		ebp
+		ret

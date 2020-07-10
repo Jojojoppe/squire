@@ -67,17 +67,17 @@ copy:
 # Run the test suite
 run:
 	echo + Run test suite
-	qemu-system-i386 -s -m 32M -no-reboot -drive file=drive,format=raw -monitor stdio
+	qemu-system-i386 -s -m 64M -no-reboot -drive file=drive,format=raw -monitor stdio
 
 # Run the test suite
 runtty:
 	echo + Run test suite in terminal
-	qemu-system-i386 -s -m 32M -no-reboot -drive file=drive,format=raw -nographic
+	qemu-system-i386 -s -m 64M -no-reboot -drive file=drive,format=raw -nographic
 
 # Debug
 debug:
 	echo + Debug
-	qemu-system-i386 -s -S -m 32M -no-shutdown -no-reboot -drive file=drive,format=raw &
+	qemu-system-i386 -s -S -m 64M -no-shutdown -no-reboot -drive file=drive,format=raw &
 	sleep 1
 	gdb -x kernel/DEBUG
 
