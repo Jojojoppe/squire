@@ -10,6 +10,7 @@ bits 32
 %include "vas.inc"
 %include "kmalloc.inc"
 %include "proc.inc"
+%include "timer.inc"
 ; --------
 
 %define KERNEL_virtualbase		0xc0000000
@@ -123,6 +124,15 @@ g_start:
 
 		; Initialize processing
 		call	proc_init
+
+		; Initialize timer
+		call	timer_init
+
+.lp:
+		call	timer_print
+		mov		al, 0x0d
+		call	serial_out
+		jmp		.lp
 
 hang:
 		cli

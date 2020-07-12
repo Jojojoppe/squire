@@ -4,6 +4,7 @@ bits 32
 ; --------
 %include "idt.inc"
 %include "panic.inc"
+%include "timer.inc"
 ; --------
 
 ; ------------
@@ -165,6 +166,11 @@ interrupts_init:
 		cmp		eax, 0x19
 		jne		.lp_hw
 
+		; Set timer interrupt
+		mov		eax, 0x20
+		mov		ecx, isr_timer
+		call	idt_set_interrupt
+
 		; Enable interrupts
 		sti
 
@@ -204,6 +210,10 @@ _remap_PIC:
 ; Empty ISR
 ; ---------
 _isr_empty:
+		push	eax
+		mov		eax, 0x20
+		out		0x20, al
+		pop		eax
 		iret
 
 ; Panic ISR no code
