@@ -37,6 +37,21 @@ vas_init:
 		extern ld_kernel_end
 		mov		dword [vas_k_brk], 0xc0400000
 
+		; Split kernel 4MiB
+		mov		eax, 0
+		mov		edx, 0xc0000000
+		call	vas_map
+		mov		eax, 0xc0000000
+		call	vas_unmap
+
+		; Completely map kernelspace
+		mov		ecx, 255		; 3GiB to 4GiB minus page table structure
+		mov		edx, KERNEL_PT + 4096*256*3
+
+		mov		eax, KERNEL_PD
+		mov		edx, 4096
+		call	serial_hexdump
+
 		mov		esp, ebp
 		pop		ebp
 		ret
@@ -83,7 +98,7 @@ vas_map:
 		shl		edx, 2
 		add		edx, KERNEL_PT
 		mov		eax, [ebp-4]
-		or		eax, 0x3
+		or		eax, 0x3			; Present and R/W
 		mov		[edx], eax
 
 		; Invalidate cache

@@ -210,25 +210,41 @@ serial_hexdump:
 		mov		ebp, esp
 		sub		esp, 4			; -4:	ebx
 		mov		[ebp-4], ebx
-
+		
 		mov		ecx, edx
-		mov		edx, eax
 		and		ecx, ~0x3
-.lp:
-		push	edx
+		mov		edx, eax
+		mov		ebx, 16
+
+.lpo:
 		push	ecx
+		push	edx
 		push	ebx
+
 		mov		eax, [edx]
 		call	serial_outhex
-		pop		ebx
-		pop		ecx
-		pop		edx
-		add		edx, 4
-		sub		ecx, 4
-		jnz		.lp
+		mov		eax, ' '
+		call	serial_out
 
+		pop		ebx
+		pop		edx
+		pop		ecx
+
+		dec		ebx
+		jnz		.nxt
+		push	ecx
+		push	edx
+		push	ebx
 		mov		eax, S_RN
 		call	serial_outs
+		pop		ebx
+		pop		edx
+		pop		ecx
+		mov		ebx, 16
+.nxt:
+		add		edx, 4
+		sub		ecx, 4
+		jnz		.lpo
 
 		mov		ebx, [ebp-4]
 		mov		esp, ebp

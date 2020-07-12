@@ -15,6 +15,8 @@ struc vmmregion
 	.length		resd 1		; Length of memory region
 	.shared		resd 1		; Address of shared memory descriptor. Valid if FLAGS_SHARED is set
 	.flags		resd 1
+
+	.sizeof:
 endstruc
 
 %define FLAGS_USED 0
@@ -56,7 +58,7 @@ vmm_create:
 
 		; Process starts with all space available from 4MiB to 3GiB
 		; Allocate space for descriptor
-		mov		eax, 6*4
+		mov		eax, vmmregion.sizeof
 		call	kmalloc
 		mov		edx, eax
 		mov		[ebp-4], eax
@@ -173,7 +175,7 @@ vmm_alloc:
 		jng		.aftercreatestart
 		; New region must be constructed before destination
 		; Allocate space for descriptor
-		mov		eax, 6*4
+		mov		eax, vmmregion.sizeof
 		call	kmalloc
 		mov		edx, eax
 		; Link in list after current descriptor
@@ -210,7 +212,7 @@ vmm_alloc:
 		cmp		eax, [ebp-8]
 		jnl		.aftercreateend
 		; Allocate space for descriptor
-		mov		eax, 6*4
+		mov		eax, vmmregion.sizeof
 		call	kmalloc
 		mov		edx, eax
 		; Link in list after current descriptor
