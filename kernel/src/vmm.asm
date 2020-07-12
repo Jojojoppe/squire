@@ -149,7 +149,7 @@ vmm_alloc:
 		mov		eax, [ebp-4]
 		cmp		eax, [edi+vmmregion.base]
 		; If destination base is not larger than base of region destination is not within region
-		jng		.next
+		jnge	.next
 		; Check if destination is smaller than end of region
 		mov		edx, [edi+vmmregion.base]
 		add		edx, [edi+vmmregion.length]
@@ -176,7 +176,7 @@ vmm_alloc:
 		mov		eax, 6*4
 		call	kmalloc
 		mov		edx, eax
-		; Link in list before current descriptor
+		; Link in list after current descriptor
 		; Set next field of new
 		mov		eax, [edi+vmmregion.next]
 		mov		[edx+vmmregion.next], eax
@@ -194,8 +194,7 @@ vmm_alloc:
 		; Set fields of new and current
 		mov		eax, [ebp-4]
 		mov		[edx+vmmregion.base], eax
-		mov		eax, [ebp-12]
-		or		eax, 1<<FLAGS_USED
+		mov		eax, [edi+vmmregion.flags]
 		mov		[edx+vmmregion.flags], eax
 		mov		ebx, [ebp-4]
 		sub		ebx, [edi+vmmregion.base]		; ebx is length of current region left
@@ -206,7 +205,64 @@ vmm_alloc:
 		mov		edi, edx
 .aftercreatestart:
 		; edi contains descriptor of usable region
-		; TODO FINISH
+		; Check if its needed to create region after new
+		mov		eax, [edi+vmmregion.length]
+		cmp		eax, [ebp-8]
+		jnl		.aftercreateend
+		; Allocate space for descriptor
+		mov		eax, 6*4
+		call	kmalloc
+		mov		edx, eax
+		; Link in list after current descriptor
+		; Set next field of new
+		mov		eax, [edi+vmmregion.next]
+		mov		[edx+vmmregion.next], eax
+		; Set prev field of new
+		mov		[edx+vmmregion.prev], edi
+		; Set next field of current
+		mov		[edi+vmmregion.next], edx
+		; Check if need to set prev of currents next descriptor
+		mov		eax, [edx+vmmregion.next]
+		test	eax, eax
+		jz		.aftersetprev2
+		mov		[eax+vmmregion.prev], edx
+.aftersetprev2:
+		; Descriptor is in linked list
+		; Set fields of new and current
+		mov		eax, [ebp-4]
+		add		eax, [ebp-8]
+		mov		[edx+vmmregion.base], eax
+		mov		eax, [edi+vmmregion.flags]
+		mov		[edx+vmmregion.flags], eax
+		mov		ebx, [edx+vmmregion.base]
+		sub		ebx, [edi+vmmregion.base]
+		mov		eax, [edi+vmmregion.length]
+		sub		eax, ebx
+		mov		[edi+vmmregion.length], ebx
+		mov		[edx+vmmregion.length], eax
+.aftercreateend:
+		; Region descriptor correctly inserted in list
+		; Set flags of region
+		mov		eax, [ebp-12]
+		or		eax, 1<<FLAGS_USED
+		mov		[edi+vmmregion.flags], eax
+		; Allocate physical memory
+		mov		ecx, [edi+vmmregion.length]
+		shr		ecx, 12
+		mov		edx, [edi+vmmregion.base]
+.alloclp:
+		push	ecx
+		push	edx
+		call	pmm_alloc
+		pop		edx
+		push	edx
+		call	vas_map
+		pop		edx
+		pop		ecx
+
+		add		edx, 4096
+		dec		ecx
+		jnz		.alloclp
 		jmp		.end
 .next:
 		; Check if there is a next region

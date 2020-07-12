@@ -47,19 +47,6 @@ proc_init
 		mov		dword [edx+2*4], 0x10		; SS0
 		mov		dword [edx+25*4], 104		; IOPB
 
-		; Test VMM
-		call	vmm_create
-		push	eax
-		call	vmm_debugprint
-		pop		edi
-		push	edi
-		mov		eax, 0x400000
-		mov		edx, 0x4000
-		mov		ecx, 1
-		call	vmm_alloc
-		pop		eax
-		call	vmm_debugprint
-
 		mov		esp, ebp
 		pop		ebp
 		ret
