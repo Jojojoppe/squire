@@ -9,6 +9,7 @@ bits 32
 %include "pmm.inc"
 %include "vas.inc"
 %include "kmalloc.inc"
+%include "proc.inc"
 ; --------
 
 %define KERNEL_virtualbase		0xc0000000
@@ -120,34 +121,8 @@ g_start:
 		; Initialize kmalloc
 		call	kmalloc_init
 
-		; Test kmalloc
-		mov		eax, 8
-		call	kmalloc				; 18
-		call	serial_outhex
-		mov		eax, S_RN
-		call	serial_outs
-
-		mov		eax, 8
-		call	kmalloc				; 28
-		push	eax
-		call	serial_outhex
-		mov		eax, S_RN
-		call	serial_outs
-
-		pop		eax
-		call	kfree
-
-		mov		eax, 8				; 28
-		call	kmalloc
-		call	serial_outhex
-		mov		eax, S_RN
-		call	serial_outs
-
-		mov		eax, 8
-		call	kmalloc				; 38
-		call	serial_outhex
-		mov		eax, S_RN
-		call	serial_outs
+		; Initialize processing
+		call	proc_init
 
 hang:
 		cli

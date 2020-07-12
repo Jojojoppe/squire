@@ -89,3 +89,24 @@ gdt_install:
 		mov		esp, ebp
 		pop		ebp
 		ret
+
+; Set TSS
+;	eax:	address of TSS
+; -------
+global gdt_settss
+gdt_settss:
+		push	ebp
+		mov		ebp, esp
+
+		mov		edx, gdt_base
+		mov		[edx+42], ax
+		shr		eax, 16
+		mov		[edx+44], al
+		shr		eax, 8
+		mov		[edx+47], al
+		mov		ax, 0x2b
+		ltr		ax
+
+		mov		esp, ebp
+		pop		ebp
+		ret

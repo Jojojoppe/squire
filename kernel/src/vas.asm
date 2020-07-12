@@ -107,6 +107,7 @@ vas_map:
 
 ; Unmap physical page from VAS
 ;	eax:	virtual address
+;	->eax:	physical address
 ; -------------------
 global vas_unmap
 vas_unmap:
@@ -145,6 +146,10 @@ vas_unmap:
 		mov		edx, [ebp-12]
 		shl		edx, 2
 		add		edx, KERNEL_PT
+		; Save entry
+		mov		eax, [edx]
+		and		eax, 0xfffff000
+		mov		[ebp-4], eax
 		xor		eax, eax
 		mov		[edx], eax
 
@@ -152,6 +157,7 @@ vas_unmap:
 		mov		eax, [ebp-8]
 		invlpg	[eax]
 
+		mov		eax, [ebp-4]
 		mov		esp, ebp
 		pop		ebp
 		ret
