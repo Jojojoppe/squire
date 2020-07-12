@@ -45,12 +45,22 @@ vas_init:
 		call	vas_unmap
 
 		; Completely map kernelspace
-		mov		ecx, 255		; 3GiB to 4GiB minus page table structure
-		mov		edx, KERNEL_PT + 4096*256*3
+		mov		ecx, 254		; 3GiB to 4GiB minus page table structure and kernel itself
+		mov		edx, KERNEL_PD + 256*3*4 + 4
+		; Map from page after kernel until end
+.lp:
+		push	ecx
+		push	edx
+		call	pmm_alloc
+		pop		edx
+		pop		ecx
 
-		mov		eax, KERNEL_PD
-		mov		edx, 4096
-		call	serial_hexdump
+		or		eax, 0x03
+		mov		[edx], eax
+
+		add		edx, 4
+		dec		ecx
+		jnz		.lp
 
 		mov		esp, ebp
 		pop		ebp
