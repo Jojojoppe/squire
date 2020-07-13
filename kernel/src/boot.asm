@@ -153,6 +153,7 @@ g_start:
 		add		eax, 4096*4
 		mov		[edx], eax
 		mov		eax, .lp
+		; Add thread to list
 		push	eax
 		push	edx
 		call	proc_getcurrent

@@ -5,6 +5,7 @@ bits 32
 %include "gdt.inc"
 %include "vmm.inc"
 %include "kmalloc.inc"
+%include "serial.inc"
 ; --------
 
 struc process
@@ -34,6 +35,8 @@ endstruc
 ; SECTION DATA
 section .data
 ; ------------
+
+S_00			db "SWITCH!", 0x0a, 0x0d, 0
 
 ; -----------
 ; SECTION BSS
@@ -159,13 +162,13 @@ proc_thread_switch:
 		pushad
 		pushfd
 		mov		[edx+thread.kstack], esp
-		mov		eax, [TSS+4]
-		mov		[edx+thread.tss_esp0], eax
+		mov		ecx, [TSS+4]
+		mov		[edx+thread.tss_esp0], ecx
 .endsave:
 		mov		[proc_threadcurrent], eax
 		mov		esp, [eax+thread.kstack]
-		mov		eax, [eax+thread.tss_esp0]
-		mov		[TSS+4], eax
+		mov		ecx, [eax+thread.tss_esp0]
+		mov		[TSS+4], ecx
 		; NEW STACK
 		popfd
 		popad
@@ -316,6 +319,30 @@ proc_getcurrent:
 
 		mov		eax, [proc_proccurrent]
 
+		mov		esp, ebp
+		pop		ebp
+		ret
+
+; Scheduler
+; Called by the timer interrupt or after syscall
+; ---------
+global proc_schedule
+proc_schedule:
+		push	ebp
+		mov		ebp, esp
+
+		mov		eax, S_00
+		call	serial_outs
+
+		; Check if there is next thread
+		mov		edx, [proc_threadcurrent]
+		mov		eax, [edx+thread.next]
+		test	eax, eax
+		jz		.nextproc
+		call	proc_thread_switch	
+
+.nextproc:
+		; TODO finish
 		mov		esp, ebp
 		pop		ebp
 		ret

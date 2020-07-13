@@ -3,6 +3,7 @@ bits 32
 ; INCLUDES
 ; --------
 %include "serial.inc"
+%include "proc.inc"
 ; --------
 
 ; ------------
@@ -48,6 +49,7 @@ timer_init:
 ; ---------
 global isr_timer
 isr_timer:
+		cli
 		pushad
 
 		inc		dword [timer_counter]
@@ -57,7 +59,17 @@ isr_timer:
 		; Clear PIC
 		mov		eax, 0x20
 		out		0x20, al
+
+		; Check if scheduler must be called
+		mov		eax, [timer_counter]
+		and		eax, 0x3f
+		cmp		eax, 0x3f
+		jnz		.clearpic
+		call	proc_schedule
+.clearpic:
 		popad
+
+		sti
 		iret
 
 ; Print time
