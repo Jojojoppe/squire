@@ -339,10 +339,16 @@ proc_schedule:
 		mov		eax, [edx+thread.next]
 		test	eax, eax
 		jz		.nextproc
-		call	proc_thread_switch	
+		call	proc_thread_switch
+		jmp		.end
 
 .nextproc:
-		; TODO finish
+		mov		edx, [proc_proccurrent]
+		mov		eax, [edx+process.threads]
+		mov		edx, [proc_threadcurrent]
+		call	proc_thread_switch
+
+.end:
 		mov		esp, ebp
 		pop		ebp
 		ret
