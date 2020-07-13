@@ -41,7 +41,8 @@ S_00							db 0x0a, 0x0d,
 								db "|    SQUIRE     |", 0x0a, 0x0d
 								db "+---------------|", 0x0a, 0x0d
 								db "| a microkernel |", 0x0a, 0x0d
-								db "+---------------+", 0x0a, 0x0d, 0
+								db "+---------------+", 0x0a, 0x0d,
+								db "Copyright (c) 2020, Joppe Blondel", 0x0a, 0x0d, 0x0a, 0x0d, 0
 S_RN							db 0x0a, 0x0d, 0
 
 ; -----------

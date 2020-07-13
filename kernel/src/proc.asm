@@ -331,9 +331,6 @@ proc_schedule:
 		push	ebp
 		mov		ebp, esp
 
-		mov		eax, S_00
-		call	serial_outs
-
 		; Check if there is next thread
 		mov		edx, [proc_threadcurrent]
 		mov		eax, [edx+thread.next]
@@ -343,6 +340,7 @@ proc_schedule:
 		jmp		.end
 
 .nextproc:
+		; TODO jump to next process if there is one
 		mov		edx, [proc_proccurrent]
 		mov		eax, [edx+process.threads]
 		mov		edx, [proc_threadcurrent]
