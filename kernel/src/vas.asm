@@ -55,7 +55,7 @@ vas_init:
 		pop		edx
 		pop		ecx
 
-		or		eax, 0x03
+		or		eax, 0x03		; Present and R/W
 		mov		[edx], eax
 
 		add		edx, 4
@@ -108,7 +108,7 @@ vas_map:
 		shl		edx, 2
 		add		edx, KERNEL_PT
 		mov		eax, [ebp-4]
-		or		eax, 0x3			; Present and R/W
+		or		eax, 0x7			; Present, R/W and user
 		mov		[edx], eax
 
 		; Invalidate cache
@@ -277,7 +277,7 @@ _vas_create_pd:
 		mov		edx, [ebp-4]
 		shl		edx, 2
 		add		edx, KERNEL_PD
-		or		eax, 0x3		; Present and R/W
+		or		eax, 0x7		; Present, R/W and user
 		mov		[edx], eax
 
 		mov		esp, ebp

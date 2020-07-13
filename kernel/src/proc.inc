@@ -1,2 +1,4 @@
 extern proc_init
 extern proc_thread_switch
+extern proc_getmemory
+extern proc_user_exec

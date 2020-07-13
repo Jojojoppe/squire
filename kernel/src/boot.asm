@@ -129,7 +129,7 @@ g_start:
 		; Proc_init uses top as kernel stack for start of new kernel thread stack
 		; Since upcomming function calls must be able to return without overwriting set-up stack frame
 		; Space must be made
-		mov		eax, .lp
+		mov		eax, .after_proc_init
 		call	proc_init
 		push	eax
 		push	edx
@@ -140,13 +140,15 @@ g_start:
 		; Jump to kernel thread
 		xor		edx, edx
 		pop		eax
-		call	proc_thread_switch		
-
-		jmp		$
+		call	proc_thread_switch
+.after_proc_init:
+		; From here stack frame is reset! From now on running in process 1, thread 1 ([1,1])
+		push	ebp
+		mov		ebp, esp
 
 		; For test copy usertest thread to userspace
-		pop		edi
-		push	edi
+		call	proc_getmemory
+		mov		edi, eax
 		mov		eax, 0x00400000
 		mov		edx, 0x4000
 		mov		ecx, 0
@@ -156,6 +158,17 @@ g_start:
 		mov		esi, usertest
 		mov		edi, 0x00400000
 	rep	movsb
+		; Setup user stack
+		call	proc_getmemory
+		mov		edi, eax
+		mov		eax, 0x2fffb000
+		mov		edx, 0x4000
+		mov		ecx, 0
+		call	vmm_alloc
+		; Execute code in userspace
+		mov		eax, 0x00400000
+		mov		edx, 0x2fffb000
+		call	proc_user_exec
 
 .lp:
 		call	timer_print
@@ -172,5 +185,5 @@ hang:
 ; ----------------
 usertest:
 		nop
-		jmp		0x08:0x00400000
+		jmp		0x1b:0x00400000
 usertest_end:

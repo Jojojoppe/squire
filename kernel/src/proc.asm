@@ -164,3 +164,60 @@ proc_thread_switch:
 		mov		esp, ebp
 		pop		ebp
 		ret
+
+; Return current process memory list
+;	->eax:	address of memory list
+; ----------------------------------
+global proc_getmemory
+proc_getmemory:
+		push	ebp
+		mov		ebp, esp
+
+		mov		edx, [proc_proccurrent]
+		mov		eax, [edx+process.memory]
+
+		mov		esp, ebp
+		pop		ebp
+		ret
+
+; Execute in process/thread
+; Sets up user stack and kernel stack and jumps to ring 3
+;	eax:	Address to jump to
+;	edx:	User stack address
+; -------------------------
+global proc_user_exec
+proc_user_exec:
+		push	ebp
+		mov		ebp, esp
+		sub		esp, 8		; -4:	Address to jump to
+							; -8:	User stack address
+		mov		[ebp-4], eax
+		mov		[ebp-8], edx
+
+		; Load current esp as kernel stack in TSS
+		mov		edx, TSS
+		mov		eax, esp
+		mov		dword [edx+1*4], esp		; ESP0
+		mov		dword [edx+2*4], 0x10		; SS0
+
+		; Jump to user space
+		cli
+		mov		eax, 0x23					; User data segment
+		mov		ds, ax
+		mov		es, ax
+		mov		fs, ax
+		mov		gs, ax
+
+		push	eax							; User stack segment
+		mov		eax, [ebp-8]
+		push	eax							; User stack
+		pushfd
+		pop		eax
+		or		eax, 0x200
+		push	eax							; EFLAGS with interrupts re-enabled
+		mov		eax, 0x1b
+		push	eax							; User code segment
+		mov		eax, [ebp-4]
+		push	eax							; New user code
+		iret
+
