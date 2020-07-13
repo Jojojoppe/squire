@@ -154,6 +154,8 @@ proc_thread_switch:
 		mov		ebp, esp
 		cli
 
+		mov		[proc_threadcurrent], eax
+
 		; Check if need to save
 		test	edx, edx
 		jz		.endsave
@@ -165,7 +167,6 @@ proc_thread_switch:
 		mov		ecx, [TSS+4]
 		mov		[edx+thread.tss_esp0], ecx
 .endsave:
-		mov		[proc_threadcurrent], eax
 		mov		esp, [eax+thread.kstack]
 		mov		ecx, [eax+thread.tss_esp0]
 		mov		[TSS+4], ecx
@@ -351,8 +352,8 @@ proc_schedule:
 
 .nextproc:
 		mov		edx, [proc_proccurrent]
-		mov		edx, [edx+process.next]
-		mov		[proc_proccurrent], edx
+		;mov		edx, [edx+process.next]
+		;mov		[proc_proccurrent], edx
 		mov		eax, [edx+process.threads]
 		mov		edx, [proc_threadcurrent]
 		call	proc_thread_switch

@@ -149,6 +149,21 @@ g_start:
 		push	ebp
 		mov		ebp, esp
 
+		; Setup stack
+		mov		eax, 4
+		call	vas_kbrk_addx
+		add		eax, 4096*4
+		mov		[edx], eax
+		mov		eax, .lp
+		; Add thread to list
+		push	eax
+		push	edx
+		call	proc_getcurrent
+		mov		ecx, eax
+		pop		edx
+		pop		eax
+		call	proc_thread_new
+
 		mov		eax, S_INIT
 		call	mboot_get_mod
 		; TODO test if succeeded
@@ -168,9 +183,11 @@ g_start:
 		call	proc_user_exec
 
 .lp:
+		sti
 		call	timer_print
 		mov		al, 0x0d
 		call	serial_out
+		cli
 		jmp		.lp
 
 hang:
