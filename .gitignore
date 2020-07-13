@@ -10,3 +10,9 @@ kernel/kernel.bin
 kernel/LOC
 kernel/DISASS
 kernel/DEBUG.sym
+
+init/build
+init/init.bin
+init/LOC
+init/DISASS
+init/DEBUG.sym

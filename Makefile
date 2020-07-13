@@ -1,9 +1,9 @@
 .SILENT:
 
-.PHONY: all clean run reset clean mount umount kernel debug env runtty TODO
+.PHONY: all clean run reset clean mount umount kernel debug env runtty TODO init
 
 # Normal list of actions
-all: drive kernel mount copy umount TODO
+all: drive kernel init mount copy umount TODO
 
 # Make drive
 drive:
@@ -63,6 +63,7 @@ copy:
 	echo + Copy files to drive
 	sudo cp grub.cfg mnt/boot/grub/grub.cfg
 	sudo cp kernel/kernel.bin mnt/boot/kernel.bin
+	sudo cp init/init.bin mnt/boot/init.bin
 
 # Run the test suite
 run:
@@ -85,6 +86,11 @@ debug:
 kernel:
 	echo + Make kernel
 	cd kernel && ${MAKE} ${MFLAGS} kernel.bin
+
+# Compile init
+init:
+	echo + Make init
+	cd init && ${MAKE} ${MFLAGS} init.bin
 
 # List all todos
 TODO:
