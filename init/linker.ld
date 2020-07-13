@@ -3,6 +3,7 @@ ENTRY(_start)
 SECTIONS
 {
 	. = 0x00400000;
+	. = virt;
 
 	.text : AT(ADDR(.text)){
 		g_code = .;

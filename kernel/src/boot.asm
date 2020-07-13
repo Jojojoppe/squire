@@ -153,37 +153,10 @@ g_start:
 		call	mboot_get_mod
 		; TODO test if succeeded
 		call	elf_load
+		push	eax
 
 		jmp .lp
 
-		; Create test thread
-		; Create kernel stack
-		mov		eax, 4
-		call	vas_kbrk_addx
-		add		eax, 4096*4
-		mov		[edx], eax
-		mov		eax, .lp
-		; Add thread to list
-		push	eax
-		push	edx
-		call	proc_getcurrent
-		mov		ecx, eax
-		pop		edx
-		pop		eax
-		call	proc_thread_new
-
-		; For test copy usertest thread to userspace
-		call	proc_getmemory
-		mov		edi, eax
-		mov		eax, 0x00400000
-		mov		edx, 0x4000
-		mov		ecx, 0
-		call	vmm_alloc
-		; Copy usertest to userspace (dummy elf load)
-		mov		ecx, usertest_end-usertest
-		mov		esi, usertest
-		mov		edi, 0x00400000
-	rep	movsb
 		; Setup user stack
 		call	proc_getmemory
 		mov		edi, eax
@@ -206,9 +179,3 @@ hang:
 		cli
 		hlt
 		jmp		hang
-
-; USER TEST THREAD
-; ----------------
-usertest:
-		jmp		0x1b:0x00400000
-usertest_end:

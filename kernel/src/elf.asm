@@ -3,6 +3,8 @@ bits 32
 ; INCLUDES
 ; --------
 %include "serial.inc"
+%include "proc.inc"
+%include "vmm.inc"
 ; --------
 
 struc elfheader
@@ -62,7 +64,7 @@ align 0x04
 ; Loads elf file STATICALLY (thus no linking or repositioning)
 ;	eax:	Address of elf file
 ;	edx:	Length of elf file
-;	->eax:	NULL if succeeded
+;	->eax:	NULL if succeeded, else entry address
 ; -------------
 global elf_load
 elf_load:
@@ -90,7 +92,7 @@ elf_load:
 
 		; Traverse all header entries
 		; Get program header
-		xor		eax, eax
+		xor		ecx, ecx
 		xor		ebx, ebx
 		mov		eax, [edx+elfheader.pheader]
 		mov		cx, [edx+elfheader.penum]
@@ -102,12 +104,40 @@ elf_load:
 		cmp		eax, 1
 		jne		.next
 		; Loadable segment
-		; TODO load
+		push	edx
+		push	ecx
+
+		; Allocate memory
+		push	edx
+		call	proc_getmemory
+		pop		edx
+		mov		edi, eax
+		mov		eax, [edx+elfprogramheader.start_virt]
+		mov		edx, [edx+elfprogramheader.size_mem]
+		mov		ecx, 0 ; TODO FLAGS
+		call	vmm_alloc
+		pop		ecx
+		pop		edx
+		; Copy data
+		push	ecx
+		mov		ecx, [edx+elfprogramheader.size_file]
+		mov		esi, [edx+elfprogramheader.offset]
+		add		esi, [ebp-4]
+		mov		edi, [edx+elfprogramheader.start_virt]
+	rep	movsb
+		pop		ecx
+		push	ecx
+		; If memsize is bigger then file (bss) zero out
+		; TODO zero out
+		pop		ecx
 .next:
 		add		edx, ebx
 		dec		ecx
 		jnz		.lp
 
+		; Return entry address
+		mov		edx, [ebp-4]
+		mov		eax, [edx+elfheader.entry]
 .end:
 		mov		ebx, [ebp-12]
 		mov		esp, ebp
