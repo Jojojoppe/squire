@@ -146,6 +146,21 @@ g_start:
 		push	ebp
 		mov		ebp, esp
 
+		; Create test thread
+		; Create kernel stack
+		mov		eax, 4
+		call	vas_kbrk_addx
+		add		eax, 4096*4
+		mov		[edx], eax
+		mov		eax, .lp
+		push	eax
+		push	edx
+		call	proc_getcurrent
+		mov		ecx, eax
+		pop		edx
+		pop		eax
+		call	proc_thread_new
+
 		; For test copy usertest thread to userspace
 		call	proc_getmemory
 		mov		edi, eax

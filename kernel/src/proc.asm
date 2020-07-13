@@ -25,6 +25,7 @@ struc thread
 
 	.id			resd 1
 	.kstack		resd 1
+	.tss_esp0	resd 1
 
 	.sizeof:
 endstruc
@@ -48,6 +49,7 @@ TSS					resd 26
 proc_pidcounter		resd 1
 ; Current process
 proc_proccurrent	resd 1
+proc_threadcurrent	resd 1
 
 ; ------------
 ; SECTION TEXT
@@ -97,7 +99,9 @@ proc_init:
 		mov		dword [edx+process.vas], eax
 		; Create main thread structure
 		mov		eax, thread.sizeof
+		push	edx
 		call	kmalloc
+		pop		edx
 		mov		dword [edx+process.threads], eax
 		push	eax
 		; Fill tread structure
@@ -107,6 +111,7 @@ proc_init:
 		mov		dword [edx+thread.id], 1
 		extern boot_stack_top
 		mov		dword [edx+thread.kstack], boot_stack_top-44
+		mov		dword [edx+thread.tss_esp0], 0
 
 		; Create return stack frame
 		mov		edx, boot_stack_top
@@ -154,8 +159,13 @@ proc_thread_switch:
 		pushad
 		pushfd
 		mov		[edx+thread.kstack], esp
+		mov		eax, [TSS+4]
+		mov		[edx+thread.tss_esp0], eax
 .endsave:
+		mov		[proc_threadcurrent], eax
 		mov		esp, [eax+thread.kstack]
+		mov		eax, [eax+thread.tss_esp0]
+		mov		[TSS+4], eax
 		; NEW STACK
 		popfd
 		popad
@@ -221,3 +231,91 @@ proc_user_exec:
 		push	eax							; New user code
 		iret
 
+; New kernel thread
+;	eax:	Code to execute
+;	edx:	Stack
+;	ecx:	Process to add thread to
+;	->eac:	Thread structure address
+; -----------------
+global proc_thread_new
+proc_thread_new:
+		push	ebp
+		mov		ebp, esp
+		sub		esp, 20			; -4:	Code to execute
+								; -8:	Stack
+								; -12:	Process to add thread to
+								; -16:	thread descriptor
+		mov		[ebp-4], eax
+		mov		[ebp-8], edx
+		mov		[ebp-12], ecx
+		cli
+
+		; Allocate new thread structure
+		mov		eax, thread.sizeof
+		call	kmalloc
+		mov		[ebp-16], eax
+		; Link thread structure to said process
+		mov		edx, [ebp-12]
+		; Find last in line
+		mov		eax, [edx+process.threads]
+.findlast:
+		mov		edx, eax
+		mov		eax, [edx+thread.next]
+		test	eax, eax
+		jnz		.findlast
+		; edx contains last thread
+		; Link
+		mov		ecx, [ebp-16]
+		mov		[edx+thread.next], ecx
+		mov		[ecx+thread.prev], edx
+		mov		dword [ecx+thread.next], 0
+		; Fill other data
+		mov		eax, [edx+thread.id]
+		inc		eax
+		mov		[ecx+thread.id], eax
+		mov		eax, [ebp-8]
+		sub		eax, 44
+		mov		[ecx+thread.kstack], eax
+		mov		dword [ecx+thread.tss_esp0], 0
+
+		; Create return stack frame
+		mov		edx, [ebp-8]
+		mov		eax, [ebp-4]
+		mov		[edx-4], eax			; Return address
+		mov		eax, 0
+		mov		[edx-8], eax			; Old ebp
+		mov		[edx-12], eax			; eax
+		mov		[edx-16], eax			; ecx
+		mov		[edx-20], eax			; edx
+		mov		[edx-24], eax			; ebx
+		mov		eax, [ebp-8]
+		sub		eax, 8
+		mov		[edx-28], eax			; esp (=ebp)
+		mov		[edx-32], eax			; ebp
+		mov		eax, 0
+		mov		[edx-36], eax			; esi
+		mov		[edx-40], eax			; edi
+		; Get eflags
+		pushfd
+		pop		eax
+		mov		[edx-44], eax			; eflags
+
+		mov		eax, [ebp-16]
+		sti
+		mov		esp, ebp
+		pop		ebp
+		ret
+
+; Return current process
+;	->eax:	current process
+; ----------------------------------
+global proc_getcurrent
+proc_getcurrent:
+		push	ebp
+		mov		ebp, esp
+
+		mov		eax, [proc_proccurrent]
+
+		mov		esp, ebp
+		pop		ebp
+		ret

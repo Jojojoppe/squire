@@ -2,3 +2,5 @@ extern proc_init
 extern proc_thread_switch
 extern proc_getmemory
 extern proc_user_exec
+extern proc_thread_new
+extern proc_getcurrent
