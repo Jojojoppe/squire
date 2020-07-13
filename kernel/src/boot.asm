@@ -201,6 +201,5 @@ hang:
 ; USER TEST THREAD
 ; ----------------
 usertest:
-		nop
 		jmp		0x1b:0x00400000
 usertest_end:

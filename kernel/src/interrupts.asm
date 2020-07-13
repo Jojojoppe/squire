@@ -5,6 +5,7 @@ bits 32
 %include "idt.inc"
 %include "panic.inc"
 %include "timer.inc"
+%include "syscall.inc"
 ; --------
 
 ; ------------
@@ -170,6 +171,15 @@ interrupts_init:
 		mov		eax, 0x20
 		mov		ecx, isr_timer
 		call	idt_set_interrupt
+
+		; Set syscall interrupt
+		mov		eax, 0x80
+		mov		ecx, isr_syscall
+		call	idt_set_interrupt_user
+		; Set debug syscall interrupt
+		mov		eax, 0x81
+		mov		ecx, isr_syscall_debug
+		call	idt_set_interrupt_user
 
 		; Enable interrupts
 		sti

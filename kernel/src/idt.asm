@@ -81,3 +81,34 @@ idt_set_interrupt:
 		mov		esp, ebp
 		pop		ebp
 		ret
+
+; Set interrupt gate for user
+;	eax, interrupt number
+;	edx, interrupt handler
+; ------------------
+global idt_set_interrupt_user
+idt_set_interrupt_user:
+		push	ebp
+		mov		ebp, esp
+		sub		esp, 8
+		mov		[ebp-4], edi
+		mov		[ebp-8], eax
+
+		mov		edi, idt_base
+		shl		eax, 3
+		add		edi, eax			; eax = idtentry
+		mov		[edi + idtentry.offset_1], cx
+		rol		ecx, 16
+		mov		[edi + idtentry.offset_2], cx
+		mov		eax, 0x08
+		mov		[edi + idtentry.selector], ax
+		xor		eax, eax
+		mov		[edi + idtentry.zero], al
+		mov		eax, 0xee
+		mov		[edi + idtentry.type_attr], al
+
+		mov		edi, [ebp-4]
+		mov		eax, [ebp-8]
+		mov		esp, ebp
+		pop		ebp
+		ret

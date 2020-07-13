@@ -340,8 +340,9 @@ proc_schedule:
 		jmp		.end
 
 .nextproc:
-		; TODO jump to next process if there is one
 		mov		edx, [proc_proccurrent]
+		mov		edx, [edx+process.next]
+		mov		[proc_proccurrent], edx
 		mov		eax, [edx+process.threads]
 		mov		edx, [proc_threadcurrent]
 		call	proc_thread_switch
