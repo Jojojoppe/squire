@@ -26,6 +26,7 @@ align 0x04
 ; ------------
 
 ; Initialize timer
+; Set timer at 100 hz
 ; ----------------
 global timer_init
 timer_init:
@@ -34,7 +35,7 @@ timer_init:
 
 		mov		eax, 0x36
 		out		0x43, al
-		mov		eax, 11931
+		mov		eax, 1193180 / 100
 		out		0x40, al
 		shr		eax, 8
 		out		0x40, al
@@ -67,7 +68,7 @@ timer_print:
 		mov		ebp, esp
 
 		mov		eax, [timer_counter]
-		call	serial_outhex
+		call	serial_outdec
 
 		mov		esp, ebp
 		pop		ebp

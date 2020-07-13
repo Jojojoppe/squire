@@ -25,7 +25,6 @@ struc thread
 
 	.id			resd 1
 	.kstack		resd 1
-	.ustack		resd 1
 
 	.sizeof:
 endstruc
@@ -57,11 +56,16 @@ align 0x04
 ; ------------
 
 ; Initialize processes
+;	eax:	main kernel thread function
+;	->eax:	memory region list
+;	->edx:	thread descriptor
 ; --------------------
 global proc_init
 proc_init:
 		push	ebp
 		mov		ebp, esp
+		sub		esp, 4
+		mov		[ebp-4], eax
 
 		; Initialize TSS
 		mov		eax, TSS
@@ -85,7 +89,9 @@ proc_init:
 		mov		[edx+process.prev], edx
 		mov		dword [edx+process.id], 1
 		; Create memory region list
+		push	edx
 		call	vmm_create
+		pop		edx
 		mov		dword [edx+process.memory], eax
 		mov		eax, cr3
 		mov		dword [edx+process.vas], eax
@@ -93,16 +99,68 @@ proc_init:
 		mov		eax, thread.sizeof
 		call	kmalloc
 		mov		dword [edx+process.threads], eax
+		push	eax
 		; Fill tread structure
 		mov		edx, eax
 		mov		dword [edx+thread.next], 0
 		mov		dword [edx+thread.prev], 0
 		mov		dword [edx+thread.id], 1
-		mov		dword [edx+thread.kstack], 0		; TODO set value
-		mov		dword [edx+thread.ustack], 0		; TODO set value
+		extern boot_stack_top
+		mov		dword [edx+thread.kstack], boot_stack_top-44
 
-		; TODO finish
+		; Create return stack frame
+		mov		edx, boot_stack_top
+		mov		eax, [ebp-4]
+		mov		[edx-4], eax			; Return address
+		mov		eax, 0
+		mov		[edx-8], eax			; Old ebp
+		mov		[edx-12], eax			; eax
+		mov		[edx-16], eax			; ecx
+		mov		[edx-20], eax			; edx
+		mov		[edx-24], eax			; ebx
+		mov		eax, boot_stack_top-8
+		mov		[edx-28], eax			; esp (=ebp)
+		mov		[edx-32], eax			; ebp
+		mov		eax, 0
+		mov		[edx-36], eax			; esi
+		mov		[edx-40], eax			; edi
+		; Get eflags
+		pushfd
+		pop		eax
+		mov		[edx-44], eax			; eflags
 
+		mov		edx, [proc_proccurrent]
+		mov		eax, [edx+process.memory]
+		pop		edx
+		mov		esp, ebp
+		pop		ebp
+		ret
+
+; Switch to thread
+;	eax:	address of thread structure to switch to
+;	edx:	address of thead structure to save thread information to (NULL if not saving)
+; ----------------
+global proc_thread_switch
+proc_thread_switch:
+		push	ebp
+		mov		ebp, esp
+		cli
+
+		; Check if need to save
+		test	edx, edx
+		jz		.endsave
+
+		; OLD STACK
+		pushad
+		pushfd
+		mov		[edx+thread.kstack], esp
+.endsave:
+		mov		esp, [eax+thread.kstack]
+		; NEW STACK
+		popfd
+		popad
+
+		sti
 		mov		esp, ebp
 		pop		ebp
 		ret

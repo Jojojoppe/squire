@@ -1,1 +1,2 @@
 extern proc_init
+extern proc_thread_switch

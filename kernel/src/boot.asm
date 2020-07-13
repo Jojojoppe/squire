@@ -11,6 +11,7 @@ bits 32
 %include "kmalloc.inc"
 %include "proc.inc"
 %include "timer.inc"
+%include "vmm.inc"
 ; --------
 
 %define KERNEL_virtualbase		0xc0000000
@@ -52,6 +53,7 @@ align 0x1000
 ; Boot time kernel stack
 ; ----------------------
 boot_stack_btm					resb KERNEL_stacksize
+global boot_stack_top
 boot_stack_top:
 
 ; ------------
@@ -123,10 +125,37 @@ g_start:
 		call	kmalloc_init
 
 		; Initialize processing
+		sub		esp, 64			; Make space on stack
+		; Proc_init uses top as kernel stack for start of new kernel thread stack
+		; Since upcomming function calls must be able to return without overwriting set-up stack frame
+		; Space must be made
+		mov		eax, .lp
 		call	proc_init
+		push	eax
+		push	edx
 
 		; Initialize timer
 		call	timer_init
+
+		; Jump to kernel thread
+		xor		edx, edx
+		pop		eax
+		call	proc_thread_switch		
+
+		jmp		$
+
+		; For test copy usertest thread to userspace
+		pop		edi
+		push	edi
+		mov		eax, 0x00400000
+		mov		edx, 0x4000
+		mov		ecx, 0
+		call	vmm_alloc
+		; Copy usertest to userspace (dummy elf load)
+		mov		ecx, usertest_end-usertest
+		mov		esi, usertest
+		mov		edi, 0x00400000
+	rep	movsb
 
 .lp:
 		call	timer_print
@@ -138,3 +167,10 @@ hang:
 		cli
 		hlt
 		jmp		hang
+
+; USER TEST THREAD
+; ----------------
+usertest:
+		nop
+		jmp		0x08:0x00400000
+usertest_end:
