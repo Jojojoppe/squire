@@ -12,6 +12,7 @@ bits 32
 %include "proc.inc"
 %include "timer.inc"
 %include "vmm.inc"
+%include "elf.inc"
 ; --------
 
 %define KERNEL_virtualbase		0xc0000000
@@ -44,6 +45,7 @@ S_00							db 0x0a, 0x0d,
 								db "+---------------+", 0x0a, 0x0d,
 								db "Copyright (c) 2020, Joppe Blondel", 0x0a, 0x0d, 0x0a, 0x0d, 0
 S_RN							db 0x0a, 0x0d, 0
+S_INIT							db "init.bin", 0
 
 ; -----------
 ; SECTION BSS
@@ -146,6 +148,13 @@ g_start:
 		; From here stack frame is reset! From now on running in process 1, thread 1 ([1,1])
 		push	ebp
 		mov		ebp, esp
+
+		mov		eax, S_INIT
+		call	mboot_get_mod
+		; TODO test if succeeded
+		call	elf_load
+
+		jmp .lp
 
 		; Create test thread
 		; Create kernel stack

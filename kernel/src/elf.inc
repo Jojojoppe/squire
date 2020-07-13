@@ -1,0 +1,1 @@
+extern elf_load

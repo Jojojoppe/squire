@@ -1,5 +1,7 @@
 bits 32
 
+%include "serial.inc"
+
 %define MBOOT_magic					0x1badb002
 %define MBOOT_flags					0x07
 %define MBOOT_checksum				-(MBOOT_magic+MBOOT_flags)
@@ -43,6 +45,13 @@ struc mmap_entry
 	.type				resb 1
 endstruc
 
+struc mod_entry
+	.start				resd 1
+	.end				resd 1
+	.string 			resd 1
+	.reserved			resd 1
+endstruc
+
 ; -------------
 ; SECTION MBOOT
 section .mboot
@@ -66,6 +75,13 @@ align 0x04
 									dd 32				; Depth
 
 ; ------------
+; SECTION DATA
+section .data
+; ------------
+
+mboot_base_addr		resd 1
+
+; ------------
 ; SECTION TEXT
 section .text
 align 0x04
@@ -86,6 +102,9 @@ mboot_get_mmap:
 		sub		esp, 12			; -4:	mmap_addr
 								; -8:	mmap_length
 								; -12:	address of previous map
+		; Save mboot info header address for later use
+		mov		[mboot_base_addr], edx
+
 		test	eax, eax
 		jz		.first_entry
 		jmp		.next_entry
@@ -139,3 +158,91 @@ mboot_get_mmap:
 		add		eax, [eax + mmap_entry.size]
 		add		eax, 4
 		jmp		.proceed
+
+; Get boot module
+;	eax:	string of name
+;	->eax:	address of module
+;	->edx:	length of module
+; ---------------
+global mboot_get_mod
+mboot_get_mod:
+		push	ebp
+		mov		ebp, esp
+		sub		esp, 4			; -4: String of name
+		mov		[ebp-4], eax
+
+		; Get mod list
+		mov		edx, [mboot_base_addr]
+		mov		ecx, [edx+mbootinfo.mods_count]
+		mov		edx, [edx+mbootinfo.mods_addr]
+		add		edx, KERNEL_virtualbase
+
+.lp:
+		push	ecx
+		push	edx
+
+		; Get module name/parameter string
+		mov		eax, [edx+mod_entry.string]
+		add		eax, KERNEL_virtualbase
+		mov		edx, [ebp-4]
+		call	strcmp
+		test	eax, eax
+		jnz		.next
+		; Module found
+		pop		edx
+		mov		eax, [edx+mod_entry.end]
+		sub		eax, [edx+mod_entry.start]
+		push	eax
+		mov		eax, [edx+mod_entry.start]
+		add		eax, KERNEL_virtualbase
+		pop		edx
+		mov		esp, ebp
+		pop		ebp
+		ret
+
+.next:
+		pop		edx
+		pop		ecx
+		; Goto next module
+		add		edx, 16
+		dec		ecx
+		jnz		.lp
+
+		; If here: module not found
+		xor		eax, eax
+		mov		esp, ebp
+		pop		ebp
+		ret
+
+; String compare
+;	eax, edx:	strings to compare
+;	->eax:		NULL if the same
+strcmp:
+		push	ebp
+		mov		ebp, esp
+		mov		[ebp-4], ecx
+		mov		ecx, eax
+.lp:
+		mov		al, [ecx]
+		cmp		al, [edx]
+		jne		.nsame
+		; Same character
+		test	al, al
+		jz		.same
+		; Goto next
+		inc		ecx
+		inc		edx
+		jmp		.lp		
+
+.same:
+		xor		eax, eax
+		mov		ecx, [ebp-4]
+		mov		esp, ebp
+		pop		ebp
+		ret
+.nsame:
+		mov		eax, 1
+		mov		ecx, [ebp-4]
+		mov		esp, ebp
+		pop		ebp
+		ret
