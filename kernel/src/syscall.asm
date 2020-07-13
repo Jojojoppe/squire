@@ -44,9 +44,9 @@ isr_syscall_debug:
 
 		; Check if address is valid
 		cmp		eax, 0xc0000000
-		jnl		.end
+		jnb		.end
 		cmp		eax, 0x00400000
-		jnge	.end
+		jnae	.end
 		call	serial_outs
 		
 .end:

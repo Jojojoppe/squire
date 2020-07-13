@@ -232,6 +232,16 @@ proc_user_exec:
 		push	eax							; User code segment
 		mov		eax, [ebp-4]
 		push	eax							; New user code
+
+		; Clear registers
+		xor		eax, eax
+		mov		ebx, eax
+		mov		ecx, eax
+		mov		edx, eax
+		mov		edi, eax
+		mov		esi, eax
+		mov		ebp, [ebp-8]
+
 		iret
 
 ; New kernel thread

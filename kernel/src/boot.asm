@@ -155,18 +155,16 @@ g_start:
 		call	elf_load
 		push	eax
 
-		jmp .lp
-
 		; Setup user stack
 		call	proc_getmemory
 		mov		edi, eax
-		mov		eax, 0x2fffb000
+		mov		eax, 0xbfffc000
 		mov		edx, 0x4000
 		mov		ecx, 0
 		call	vmm_alloc
 		; Execute code in userspace
-		mov		eax, 0x00400000
-		mov		edx, 0x2fffb000
+		pop		eax
+		mov		edx, 0xc0000000 - 4
 		call	proc_user_exec
 
 .lp:

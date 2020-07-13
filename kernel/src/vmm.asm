@@ -136,27 +136,32 @@ global vmm_alloc
 vmm_alloc:
 		push	ebp
 		mov		ebp, esp
-		sub		esp, 16			; -4:	address base to allocate to
+		sub		esp, 20			; -4:	address base to allocate to
 								; -8:	length of region
 								; -12:	flags
 								; -16:	ebx
+								; -20:	Address of base list
 		mov		[ebp-4], eax
 		mov		[ebp-8], edx
 		mov		[ebp-12], ecx
 		mov		[ebp-16], ebx
+		mov		[ebp-20], edi
 
 		; Find descriptor of region (start)
 .traverse:
 		; Check if destination base is within this descriptor
 		mov		eax, [ebp-4]
+		push	edx
+		mov		edx, [edi+vmmregion.base]
+		pop		edx
 		cmp		eax, [edi+vmmregion.base]
 		; If destination base is not larger than base of region destination is not within region
-		jnge	.next
+		jnae	.next
 		; Check if destination is smaller than end of region
 		mov		edx, [edi+vmmregion.base]
 		add		edx, [edi+vmmregion.length]
-		cmp		edx, eax
-		jnl		.next
+		cmp		eax, edx
+		jnb		.next
 		; Destination starts within current region
 		; Check if already used
 		mov		eax, [edi+vmmregion.flags]
@@ -166,13 +171,14 @@ vmm_alloc:
 		; Check if end is within region bounds
 		mov		eax, [ebp-8]
 		cmp		[edi+vmmregion.length], eax
-		jg		.enderror
+		jbe		.enderror
 		; Region to allocate fits insize memory region
 
 		; Check if a new region must be made before destination
 		mov		eax, [ebp-4]
+		mov		edx, [edi+vmmregion.base]
 		cmp		eax, [edi+vmmregion.base]
-		jng		.aftercreatestart
+		jna		.aftercreatestart
 		; New region must be constructed before destination
 		; Allocate space for descriptor
 		mov		eax, vmmregion.sizeof
@@ -203,14 +209,14 @@ vmm_alloc:
 		mov		eax, [edi+vmmregion.length]
 		sub		eax, ebx			; eax is lenght of new region
 		mov		[edi+vmmregion.length], ebx
-		mov		[edx+vmmregion.length], eax		
+		mov		[edx+vmmregion.length], eax
 		mov		edi, edx
 .aftercreatestart:
 		; edi contains descriptor of usable region
 		; Check if its needed to create region after new
 		mov		eax, [edi+vmmregion.length]
-		cmp		eax, [ebp-8]
-		jnl		.aftercreateend
+		cmp		[ebp-8], eax
+		jnb		.aftercreateend
 		; Allocate space for descriptor
 		mov		eax, vmmregion.sizeof
 		call	kmalloc
