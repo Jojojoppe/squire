@@ -333,6 +333,23 @@ proc_thread_new:
 		pop		ebp
 		ret
 
+; New user thread
+;	eax:	Code to execute
+;	edx:	Stack
+;	ecx:	Process to add thread to
+;	->eac:	Thread structure address
+; -----------------
+global proc_thread_new_user
+proc_thread_new_user:
+		push	ebp
+		mov		ebp, esp
+		; TODO IMPLEMENT
+		; Create kernel stack
+		; Setup kernel stack frame containing the proc_user_exec function
+		mov		esp, ebp
+		pop		ebp
+		ret
+
 ; Return current process
 ;	->eax:	current process
 ; ----------------------------------

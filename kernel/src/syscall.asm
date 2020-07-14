@@ -28,6 +28,7 @@ align 0x04
 ; Syscall numbers
 %define SYSCALL_YIELD		0x00000000
 %define SYSCALL_MMAP		0x00000001
+%define SYSCALL_THREAD		0x00000010
 %define SYSCALL_DEBUG		0xffffffff
 
 ; Syscall ISR
@@ -55,6 +56,8 @@ isr_syscall:
 		je		syscall_yield
 		cmp		eax, SYSCALL_MMAP
 		je		syscall_mmap
+		cmp		eax, SYSCALL_THREAD
+		je		syscall_thread
 		cmp		eax, SYSCALL_DEBUG
 		je		syscall_debug
 
@@ -90,10 +93,10 @@ syscall_yield:
 ;	.length will have the allocated length
 ;	.flags will have the flags of allocated memory
 struc params_mmap
-		.address	resd 1		; Starting address of range to map. NULL if kernel may choose		[0, 0x00400000 - 0xbfffffff]
-		.length		resd 1		; Length of range to map in bytes. Kernel will floor to 4KiB		[0x1000 - 0x10000000]
-		.flags		resd 1		; Flags for mapping (TODO implement and define flags)
-		.sizeof:
+	.address	resd 1		; Starting address of range to map. NULL if kernel may choose		[0, 0x00400000 - 0xbfffffff]
+	.length		resd 1		; Length of range to map in bytes. Kernel will floor to 4KiB		[0x1000 - 0x10000000]
+	.flags		resd 1		; Flags for mapping (TODO implement and define flags)
+	.sizeof:
 endstruc
 syscall_mmap:
 		; Check for block length
@@ -106,7 +109,6 @@ syscall_mmap:
 		jb		isr_syscall.error
 		cmp		eax, 0x10000000
 		ja		isr_syscall.error
-
 		; Check if base address is within OK region
 		mov		eax, [edx+params_mmap.address]
 		cmp		eax, 0xc0000000
@@ -133,6 +135,46 @@ syscall_mmap:
 		jmp		isr_syscall.end
 .kernel_select
 		; Let kernel choose memory region
+		jmp		isr_syscall.error
+		; TODO not yet implemented
+		mov		dword [ebp-36], 0
+		jmp		isr_syscall.end
+
+; THREAD
+; Create a new thread
+;	->NULL if succeeded
+;	.entry will contain the TID of the new thread
+;	.stack will contain the PID of the current process
+struc params_thread
+	.entry		resd 1		; Entry of the code to run					[0x00400000 - 0xbfffffff]
+	.stack		resd 1		; Points towards the top of the stack		[0x00400000 - 0xbfffffff]
+	.flags		resd 1		; Flags for new thread (TODO implement and define flags)
+	.sizeof:
+endstruc
+syscall_thread:
+		; Check for block length
+		cmp		ecx, params_thread.sizeof
+		jb		isr_syscall.error
+
+		; Check if entry is OK
+		mov		eax, [edx+params_thread.entry]
+		cmp		eax, 0x00400000
+		jb		isr_syscall.error
+		cmp		eax, 0xc0000000
+		ja		isr_syscall.error
+		; Check if stack is OK
+		mov		eax, [edx+params_thread.stack]
+		cmp		eax, 0x00400000
+		jb		isr_syscall.error
+		cmp		eax, 0xc0000000
+		ja		isr_syscall.error
+
+		call	proc_getcurrent
+		mov		ecx, eax
+		mov		eax, [edx+params_thread.entry]
+		mov		edx, [edx+params_thread.stack]
+		call	proc_thread_new_user
+
 		mov		dword [ebp-36], 0
 		jmp		isr_syscall.end
 
