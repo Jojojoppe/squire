@@ -367,8 +367,10 @@ proc_schedule:
 
 .nextproc:
 		mov		edx, [proc_proccurrent]
-		;mov		edx, [edx+process.next]
-		;mov		[proc_proccurrent], edx
+		nop
+		nop									; Add stability... Probably cache miss??
+		mov		edx, [edx+process.next]
+		mov		[proc_proccurrent], edx
 		mov		eax, [edx+process.threads]
 		mov		edx, [proc_threadcurrent]
 		call	proc_thread_switch

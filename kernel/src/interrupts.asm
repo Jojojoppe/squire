@@ -62,13 +62,13 @@ interrupts_init:
 		call	idt_set_interrupt
 		inc		eax						; Debug
 		mov		ecx, _isr_panic_db
-		call	idt_set_interrupt
+		call	idt_set_interrupt_user
 		inc		eax						; Non-maskable Interrupt
 		mov		ecx, _isr_panic_nmi
 		call	idt_set_interrupt
 		inc		eax						; Breakpoint
 		mov		ecx, _isr_panic_br
-		call	idt_set_interrupt
+		call	idt_set_interrupt_user
 		inc		eax						; Overflow
 		mov		ecx, _isr_panic_of
 		call	idt_set_interrupt
