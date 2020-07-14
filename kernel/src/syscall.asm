@@ -51,6 +51,6 @@ isr_syscall_debug:
 		
 .end:
 		call	proc_schedule
-		sti
 		popad
+		sti
 		iret

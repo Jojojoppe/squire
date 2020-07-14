@@ -74,6 +74,7 @@ global vas_map
 vas_map:
 		push	ebp
 		mov		ebp, esp
+		cli
 		sub		esp, 24		; -4:	physical address
 							; -8:	virtual address
 							; -12:	PT
@@ -138,6 +139,7 @@ global vas_unmap
 vas_unmap:
 		push	ebp
 		mov		ebp, esp
+		cli
 		sub		esp, 24		; -4:	physical address
 							; -8:	virtual address
 							; -12:	PT
@@ -204,6 +206,7 @@ vas_unmap:
 _vas_split:
 		push	ebp
 		mov		ebp, esp
+		cli
 		sub		esp, 16		; -4:	PD
 							; -8:	PT physical page
 							; -12:	physical address
@@ -265,6 +268,7 @@ _vas_split:
 _vas_create_pd:
 		push	ebp
 		mov		ebp, esp
+		cli
 		sub		esp, 8			; -4:	PD
 								; -8:	physical page
 		mov		[ebp-4], eax
@@ -291,6 +295,7 @@ global vas_kbrk_add
 vas_kbrk_add:
 		push	ebp
 		mov		ebp, esp
+		cli
 
 		; Get physical page
 		call	pmm_alloc
@@ -316,6 +321,7 @@ global vas_kbrk_addx
 vas_kbrk_addx:
 		push	ebp
 		mov		ebp, esp
+		cli
 		sub		esp, 4			; -4:	x
 		mov		[ebp-4], eax
 

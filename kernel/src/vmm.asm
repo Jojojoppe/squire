@@ -54,6 +54,7 @@ global vmm_create
 vmm_create:
 		push	ebp
 		mov		ebp, esp
+		cli
 		sub		esp, 4			; -4:	descriptor address
 
 		; Process starts with all space available from 4MiB to 3GiB
@@ -83,6 +84,7 @@ global vmm_destroy
 vmm_destroy:
 		push	ebp
 		mov		ebp, esp
+		cli
 		sub		esp, 8			; -4:	descriptor list address
 								; -8:	edi
 		mov		[ebp-4], eax
@@ -136,6 +138,7 @@ global vmm_alloc
 vmm_alloc:
 		push	ebp
 		mov		ebp, esp
+		cli
 		sub		esp, 20			; -4:	address base to allocate to
 								; -8:	length of region
 								; -12:	flags
@@ -299,6 +302,7 @@ global vmm_debugprint
 vmm_debugprint:
 		push	ebp
 		mov		ebp, esp
+		cli
 		sub		esp, 8			; -4:	descriptor list address
 								; -8:	edi
 		mov		[ebp-4], eax

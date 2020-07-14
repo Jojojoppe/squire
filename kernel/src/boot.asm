@@ -183,11 +183,9 @@ g_start:
 		call	proc_user_exec
 
 .lp:
-		sti
 		call	timer_print
 		mov		al, 0x0d
 		call	serial_out
-		cli
 		jmp		.lp
 
 hang:

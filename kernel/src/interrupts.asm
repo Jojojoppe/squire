@@ -181,9 +181,6 @@ interrupts_init:
 		mov		ecx, isr_syscall_debug
 		call	idt_set_interrupt_user
 
-		; Enable interrupts
-		sti
-
 		mov		esp, ebp
 		pop		ebp
 		ret

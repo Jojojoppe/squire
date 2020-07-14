@@ -69,6 +69,7 @@ global proc_init
 proc_init:
 		push	ebp
 		mov		ebp, esp
+		cli
 		sub		esp, 4
 		mov		[ebp-4], eax
 
@@ -174,7 +175,6 @@ proc_thread_switch:
 		popfd
 		popad
 
-		sti
 		mov		esp, ebp
 		pop		ebp
 		ret
@@ -186,6 +186,7 @@ global proc_getmemory
 proc_getmemory:
 		push	ebp
 		mov		ebp, esp
+		cli
 
 		mov		edx, [proc_proccurrent]
 		mov		eax, [edx+process.memory]
@@ -203,6 +204,7 @@ global proc_user_exec
 proc_user_exec:
 		push	ebp
 		mov		ebp, esp
+		cli
 		sub		esp, 8		; -4:	Address to jump to
 							; -8:	User stack address
 		mov		[ebp-4], eax
@@ -245,6 +247,14 @@ proc_user_exec:
 
 		iret
 
+; Start a thread
+; This is done to re-enable interrupts
+; DO NOT CALL DIRECTLY! This is put on a new kernel thread stack
+; --------------
+_proc_thread_start:
+		sti
+		ret
+
 ; New kernel thread
 ;	eax:	Code to execute
 ;	edx:	Stack
@@ -255,6 +265,7 @@ global proc_thread_new
 proc_thread_new:
 		push	ebp
 		mov		ebp, esp
+		cli
 		sub		esp, 20			; -4:	Code to execute
 								; -8:	Stack
 								; -12:	Process to add thread to
@@ -288,7 +299,7 @@ proc_thread_new:
 		inc		eax
 		mov		[ecx+thread.id], eax
 		mov		eax, [ebp-8]
-		sub		eax, 44
+		sub		eax, 48
 		mov		[ecx+thread.kstack], eax
 		mov		dword [ecx+thread.tss_esp0], 0
 
@@ -296,23 +307,25 @@ proc_thread_new:
 		mov		edx, [ebp-8]
 		mov		eax, [ebp-4]
 		mov		[edx-4], eax			; Return address
+		mov		eax, _proc_thread_start
+		mov		[edx-8], eax			; Return address of _proc_thread_start
 		mov		eax, 0
-		mov		[edx-8], eax			; Old ebp
-		mov		[edx-12], eax			; eax
-		mov		[edx-16], eax			; ecx
-		mov		[edx-20], eax			; edx
-		mov		[edx-24], eax			; ebx
+		mov		[edx-12], eax			; Old ebp
+		mov		[edx-16], eax			; eax
+		mov		[edx-20], eax			; ecx
+		mov		[edx-24], eax			; edx
+		mov		[edx-28], eax			; ebx
 		mov		eax, [ebp-8]
-		sub		eax, 8
-		mov		[edx-28], eax			; esp (=ebp)
-		mov		[edx-32], eax			; ebp
+		sub		eax, 12
+		mov		[edx-32], eax			; esp (=ebp)
+		mov		[edx-36], eax			; ebp
 		mov		eax, 0
-		mov		[edx-36], eax			; esi
-		mov		[edx-40], eax			; edi
+		mov		[edx-40], eax			; esi
+		mov		[edx-44], eax			; edi
 		; Get eflags
 		pushfd
 		pop		eax
-		mov		[edx-44], eax			; eflags
+		mov		[edx-48], eax			; eflags
 
 		mov		eax, [ebp-16]
 		sti
@@ -327,6 +340,7 @@ global proc_getcurrent
 proc_getcurrent:
 		push	ebp
 		mov		ebp, esp
+		cli
 
 		mov		eax, [proc_proccurrent]
 
@@ -341,6 +355,7 @@ global proc_schedule
 proc_schedule:
 		push	ebp
 		mov		ebp, esp
+		cli
 
 		; Check if there is next thread
 		mov		edx, [proc_threadcurrent]

@@ -18,9 +18,7 @@ global _start
 _start:
 		push	ebp
 		mov		ebp, esp
-
+.lp:
 		mov		eax, S_00
 		int		0x81
-
-.lp:
 		jmp		.lp
