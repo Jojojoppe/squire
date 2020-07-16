@@ -1,9 +1,9 @@
 .SILENT:
 
-.PHONY: all clean run reset clean mount umount kernel debug env runtty TODO init
+.PHONY: all clean run reset clean mount umount kernel debug env runtty TODO init initramfs
 
 # Normal list of actions
-all: drive kernel init mount copy umount TODO
+all: drive kernel init initramfs mount copy umount TODO
 
 # Make drive
 drive:
@@ -40,6 +40,8 @@ clean:
 	echo + Clean
 	# goto subdirectories and clean there
 	cd kernel && ${MAKE} clean
+	cd init && ${MAKE} clean
+	-rm initramfs.tar
 
 # Mount drive
 mount:
@@ -64,6 +66,7 @@ copy:
 	sudo cp grub.cfg mnt/boot/grub/grub.cfg
 	sudo cp kernel/kernel.bin mnt/boot/kernel.bin
 	sudo cp init/init.bin mnt/boot/init.bin
+	sudo cp initramfs.tar mnt/boot/initramfs.tar
 
 # Run the test suite
 run:
@@ -91,6 +94,11 @@ kernel:
 init:
 	echo + Make init
 	cd init && ${MAKE} ${MFLAGS} init.bin
+
+# Create initramfs
+initramfs:
+	echo + Create initramfs
+	tar -cf initramfs.tar -T initramfs.conf
 
 # List all todos
 TODO:

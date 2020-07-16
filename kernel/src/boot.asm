@@ -46,6 +46,7 @@ S_00							db 0x0a, 0x0d,
 								db "Copyright (c) 2020, Joppe Blondel", 0x0a, 0x0d, 0x0a, 0x0d, 0
 S_RN							db 0x0a, 0x0d, 0
 S_INIT							db "init.bin", 0
+S_INITRAMFS						db "initramfs.tar", 0
 
 ; -----------
 ; SECTION BSS
@@ -149,26 +150,32 @@ g_start:
 		push	ebp
 		mov		ebp, esp
 
-		;; Setup stack
-		;mov		eax, 4
-		;call	vas_kbrk_addx
-		;add		eax, 4096*4
-		;mov		[edx], eax
-		;mov		eax, .lp
-		;; Add thread to list
-		;push	eax
-		;push	edx
-		;call	proc_getcurrent
-		;mov		ecx, eax
-		;pop		edx
-		;pop		eax
-		;call	proc_thread_new
-
+		; Load init.bin
 		mov		eax, S_INIT
 		call	mboot_get_mod
 		; TODO test if succeeded
 		call	elf_load
 		push	eax
+
+		; Load initramfs.tar
+		mov		eax, S_INITRAMFS
+		call	mboot_get_mod
+		; Allocate space in userspace
+		push	eax
+		push	edx
+		call	proc_getmemory
+		mov		edi, eax
+		mov		eax, 0x40000000
+		pop		edx
+		push	edx
+		add		edx, 0x1000			; Add 4KiB to be sure for its size
+		mov		ecx, 0
+		call	vmm_alloc
+		; Copy to newly allocated memory
+		pop		ecx
+		pop		esi
+		mov		edi, 0x40000000
+	rep	movsb
 
 		; Setup user stack
 		call	proc_getmemory
@@ -180,6 +187,7 @@ g_start:
 		; Execute code in userspace
 		pop		eax
 		mov		edx, 0xc0000000 - 4
+		mov		ecx, 0x40000000
 		call	proc_user_exec
 
 .lp:

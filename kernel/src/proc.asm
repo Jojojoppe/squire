@@ -202,16 +202,19 @@ proc_getmemory:
 ; Sets up user stack and kernel stack and jumps to ring 3
 ;	eax:	Address to jump to
 ;	edx:	User stack address
+;	ecx:	Parameter
 ; -------------------------
 global proc_user_exec
 proc_user_exec:
 		push	ebp
 		mov		ebp, esp
 		cli
-		sub		esp, 8		; -4:	Address to jump to
+		sub		esp, 12		; -4:	Address to jump to
 							; -8:	User stack address
+							; -12:	Param
 		mov		[ebp-4], eax
 		mov		[ebp-8], edx
+		mov		[ebp-12], ecx
 
 		; Load current esp as kernel stack in TSS
 		mov		edx, TSS
@@ -246,6 +249,7 @@ proc_user_exec:
 		mov		edx, eax
 		mov		edi, eax
 		mov		esi, eax
+		mov		eax, [ebp-12]
 		mov		ebp, [ebp-8]
 
 		iret
