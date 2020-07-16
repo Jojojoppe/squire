@@ -6,6 +6,7 @@ bits 32
 %include "vmm.inc"
 %include "kmalloc.inc"
 %include "serial.inc"
+%include "vas.inc"
 ; --------
 
 struc process
@@ -252,6 +253,7 @@ proc_user_exec:
 ; DO NOT CALL DIRECTLY! This is put on a new kernel thread stack
 ; --------------
 _proc_thread_start:
+		int 1
 		sti
 		ret
 
@@ -343,9 +345,84 @@ global proc_thread_new_user
 proc_thread_new_user:
 		push	ebp
 		mov		ebp, esp
+		sub		esp, 20			; -4:	Code to execute
+								; -8:	(user) Stack
+								; -12:	Process to add thread to
+								; -16:	Kernel stack
+								; -20:	Thread structure
+		mov		[ebp-4], eax
+		mov		[ebp-8], edx
+		mov		[ebp-12], ecx
+		cli
+
 		; TODO IMPLEMENT
 		; Create kernel stack
 		; Setup kernel stack frame containing the proc_user_exec function
+
+		; Create kernel stack
+		mov		eax, 1			; 4KiB of kernel stack
+		call	vas_kbrk_addx
+		add		eax, 4096-4
+		mov		[ebp-16], eax
+
+		; Allocate new thread structure
+		mov		eax, thread.sizeof
+		call	kmalloc
+		mov		[ebp-20], eax
+		; Link thread structure to said process
+		mov		edx, [ebp-12]
+		; Find last in line
+		mov		eax, [edx+process.threads]
+.findlast:
+		mov		edx, eax
+		mov		eax, [edx+thread.next]
+		test	eax, eax
+		jnz		.findlast
+		; edx contains last thread
+		; Link
+		mov		ecx, [ebp-20]
+		mov		[edx+thread.next], ecx
+		mov		[ecx+thread.prev], edx
+		mov		dword [ecx+thread.next], 0
+		; Fill other data
+		mov		eax, [edx+thread.id]
+		inc		eax
+		mov		[ecx+thread.id], eax
+		mov		eax, [ebp-16]
+		sub		eax, 48							; TODO HOW MUCH??
+		mov		[ecx+thread.kstack], eax
+		mov		dword [ecx+thread.tss_esp0], 0
+
+		; Create return stack frame
+		mov		edx, [ebp-16]
+		mov		eax, proc_user_exec		; Last return address
+		mov		[edx-4], eax
+		mov		eax, _proc_thread_start
+		mov		[edx-8], eax			; Return address of thread start
+		mov		eax, 0
+		mov		[edx-12], eax			; Old ebp
+		mov		eax, [ebp-4]
+		mov		[edx-16], eax			; eax
+		mov		eax, 0
+		mov		[edx-20], eax			; ecx
+		mov		eax, [ebp-8]
+		mov		[edx-24], eax			; edx
+		mov		eax, 0
+		mov		[edx-28], eax			; ebx
+		mov		eax, [ebp-16]
+		sub		eax, 12
+		mov		[edx-32], eax			; esp (=ebp)
+		mov		[edx-36], eax			; ebp
+		mov		eax, 0
+		mov		[edx-40], eax			; esi
+		mov		[edx-44], eax			; edi
+		; Get eflags
+		pushfd
+		pop		eax
+		mov		[edx-48], eax			; eflags
+
+		mov		eax, [ebp-20]
+		sti
 		mov		esp, ebp
 		pop		ebp
 		ret
