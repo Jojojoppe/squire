@@ -1,5 +1,10 @@
 bits 32
 
+; INCLUDES
+; --------
+%include "tar.inc"
+; --------
+
 ; ------------
 ; SECTION DATA
 section .data
@@ -34,6 +39,9 @@ _start:
 
 		mov		eax, S_00
 		int		0x81
+
+		mov		eax, [ebp-4]
+		call	tar_printlist
 
 .lp0:
 		jmp		.lp0
