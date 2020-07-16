@@ -5,6 +5,7 @@ bits 32
 %include "serial.inc"
 %include "proc.inc"
 %include "vmm.inc"
+%include "kmalloc.inc"
 ; --------
 
 ; ------------
@@ -29,6 +30,7 @@ align 0x04
 %define SYSCALL_YIELD		0x00000000
 %define SYSCALL_MMAP		0x00000001
 %define SYSCALL_THREAD		0x00000010
+%define SYSCALL_PROCESS		0x00000011
 %define SYSCALL_DEBUG		0xffffffff
 
 ; Syscall ISR
@@ -58,6 +60,8 @@ isr_syscall:
 		je		syscall_mmap
 		cmp		eax, SYSCALL_THREAD
 		je		syscall_thread
+		cmp		eax, SYSCALL_PROCESS
+		je		syscall_process
 		cmp		eax, SYSCALL_DEBUG
 		je		syscall_debug
 
@@ -133,7 +137,7 @@ syscall_mmap:
 
 		mov		dword [ebp-36], 0
 		jmp		isr_syscall.end
-.kernel_select
+.kernel_select:
 		; Let kernel choose memory region
 		jmp		isr_syscall.error
 		; TODO not yet implemented
@@ -174,6 +178,58 @@ syscall_thread:
 		mov		eax, [edx+params_thread.entry]
 		mov		edx, [edx+params_thread.stack]
 		call	proc_thread_new_user
+
+		mov		dword [ebp-36], 0
+		jmp		isr_syscall.end
+
+; PROCESS
+; Creates a new process
+;	->NULL if successful
+struc params_process
+	.elf_start		resd 1		; Start of ELF executable		[0x00400000 - 0xbfffffff]
+	.elf_length		resd 1		; Length of ELF executable		[0x1000 - 0x10000000]
+	.sizeof:
+endstruc
+syscall_process:
+		; Check for block length
+		cmp		ecx, params_process.sizeof
+		jb		isr_syscall.error
+
+		; Check if start of elf is OK
+		mov		eax, [edx+params_process.elf_start]
+		cmp		eax, 0x00400000
+		jb		isr_syscall.error
+		cmp		eax, 0xc0000000
+		ja		isr_syscall.error
+		; Check if length is OK
+		mov		eax, [edx+params_process.elf_length]
+		cmp		eax, 0x00001000
+		jb		isr_syscall.error
+		cmp		eax, 0x10000000
+		ja		isr_syscall.error
+
+		; Copy ELF to kernel space
+		mov		eax, [edx+params_process.elf_length]
+		push	edx
+		call	kmalloc
+		pop		edx
+		push	eax
+		mov		edi, eax
+		mov		ecx, [edx+params_process.elf_length]
+		mov		esi, [edx+params_process.elf_start]
+	rep	movsb	
+		pop		eax	
+	
+		; Create new process
+		push	eax
+		push	edx
+		call	proc_process_new
+		pop		edx
+		pop		ecx
+
+		; Free copied ELF
+		mov		eax, ecx
+		call	kfree
 
 		mov		dword [ebp-36], 0
 		jmp		isr_syscall.end

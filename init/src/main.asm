@@ -6,8 +6,8 @@ section .data
 ; ------------
 S_00			db "This is init!", 0x0a, 0x0d, 0
 
-S_01			db "A", 0
-S_02			db "B", 0
+S_01			db "A", 0x0a, 0x0d, 0
+S_02			db "B", 0x0a, 0x0d, 0
 
 ; -----------
 ; SECTION BSS
@@ -42,22 +42,14 @@ _start:
 		mov		ecx, 3*4
 		int		0x80
 
-		; Create user thread
-		mov		eax, 16
+		; Create new process
+		mov		eax, 17
 		mov		edx, sc_thread
-		mov		dword [edx+0*4], .lp1
-		mov		dword [edx+1*4], 0x10000000 + 4096 - 4
-		mov		dword [edx+2*4], 0
-		mov		ecx, 3*4
+		mov		dword [edx+0*4], 0x00400000
+		mov		dword [edx+1*4], 0x1000
+		mov		ecx, 2*4
 		int		0x80
 
 
 .lp0:
-		mov		eax, S_01
-		int		0x81
 		jmp		.lp0
-
-.lp1:
-		mov		eax, S_02
-		int		0x81
-		jmp		.lp1

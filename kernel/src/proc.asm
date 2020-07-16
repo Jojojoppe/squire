@@ -7,6 +7,8 @@ bits 32
 %include "kmalloc.inc"
 %include "serial.inc"
 %include "vas.inc"
+%include "pmm.inc"
+%include "elf.inc"
 ; --------
 
 struc process
@@ -253,7 +255,6 @@ proc_user_exec:
 ; DO NOT CALL DIRECTLY! This is put on a new kernel thread stack
 ; --------------
 _proc_thread_start:
-		int 1
 		sti
 		ret
 
@@ -355,10 +356,6 @@ proc_thread_new_user:
 		mov		[ebp-12], ecx
 		cli
 
-		; TODO IMPLEMENT
-		; Create kernel stack
-		; Setup kernel stack frame containing the proc_user_exec function
-
 		; Create kernel stack
 		mov		eax, 1			; 4KiB of kernel stack
 		call	vas_kbrk_addx
@@ -422,7 +419,6 @@ proc_thread_new_user:
 		mov		[edx-48], eax			; eflags
 
 		mov		eax, [ebp-20]
-		sti
 		mov		esp, ebp
 		pop		ebp
 		ret
@@ -470,6 +466,93 @@ proc_schedule:
 		call	proc_thread_switch
 
 .end:
+		mov		esp, ebp
+		pop		ebp
+		ret
+
+; Create new process
+;	eax:	Start of ELF data
+;	->eax:	Process descriptor
+; ------------------
+global proc_process_new
+proc_process_new:
+		push	ebp
+		mov		ebp, esp
+		cli
+		sub		esp, 12		; -4:	Start of ELF data
+							; -8:	Process descriptor
+							; -12:	temporary proc_proccurrent
+		mov		[ebp-4], eax
+
+		; Create new process descriptor
+		mov		eax, process.sizeof
+		call	kmalloc
+		mov		[ebp-8], eax
+		mov		ecx, eax
+		; Link descriptor in list
+		mov		edx, [proc_proccurrent]
+		mov		[ecx+process.prev], edx
+		mov		eax, [edx+process.next]
+		mov		[ecx+process.next], eax
+		mov		[edx+process.next], ecx
+		mov		edx, [ecx+process.next]
+		mov		[edx+process.prev], ecx
+		; Set PID
+		mov		eax, [proc_pidcounter]
+		mov		[ecx+process.id], eax
+		inc		dword [proc_pidcounter]
+		; Create memory region list
+		call	vmm_create
+		mov		ecx, [ebp-8]
+		mov		[ecx+process.memory], eax
+		; Create new PD table and copy kernel space into it (use 0 as tmp)
+		call	pmm_alloc
+		push	eax
+		mov		ecx, [ebp-8]
+		mov		[ecx+process.vas], eax
+		xor		edx, edx
+		call	vas_map
+		; Copy kernel PD
+		mov		esi, 0xfffff000 + 768*4
+		mov		edi, 768*4
+		mov		ecx, 255*4		; Not the last one (that must be cr3 itself)
+	rep	movsb
+		pop		eax
+		mov		[edi], eax
+
+		; SWITCH TO NEW PROCESS VAS
+		mov		eax, [proc_proccurrent]
+		mov		[ebp-12], eax
+		mov		edx, [ebp-8]
+		mov		eax, [edx+process.vas]
+		mov		cr3, eax
+
+		; Load elf
+		mov		eax, [ebp-4]
+		call	elf_load
+		push	eax
+		; Setup user stack
+		call	proc_getmemory
+		mov		edi, eax
+		mov		eax, 0xbfffc000
+		mov		edx, 0x4000
+		mov		ecx, 0
+		call	vmm_alloc
+		pop		eax
+
+		; Add thread descriptor with [eax] as entry point
+		mov		ecx, [proc_proccurrent]
+		mov		edx, 0xbfffffff-4
+		int 0
+		call	proc_thread_new_user
+
+		; SWITCH BACK TO OWN PROCESS VAS
+		mov		edx, [ebp-12]
+		mov		[proc_proccurrent], edx
+		mov		eax, [edx+process.vas]
+		mov		cr3, eax
+
+		mov		eax, [ebp-8]
 		mov		esp, ebp
 		pop		ebp
 		ret

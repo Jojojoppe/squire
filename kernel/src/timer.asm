@@ -63,9 +63,9 @@ isr_timer:
 		; Check if scheduler must be called
 		mov		eax, [timer_counter]
 		;and		eax, 0x07
-		and		eax, 0x01
+		and		eax, 0x07
 		;cmp		eax, 0x07
-		cmp		eax, 0x01
+		cmp		eax, 0x07
 		jnz		.clearpic
 		call	proc_schedule
 		cli
