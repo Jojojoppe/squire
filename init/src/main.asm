@@ -48,6 +48,8 @@ _start:
 		call	tar_getfile
 		mov		[ebp-8], eax
 		mov		[ebp-12], edx
+		test	eax, eax
+		jz		.lp0
 
 		; Load new process (testbin.bin)
 		mov		edx, sc_process
@@ -58,10 +60,6 @@ _start:
 		mov		ecx, 4*2
 		mov		eax, 17
 		int		0x80
-
-		mov		edx, sc_process
-		mov		eax, [edx]
-		int 1
 
 .lp0:
 		jmp		.lp0

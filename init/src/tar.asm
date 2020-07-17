@@ -73,8 +73,8 @@ tar_getfile:
 
 		; right file
 		; Get start of file
+		mov		eax, edx
 		pop		edx
-		mov		eax, [ebp-16]
 		add		eax, tarheader.sizeof
 		jmp		.end
 		
