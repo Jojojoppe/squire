@@ -36,12 +36,11 @@ reset:
 	${MAKE} clean
 
 # Clean all
-clean:
+clean: initramfsclean
 	echo + Clean
 	# goto subdirectories and clean there
 	cd kernel && ${MAKE} clean
 	cd init && ${MAKE} clean
-	-rm initramfs.tar
 
 # Mount drive
 mount:
@@ -98,7 +97,19 @@ init:
 # Create initramfs
 initramfs:
 	echo + Create initramfs
-	tar -cf initramfs.tar -T initramfs.conf
+	-rm -rf initramfs
+	mkdir initramfs
+	# Make all entries
+	cd testbin && ${MAKE} ${MFLAGS} testbin.bin
+	cat initramfs.conf | xargs cp -t initramfs
+	tar -cf initramfs.tar -C initramfs .
+# Destroy initramfs
+initramfsclean:
+	-rm initramfs.tar
+	-rm -rf initramfs
+	# Clean all entries
+	cd testbin && ${MAKE} clean
+	
 
 # List all todos
 TODO:

@@ -1,9 +1,11 @@
 *.sym
 *.bin
+*.tar
 
 drive
 env
 mnt
+initramfs
 
 kernel/build
 kernel/kernel.bin
