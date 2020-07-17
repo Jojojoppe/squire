@@ -102,7 +102,7 @@ initramfs:
 	# Make all entries
 	cd testbin && ${MAKE} ${MFLAGS} testbin.bin
 	cat initramfs.conf | xargs cp -t initramfs
-	tar -cf initramfs.tar -C initramfs .
+	cd initramfs && tar -cf ../initramfs.tar *
 # Destroy initramfs
 initramfsclean:
 	-rm initramfs.tar

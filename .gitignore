@@ -18,3 +18,9 @@ init/init.bin
 init/LOC
 init/DISASS
 init/DEBUG.sym
+
+testbin/build
+testbin/testbin.bin
+testbin/LOC
+testbin/DISASS
+testbin/DEBUG.sym
