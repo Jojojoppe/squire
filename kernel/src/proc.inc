@@ -7,3 +7,4 @@ extern proc_thread_new_user
 extern proc_getcurrent
 extern proc_schedule
 extern proc_process_new
+extern proc_getpid

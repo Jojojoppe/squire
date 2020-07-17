@@ -40,6 +40,7 @@ section .data
 ; ------------
 
 S_00			db "SWITCH!", 0x0a, 0x0d, 0
+S_RN			db 0x0a, 0x0d, 0
 
 ; -----------
 ; SECTION BSS
@@ -223,7 +224,6 @@ proc_user_exec:
 		mov		dword [edx+2*4], 0x10		; SS0
 
 		; Jump to user space
-		cli
 		mov		eax, 0x23					; User data segment
 		mov		ds, ax
 		mov		es, ax
@@ -343,7 +343,7 @@ proc_thread_new:
 ; New user thread
 ;	eax:	Code to execute
 ;	edx:	Stack
-;	ecx:	Process to add thread to
+;	ecx:	Process to add thread to, NULL to add to process directly
 ;	->eac:	Thread structure address
 ; -----------------
 global proc_thread_new_user
@@ -372,6 +372,8 @@ proc_thread_new_user:
 		mov		[ebp-20], eax
 		; Link thread structure to said process
 		mov		edx, [ebp-12]
+		test	edx, edx
+		jz		.nolink
 		; Find last in line
 		mov		eax, [edx+process.threads]
 .findlast:
@@ -389,11 +391,11 @@ proc_thread_new_user:
 		mov		eax, [edx+thread.id]
 		inc		eax
 		mov		[ecx+thread.id], eax
+.fillother:
 		mov		eax, [ebp-16]
 		sub		eax, 48							; TODO HOW MUCH??
 		mov		[ecx+thread.kstack], eax
 		mov		dword [ecx+thread.tss_esp0], 0
-
 		; Create return stack frame
 		mov		edx, [ebp-16]
 		mov		eax, proc_user_exec		; Last return address
@@ -426,6 +428,12 @@ proc_thread_new_user:
 		mov		esp, ebp
 		pop		ebp
 		ret
+.nolink:
+		mov		edx, [proc_proccurrent]
+		mov		[edx+process.threads], eax
+		mov		dword [eax+thread.id], 1
+		mov		ecx, eax
+		jmp		.fillother
 
 ; Return current process
 ;	->eax:	current process
@@ -465,6 +473,8 @@ proc_schedule:
 		nop									; Add stability... Probably cache miss??
 		mov		edx, [edx+process.next]
 		mov		[proc_proccurrent], edx
+		mov		eax, [edx+process.vas]
+		mov		cr3, eax
 		mov		eax, [edx+process.threads]
 		mov		edx, [proc_threadcurrent]
 		call	proc_thread_switch
@@ -522,12 +532,21 @@ proc_process_new:
 		mov		ecx, 255*4		; Not the last one (that must be cr3 itself)
 	rep	movsb
 		pop		eax
+		or		eax, 3
 		mov		[edi], eax
+		push	eax
+		; Clear first part of kernel PD
+		mov		edi, 0
+		mov		ecx, 256*4*3
+		xor		eax, eax
+	rep	stosb
+		pop		eax
 
 		; SWITCH TO NEW PROCESS VAS
 		mov		eax, [proc_proccurrent]
 		mov		[ebp-12], eax
 		mov		edx, [ebp-8]
+		mov		[proc_proccurrent], edx
 		mov		eax, [edx+process.vas]
 		mov		cr3, eax
 
@@ -535,6 +554,7 @@ proc_process_new:
 		mov		eax, [ebp-4]
 		call	elf_load
 		push	eax
+		; TODO test if succeeded
 		; Setup user stack
 		call	proc_getmemory
 		mov		edi, eax
@@ -544,10 +564,10 @@ proc_process_new:
 		call	vmm_alloc
 		pop		eax
 
+
 		; Add thread descriptor with [eax] as entry point
-		mov		ecx, [proc_proccurrent]
-		mov		edx, 0xbfffffff-4
-		int 0
+		xor		ecx, ecx
+		mov		edx, 0xc0000000-4
 		call	proc_thread_new_user
 
 		; SWITCH BACK TO OWN PROCESS VAS
@@ -557,6 +577,21 @@ proc_process_new:
 		mov		cr3, eax
 
 		mov		eax, [ebp-8]
+		mov		esp, ebp
+		pop		ebp
+		ret
+
+; Get PID from descriptor
+;	eax:	descriptor
+;	->eax:	PID
+; -----------------------
+global proc_getpid
+proc_getpid:
+		push	ebp
+		mov		ebp, esp
+
+		mov		eax, [eax+process.id]
+
 		mov		esp, ebp
 		pop		ebp
 		ret

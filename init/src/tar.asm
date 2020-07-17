@@ -11,6 +11,7 @@ struc tarheader
 	.link		resb 1
 	.linkname	resb 100
 	.padding	resb 255
+	.sizeof:
 endstruc
 
 ; ------------
@@ -30,6 +31,81 @@ section .bss
 section .text
 align 0x04
 ; ------------
+
+; Get file from tar
+;	eax:	address of tar
+;	edx:	filename of tar
+;	->eax:	address of file, NULL if not found
+;	->edx:	length of file, NULL if not found
+; ------------------
+global tar_getfile
+tar_getfile:
+		push	ebp
+		mov		ebp, esp
+		sub		esp, 16		; -4:	ebx
+							; -8:	ecx
+							; -12:	Filename
+							; -16:	start of tar
+		mov		[ebp-4], ebx
+		mov		[ebp-8], ecx
+		mov		[ebp-12], edx
+		mov		[ebp-16], eax
+
+		mov		edx, eax
+.lp:
+		; Get size
+		lea		eax, [edx+tarheader.fsize]
+		push	edx
+		call	_ostring2number
+		pop		edx
+		push	eax
+
+		; Compare filename
+		push	ecx
+		push	edx
+		lea		eax, [edx+tarheader.fname]
+		mov		edx, [ebp-12]
+		call	_strcmp
+		pop		edx
+		pop		ecx
+		test	eax, eax
+		jnz		.next
+
+		; right file
+		; Get start of file
+		pop		edx
+		mov		eax, [ebp-16]
+		add		eax, tarheader.sizeof
+		jmp		.end
+		
+.next:
+		pop		eax
+		; To next header
+		push	eax
+		shr		eax, 9
+		inc		eax
+		shl		eax, 9
+		add		edx, eax
+		pop		eax
+		and		eax, 0xff
+		test	eax, eax
+		jz		.noadd
+		add		edx, 512
+.noadd:
+		mov		al, [edx+tarheader.fname]
+		test	al, al
+		jnz		.lp
+
+		; FILE NOT FOUND
+		xor		eax, eax
+		mov		edx, eax
+.end:
+		mov		ebx, [ebp-4]
+		mov		ecx, [ebp-8]
+		mov		esp, ebp
+		pop		ebp
+		ret
+
 
 ; Print tar content
 ;	eax:	address of tar
@@ -110,6 +186,39 @@ _ostring2number:
 		jnz		.lp
 
 		mov		eax, [ebp-12]
+		mov		esp, ebp
+		pop		ebp
+		ret
+
+; String compare
+;	eax, edx:	strings to compare
+;	->eax:		NULL if the same
+_strcmp:
+		push	ebp
+		mov		ebp, esp
+		mov		[ebp-4], ecx
+		mov		ecx, eax
+.lp:
+		mov		al, [ecx]
+		cmp		al, [edx]
+		jne		.nsame
+		; Same character
+		test	al, al
+		jz		.same
+		; Goto next
+		inc		ecx
+		inc		edx
+		jmp		.lp		
+
+.same:
+		xor		eax, eax
+		mov		ecx, [ebp-4]
+		mov		esp, ebp
+		pop		ebp
+		ret
+.nsame:
+		mov		eax, 1
+		mov		ecx, [ebp-4]
 		mov		esp, ebp
 		pop		ebp
 		ret

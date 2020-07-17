@@ -185,6 +185,7 @@ syscall_thread:
 ; PROCESS
 ; Creates a new process
 ;	->NULL if successful
+;	.elf_start will contain PID
 struc params_process
 	.elf_start		resd 1		; Start of ELF executable		[0x00400000 - 0xbfffffff]
 	.elf_length		resd 1		; Length of ELF executable		[0x1000 - 0x10000000]
@@ -226,6 +227,8 @@ syscall_process:
 		call	proc_process_new
 		pop		edx
 		pop		ecx
+		call	proc_getpid
+		mov		[edx+params_process.elf_start], eax
 
 		; Free copied ELF
 		mov		eax, ecx

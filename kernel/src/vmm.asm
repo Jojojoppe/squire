@@ -150,6 +150,10 @@ vmm_alloc:
 		mov		[ebp-16], ebx
 		mov		[ebp-20], edi
 
+		; If length is zero, do nothing
+		test	edx, edx
+		jz		.enderror
+
 		; Find descriptor of region (start)
 .traverse:
 		; Check if destination base is within this descriptor
