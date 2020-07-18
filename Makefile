@@ -116,34 +116,55 @@ TODO:
 	cd kernel && ${MAKE} ${MFLAGS} todolist
 
 # Create environment with toolchain
-# This will install binutils and gcc to env/cross
-PREFIX		= "$(shell pwd)/env/cross"
-TARGET		= "i386-elf"
+# This will install binutils and gcc to env
+PREFIX		= "$(shell pwd)/env"
+CROSSTARGET	= "i386-elf"
+TARGET		= "i386-squire"
 env:
+	-rm -rf env
 	-mkdir env
-	-mkdir env/cross
-	-rm -rf env/cross/*
-	-mkdir env/cross/src
+	-mkdir env/src
 	PATH="$(PREFIX)/bin:${PATH}"
 
-	# Make BINUTILS
-	-mkdir env/cross/src/binutils
-	curl https://ftp.gnu.org/gnu/binutils/binutils-2.31.tar.gz > env/cross/src/binutils.tar.gz
-	tar -xvf env/cross/src/binutils.tar.gz -C env/cross/src/binutils --strip-components=1
-	mkdir env/cross/src/build-binutils
-	cd env/cross/src/build-binutils; \
-	../binutils/configure --target=$(TARGET) --prefix="$(PREFIX)" --with-sysroot --disable-nls --disable-werror; \
+	# Make cross BINUTILS
+	-mkdir env/src/binutils
+	curl https://ftp.gnu.org/gnu/binutils/binutils-2.31.tar.gz > env/src/binutils.tar.gz
+	tar -xvf env/src/binutils.tar.gz -C env/src/binutils --strip-components=1
+	mkdir env/src/build-binutils
+	cd env/src/build-binutils; \
+	../binutils/configure --target=$(CROSSTARGET) --prefix="$(CROSSPREFIX)" --with-sysroot --disable-nls --disable-werror; \
 	make; \
 	make install
 
-	# Make GCC
-	-mkdir env/cross/src/gcc
-	curl https://ftp.gnu.org/gnu/gcc/gcc-8.2.0/gcc-8.2.0.tar.gz > env/cross/src/gcc.tar.gz
-	tar -xvf env/cross/src/gcc.tar.gz -C env/cross/src/gcc --strip-components=1
-	mkdir env/cross/src/build-gcc
-	cd env/cross/src/build-gcc; \
-	../gcc/configure --target=$(TARGET) --prefix="$(PREFIX)" --disable-nls --enable-languages=c,c++ --without-headers; \
+	# Make cross GCC
+	-mkdir env/src/gcc
+	curl https://ftp.gnu.org/gnu/gcc/gcc-8.2.0/gcc-8.2.0.tar.gz > env/src/gcc.tar.gz
+	tar -xvf env/src/gcc.tar.gz -C env/src/gcc --strip-components=1
+	mkdir env/src/build-gcc
+	cd env/src/build-gcc; \
+	../gcc/configure --target=$(CROSSTARGET) --prefix="$(CROSSPREFIX)" --disable-nls --enable-languages=c,c++ --without-headers; \
 	make all-gcc; \
 	make all-target-libgcc; \
 	make install-gcc; \
 	make install-target-libgcc
+
+	# Make automake
+	-mkdir env/src/automake
+	curl https://ftp.gnu.org/gnu/automake/automake-1.11.tar.gz > env/src/automake.tar.gz
+	tar -xvf env/src/automake.tar.gz -C env/src/automake --strip-components=1
+	mkdir env/src/build-automake
+	cd env/src/build-automake; \
+	../automake/configure --prefix="$(CROSSPREFIX)"; \
+	make; \
+	make install
+
+	# Make autoconf
+	-mkdir env/src/autoconf
+	curl https://ftp.gnu.org/gnu/autoconf/autoconf-2.65.tar.gz > env/src/autoconf.tar.gz
+	tar -xvf env/src/autoconf.tar.gz -C env/src/autoconf --strip-components=1
+	mkdir env/src/build-autoconf
+	cd env/src/build-autoconf; \
+	../autoconf/configure --prefix="$(CROSSPREFIX)"; \
+	make; \
+	make install
+
