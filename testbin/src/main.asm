@@ -22,18 +22,19 @@ align 0x04
 
 ; Entry point
 ; -----------
-global _start
-_start:
+global main
+main:
 		push	ebp
 		mov		ebp, esp
 
-		; Print S_00
-		mov		edx, sc_log
-		mov		dword [edx+4*0], S_00
-		mov		dword [edx+4*1], 17
-		mov		ecx, 8
-		mov		eax, 0x10000000
-		int		0x80
+		extern write
+		mov		eax,17
+		push	eax
+		mov		eax, S_00
+		push	eax
+		mov		eax, 0
+		push	eax
+		call	write
 
 .lp0:
 		jmp		.lp0

@@ -203,3 +203,14 @@ env_newlib:
 	../newlib/configure --prefix="$(PREFIX)" --target=$(TARGET); \
 	make all; \
 	make install
+#TESTING directly rebuild newlib
+env_rebuild_newlib:
+	cp envbuild/newlib/configure.in env/src/newlib/newlib/libc/sys/squire
+	cp envbuild/newlib/Makefile.am env/src/newlib/newlib/libc/sys/squire
+	cp envbuild/newlib/crt0.c env/src/newlib/newlib/libc/sys/squire
+	cp envbuild/newlib/syscalls.c env/src/newlib/newlib/libc/sys/squire
+	# Configure newlib structure
+	cd env/src/build-newlib; \
+	make all -O0; \
+	make uninstall; \
+	make install

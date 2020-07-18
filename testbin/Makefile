@@ -37,7 +37,7 @@ all:
 
 testbin.bin: $(ASMOBJ) $(COBJ)
 	echo + Link testbin.bin
-	$(LD) -g -I inc -T linker.ld -o testbin.bin $(ASMOBJ) $(COBJ)
+	$(LD) -g -I/home/joppe/Documents/Projects/Assembly/squire/env/i386-squire/include -T linker.ld -L/home/joppe/Documents/Projects/Assembly/squire/env/i386-squire/lib -o testbin.bin /home/joppe/Documents/Projects/Assembly/squire/env/i386-squire/lib/crt0.o $(ASMOBJ) $(COBJ) -lc -g -lm -lnosys
 	$(OD) -d -M intel-mnemonic testbin.bin > DISASS
 	$(OC) --only-keep-debug testbin.bin DEBUG.sym
 	$(OC) --strip-debug testbin.bin
@@ -45,7 +45,7 @@ testbin.bin: $(ASMOBJ) $(COBJ)
 
 $(COBJ): $(OUTPUTDIR)/%.c.o: %.c
 	echo '>' $<
-	$(CC) -ffreestanding -g -MMD -I inc $(CC_WARNING) -o $@ -c $<
+	$(CC) -ffreestanding -g -MMD -I/home/joppe/Documents/Projects/Assembly/squire/env/i386-squire/include $(CC_WARNING) -o $@ -c $<
 
 $(ASMOBJ): $(OUTPUTDIR)/%.asm.o: %.asm
 	echo '>' $<

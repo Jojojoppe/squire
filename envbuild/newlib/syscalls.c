@@ -6,6 +6,9 @@
 #include <sys/time.h>
 #include <stdio.h>
 
+#pragma GCC push_options
+#pragma GCC optimize ("O0")
+
 #undef errno
 extern int errno;
 
@@ -90,12 +93,9 @@ int wait(int *status){
 
 int write(int file, char *ptr, int len){
 	// Use LOG syscall for now
-	struct params_log{
-		char * data;
-		int length;
-	} pars;
-	pars.data = ptr;
-	pars.length = len;
-	asm __volatile__("int $0x80"::"a"(0x10000000), "c"(8), "d"(&pars));
+	unsigned int parms[2] = {(unsigned int)ptr, len};
+	asm __volatile__("int $0x80"::"a"(0x10000000),"c"(8),"d"(parms));
 	return len;
 }
+
+#pragma GCC pop_options
