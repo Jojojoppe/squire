@@ -31,6 +31,7 @@ struc thread
 	.id			resd 1
 	.kstack		resd 1
 	.tss_esp0	resd 1
+	.fpudata	resb 128
 
 	.sizeof:
 endstruc
@@ -167,6 +168,9 @@ proc_thread_switch:
 		test	edx, edx
 		jz		.endsave
 
+		; Save FPU state
+		fsave	[edx+thread.fpudata]
+
 		; OLD STACK
 		pushad
 		pushfd
@@ -177,6 +181,10 @@ proc_thread_switch:
 		mov		esp, [eax+thread.kstack]
 		mov		ecx, [eax+thread.tss_esp0]
 		mov		[TSS+4], ecx
+		
+		; Restore FPU data
+		frstor	[eax+thread.fpudata]
+
 		; NEW STACK
 		popfd
 		popad
