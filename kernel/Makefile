@@ -21,7 +21,7 @@ ALLFILES		:= $(ASMFILES) $(INCFILES) $(CFILES) $(HFILES)
 ARCH			:= "i386"
 
 # Toolchain
-PTH				:= "../env/cross/bin"
+PTH				:= "../env/bin"
 TARGET			:= "$(ARCH)-elf"
 PREFIX			:= "$(PTH)/$(TARGET)"
 
