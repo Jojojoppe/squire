@@ -19,6 +19,7 @@ struc process
 	.memory		resd 1				; Memory regions list address
 	.vas		resd 1				; CR3 for process
 	.threads	resd 1				; Pointer to thread list
+	.messages	resd 1				; Pointer to message structure. NULL if none has been set up
 
 	.sizeof:
 endstruc
@@ -98,6 +99,7 @@ proc_init:
 		mov		[edx+process.next], edx
 		mov		[edx+process.prev], edx
 		mov		dword [edx+process.id], 1
+		mov		dword [edx+process.messages], 0
 		; Create memory region list
 		push	edx
 		call	vmm_create
@@ -519,6 +521,8 @@ proc_process_new:
 		call	vmm_create
 		mov		ecx, [ebp-8]
 		mov		[ecx+process.memory], eax
+		; Clear message structure
+		mov		dword [ecx+process.messages], 0
 		; Create new PD table and copy kernel space into it (use 0 as tmp)
 		call	pmm_alloc
 		push	eax
@@ -591,6 +595,64 @@ proc_getpid:
 		mov		ebp, esp
 
 		mov		eax, [eax+process.id]
+
+		mov		esp, ebp
+		pop		ebp
+		ret
+
+; Get Process descriptor from PID
+;	eax:	PID
+;	->eax:	descriptor, NULL if not found
+; -------------------------------
+global proc_getprocess
+proc_getprocess:
+		push	ebp
+		mov		ebp, esp
+
+		mov		edx, [proc_proccurrent]
+.lp:
+		cmp		eax, [edx+process.id]
+		je		.found
+		; Next process
+		mov		edx, [edx+process.next]
+		cmp		edx, [proc_proccurrent]
+		jne		.lp
+
+		; Not found
+		xor		eax, eax
+.end:
+		mov		esp, ebp
+		pop		ebp
+		ret
+.found:
+		mov		eax, edx
+		jmp		.end
+
+; Get messages address from descriptor
+;	eax:	descriptor
+;	->eax:	messages
+; -----------------------
+global proc_getmessages
+proc_getmessages:
+		push	ebp
+		mov		ebp, esp
+
+		mov		eax, [eax+process.messages]
+
+		mov		esp, ebp
+		pop		ebp
+		ret
+
+; Set messages address int descriptor
+;	eax:	descriptor
+;	edx:	messages
+; -----------------------
+global proc_setmessages
+proc_setmessages:
+		push	ebp
+		mov		ebp, esp
+
+		mov		[eax+process.messages], edx
 
 		mov		esp, ebp
 		pop		ebp

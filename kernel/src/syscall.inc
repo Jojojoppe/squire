@@ -1,2 +1,3 @@
 extern isr_syscall
 extern isr_syscall_debug
+extern isr_syscall_hexdump

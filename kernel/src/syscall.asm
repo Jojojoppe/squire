@@ -6,6 +6,7 @@ bits 32
 %include "proc.inc"
 %include "vmm.inc"
 %include "kmalloc.inc"
+%include "messages.inc"
 ; --------
 
 ; ------------
@@ -31,6 +32,8 @@ align 0x04
 %define SYSCALL_MMAP		0x00000001
 %define SYSCALL_THREAD		0x00000010
 %define SYSCALL_PROCESS		0x00000011
+%define SYSCALL_SEND		0x00000020
+%define SYSCALL_RECEIVE		0x00000021
 %define SYSCALL_DEBUG		0xffffffff
 
 ; Syscall ISR
@@ -49,6 +52,8 @@ isr_syscall:
 		mov		[ebp-44], edx
 		mov		[ebp-48], ecx
 
+		; TODO: Check for existance of parameter memory block
+
 		; Clear out return value
 		xor		eax, eax
 		mov		[ebp-36], eax
@@ -62,6 +67,10 @@ isr_syscall:
 		je		syscall_thread
 		cmp		eax, SYSCALL_PROCESS
 		je		syscall_process
+		cmp		eax, SYSCALL_SEND
+		je		syscall_send
+		cmp		eax, SYSCALL_RECEIVE
+		je		syscall_receive
 		cmp		eax, SYSCALL_DEBUG
 		je		syscall_debug
 
@@ -218,9 +227,9 @@ syscall_process:
 		mov		edi, eax
 		mov		ecx, [edx+params_process.elf_length]
 		mov		esi, [edx+params_process.elf_start]
-	rep	movsb	
-		pop		eax	
-	
+	rep	movsb
+		pop		eax
+
 		; Create new process
 		push	eax
 		push	edx
@@ -233,6 +242,87 @@ syscall_process:
 		; Free copied ELF
 		mov		eax, ecx
 		call	kfree
+
+		mov		dword [ebp-36], 0
+		jmp		isr_syscall.end
+
+; SEND
+; Sends a message to other process
+;	-> NULL if successful
+; -------
+struc params_send
+	.pid		resd 1
+	.flags		resd 1
+	.size		resd 1
+	.data:
+	.sizeof:
+endstruc
+syscall_send:
+		; Check for block length
+		cmp		ecx, params_send.sizeof
+		jb		isr_syscall.error
+
+		; Check if size is OK
+		mov		eax, [edx+params_send.size]
+		cmp		eax, 0x4000
+		ja		isr_syscall.error
+
+		; Get process descriptor from pid
+		mov		eax, [edx+params_send.pid]
+		push	edx
+		call	proc_getprocess
+		push	eax
+		call	proc_getcurrent
+		pop		edi
+		pop		edx
+		push	eax
+		; Add message to queue
+		lea		eax, [edx+params_send.data]
+		mov		ecx, [edx+params_send.size]
+		pop		edx
+		call	message_add
+
+		mov		dword [ebp-36], 0
+		jmp		isr_syscall.end
+
+; RECEIVE
+; Receives a message if the receiving buffer is long enough
+;	-> NULL if successful
+;	.pid contains the PID of the sending process, NULL if none
+;	.size contains the size of the received message, NULL if none
+;	.data contains the message itself
+;	If there is a message but the buffer does not have enough size, PID contains NULL but size does have the minimun size of the buffer (TODO)
+; -------
+struc params_receive
+	.pid		resd 1		; PID of sender
+	.flags		resd 1
+	.size		resd 1		; Size of received message, NULL if none
+	.data:
+	.sizeof:
+endstruc
+syscall_receive:
+		; Check for block length
+		cmp		ecx, params_receive.sizeof
+		jb		isr_syscall.error
+
+		; Check if there is a message and receive it
+		; Calculate max buffer length
+		sub		ecx, params_receive.sizeof
+		push	edx
+		lea		eax, [edx+params_receive.data]
+		push	eax
+		push	ecx
+		call	proc_getcurrent
+		mov		ecx, eax
+		pop		edx
+		pop		eax
+		call	message_get
+		mov		ecx, edx
+		pop		edx
+
+		; Fill structure
+		mov		[edx+params_receive.size], eax
+		mov		[edx+params_receive.pid], ecx
 
 		mov		dword [ebp-36], 0
 		jmp		isr_syscall.end
@@ -258,7 +348,24 @@ isr_syscall_debug:
 		cmp		eax, 0x00400000
 		jnae	.end
 		call	serial_outs
+.end:
+		call	proc_schedule
+		popad
+		sti
+		iret
 
+; Hexdump syscall ISR
+; -------------------
+global isr_syscall_hexdump
+isr_syscall_hexdump:
+		pushad
+		cli
+		; Check if address is valid
+		cmp		eax, 0xc0000000
+		jnb		.end
+		cmp		eax, 0x00400000
+		jnae	.end
+		call	serial_hexdump
 .end:
 		call	proc_schedule
 		popad

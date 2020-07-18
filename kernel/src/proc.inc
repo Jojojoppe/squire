@@ -8,3 +8,6 @@ extern proc_getcurrent
 extern proc_schedule
 extern proc_process_new
 extern proc_getpid
+extern proc_setmessages
+extern proc_getmessages
+extern proc_getprocess
