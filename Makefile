@@ -1,4 +1,4 @@
-.SILENT:
+#.SILENT:
 
 .PHONY: all clean run reset clean mount umount kernel debug env runtty TODO init initramfs
 
@@ -109,7 +109,7 @@ initramfsclean:
 	-rm -rf initramfs
 	# Clean all entries
 	cd testbin && ${MAKE} clean
-	
+
 
 # List all todos
 TODO:
@@ -117,10 +117,11 @@ TODO:
 
 # Create environment with toolchain
 # This will install binutils and gcc to env
+env: env_cross env_newlib
 PREFIX		= "$(shell pwd)/env"
 CROSSTARGET	= "i386-elf"
 TARGET		= "i386-squire"
-env:
+env_cross:
 	-rm -rf env
 	-mkdir env
 	-mkdir env/src
@@ -132,7 +133,7 @@ env:
 	tar -xvf env/src/binutils.tar.gz -C env/src/binutils --strip-components=1
 	mkdir env/src/build-binutils
 	cd env/src/build-binutils; \
-	../binutils/configure --target=$(CROSSTARGET) --prefix="$(CROSSPREFIX)" --with-sysroot --disable-nls --disable-werror; \
+	../binutils/configure --target=$(CROSSTARGET) --prefix="$(PREFIX)" --with-sysroot --disable-nls --disable-werror; \
 	make; \
 	make install
 
@@ -142,7 +143,7 @@ env:
 	tar -xvf env/src/gcc.tar.gz -C env/src/gcc --strip-components=1
 	mkdir env/src/build-gcc
 	cd env/src/build-gcc; \
-	../gcc/configure --target=$(CROSSTARGET) --prefix="$(CROSSPREFIX)" --disable-nls --enable-languages=c,c++ --without-headers; \
+	../gcc/configure --target=$(CROSSTARGET) --prefix="$(PREFIX)" --disable-nls --enable-languages=c,c++ --without-headers; \
 	make all-gcc; \
 	make all-target-libgcc; \
 	make install-gcc; \
@@ -154,7 +155,7 @@ env:
 	tar -xvf env/src/automake.tar.gz -C env/src/automake --strip-components=1
 	mkdir env/src/build-automake
 	cd env/src/build-automake; \
-	../automake/configure --prefix="$(CROSSPREFIX)"; \
+	../automake/configure --prefix="$(PREFIX)"; \
 	make; \
 	make install
 
@@ -164,7 +165,40 @@ env:
 	tar -xvf env/src/autoconf.tar.gz -C env/src/autoconf --strip-components=1
 	mkdir env/src/build-autoconf
 	cd env/src/build-autoconf; \
-	../autoconf/configure --prefix="$(CROSSPREFIX)"; \
+	../autoconf/configure --prefix="$(PREFIX)"; \
 	make; \
 	make install
 
+env_newlib:
+	PATH="$(PREFIX)/bin:${PATH}"
+	-rm -rf env/src/newlib
+	-rm -rf env/src/build-newlib
+
+	# Setup newlib
+	-mkdir env/src/newlib
+	#curl ftp://sourceware.org/pub/newlib/newlib-2.5.0.tar.gz > env/src/newlib.tar.gz
+	tar -xvf env/src/newlib.tar.gz -C env/src/newlib --strip-components=1
+	# Apply changes
+	patch env/src/newlib/config.sub < envbuild/newlib/config_sub.diff
+	patch env/src/newlib/newlib/configure.host < envbuild/newlib/configure_host.diff
+	patch env/src/newlib/newlib/libc/sys/configure.in < envbuild/newlib/libc_sys_configure_in.diff
+	cd env/src/newlib/newlib/libc/sys && autoconf
+	mkdir env/src/newlib/newlib/libc/sys/squire
+	cp envbuild/newlib/configure.in env/src/newlib/newlib/libc/sys/squire
+	cp envbuild/newlib/Makefile.am env/src/newlib/newlib/libc/sys/squire
+	cp envbuild/newlib/crt0.c env/src/newlib/newlib/libc/sys/squire
+	cp envbuild/newlib/syscalls.c env/src/newlib/newlib/libc/sys/squire
+	# Configure newlib structure
+	cd env/src/newlib/newlib/libc/sys && autoconf
+	cd env/src/newlib/newlib/libc/sys/squire && autoreconf
+	# Create temporary os compilers
+	ln -sf $(PREFIX)/bin/i386-elf-ar $(PREFIX)/bin/i386-squire-ar
+	ln -sf $(PREFIX)/bin/i386-elf-gcc $(PREFIX)/bin/i386-squire-gcc
+	ln -sf $(PREFIX)/bin/i386-elf-gcc $(PREFIX)/bin/i386-squire-cc
+	ln -sf $(PREFIX)/bin/i386-elf-as $(PREFIX)/bin/i386-squire-as
+	ln -sf $(PREFIX)/bin/i386-elf-ranlib $(PREFIX)/bin/i386-squire-ranlib
+	mkdir env/src/build-newlib
+	cd env/src/build-newlib; \
+	../newlib/configure --prefix="$(PREFIX)" --target=$(TARGET); \
+	make all; \
+	make install

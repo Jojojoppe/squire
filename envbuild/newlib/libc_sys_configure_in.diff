@@ -1,10 +1,10 @@
---- newlib/newlib/libc/sys/configure.in	2020-07-18 15:23:47.710021631 +0200
-+++ newlib-orig/newlib/libc/sys/configure.in	2016-12-23 03:33:54.000000000 +0100
-@@ -49,7 +49,6 @@
+--- newlib-orig/newlib/libc/sys/configure.in	2016-12-23 03:33:54.000000000 +0100
++++ newlib/newlib/libc/sys/configure.in	2020-07-18 15:23:47.710021631 +0200
+@@ -49,6 +49,7 @@
  	tirtos) AC_CONFIG_SUBDIRS(tirtos) ;;
  	w65) AC_CONFIG_SUBDIRS(w65) ;;
  	z8ksim) AC_CONFIG_SUBDIRS(z8ksim) ;;
--    squire) AC_CONFIG_SUBDIRS(squire) ;;
++    squire) AC_CONFIG_SUBDIRS(squire) ;;
    esac;
  fi
  
