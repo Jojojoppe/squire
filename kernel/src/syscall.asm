@@ -34,7 +34,7 @@ align 0x04
 %define SYSCALL_PROCESS		0x00000011
 %define SYSCALL_SEND		0x00000020
 %define SYSCALL_RECEIVE		0x00000021
-%define SYSCALL_DEBUG		0xffffffff
+%define SYSCALL_LOG			0x10000000
 
 ; Syscall ISR
 ; -----------
@@ -71,8 +71,8 @@ isr_syscall:
 		je		syscall_send
 		cmp		eax, SYSCALL_RECEIVE
 		je		syscall_receive
-		cmp		eax, SYSCALL_DEBUG
-		je		syscall_debug
+		cmp		eax, SYSCALL_LOG
+		je		syscall_log
 
 .error:
 		; No syscall found
@@ -327,11 +327,33 @@ syscall_receive:
 		mov		dword [ebp-36], 0
 		jmp		isr_syscall.end
 
-; DEBUG
-; Triggers int 1 (kernel panic debug
-;	-> NULL if successful
-syscall_debug:
-		int		1
+; LOG
+; Write a message to serial out
+; ---
+struc params_log
+	.data		resd 1
+	.length		resd 1
+	.sizeof:
+endstruc
+syscall_log:
+		; Check for block length
+		cmp		ecx, params_log.sizeof
+		jb		isr_syscall.error
+
+		; TODO check for sanity
+		mov		ecx, [edx+params_log.length]
+		mov		edx, [edx+params_log.data]
+.lp:
+		mov		al, [edx]
+		push	edx
+		push	ecx
+		call	serial_out
+		pop		ecx
+		pop		edx
+		inc		edx
+		dec		ecx
+		jnz		.lp
+
 		mov		dword [ebp-36], 0
 		jmp		isr_syscall.end
 

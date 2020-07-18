@@ -48,6 +48,8 @@ S_RN							db 0x0a, 0x0d, 0
 S_INIT							db "init.bin", 0
 S_INITRAMFS						db "initramfs.tar", 0
 
+fpu_test						dw 0x55aa
+
 ; -----------
 ; SECTION BSS
 section .bss
@@ -149,6 +151,15 @@ g_start:
 		; From here stack frame is reset! From now on running in process 1, thread 1 ([1,1])
 		push	ebp
 		mov		ebp, esp
+
+		; Check support for x87 FPU
+		mov		eax, cr0
+		and		eax, ~(1<<2 | 1<<3)
+		mov		cr0, eax
+		fninit
+		fnstsw	[fpu_test]
+		cmp		word [fpu_test], 0
+		jne		hang
 
 		; Load init.bin
 		mov		eax, S_INIT
