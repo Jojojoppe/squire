@@ -5,7 +5,7 @@
 #include <sys/errno.h>
 #include <sys/time.h>
 #include <stdio.h>
- 
+
 #undef errno
 extern int errno;
 
@@ -89,5 +89,13 @@ int wait(int *status){
 }
 
 int write(int file, char *ptr, int len){
-	return 0;
+	// Use LOG syscall for now
+	struct params_log{
+		char * data;
+		int length;
+	} pars;
+	pars.data = ptr;
+	pars.length = len;
+	asm __volatile__("int $0x80"::"a"(0x10000000), "c"(8), "d"(&pars));
+	return len;
 }

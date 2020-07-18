@@ -118,14 +118,15 @@ TODO:
 # Create environment with toolchain
 # This will install binutils and gcc to env
 env: env_cross env_newlib
-PREFIX		= "$(shell pwd)/env"
+PREFIX		= $(shell pwd)/env
 CROSSTARGET	= "i386-elf"
 TARGET		= "i386-squire"
+
 env_cross:
 	-rm -rf env
 	-mkdir env
 	-mkdir env/src
-	PATH="$(PREFIX)/bin:${PATH}"
+	$(eval export PATH=$(PREFIX)/bin:$(PATH))
 
 	# Make cross BINUTILS
 	-mkdir env/src/binutils
@@ -170,9 +171,9 @@ env_cross:
 	make install
 
 env_newlib:
-	PATH="$(PREFIX)/bin:${PATH}"
 	-rm -rf env/src/newlib
 	-rm -rf env/src/build-newlib
+	$(eval export PATH=${PREFIX}/bin:$(PATH))
 
 	# Setup newlib
 	-mkdir env/src/newlib
