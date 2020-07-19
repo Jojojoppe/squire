@@ -69,7 +69,27 @@ int read(int file, char *ptr, int len){
 }
 
 caddr_t sbrk(int incr){
-	return (caddr_t)0;
+	extern char g_end;
+	static char * heap_end;
+	char * prev_heap_end;
+	if(heap_end==0){
+		heap_end = &g_end;
+	}
+	prev_heap_end = heap_end;
+	heap_end += incr;
+
+	struct{
+		unsigned int address;
+		unsigned int length;
+		unsigned int flags;
+	}pars;
+
+	pars.address = prev_heap_end;
+	pars.length = (incr/4096 + 1)*4096;
+	pars.flags = 0;
+	asm __volatile__("int $0x80"::"a"(0x00000001),"c"(sizeof(pars)),"d"(&pars));
+
+	return (caddr_t) prev_heap_end;
 }
 
 int stat(const char *file, struct stat *st){

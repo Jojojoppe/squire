@@ -24,6 +24,7 @@ ARCH			:= "i386"
 PTH				:= "../env/bin"
 TARGET			:= "$(ARCH)-elf"
 PREFIX			:= "$(PTH)/$(TARGET)"
+LIBC			:= "../env/i386-squire"
 
 CC				:= "$(PREFIX)-gcc"
 AS				:= "nasm"
@@ -37,7 +38,7 @@ all:
 
 testbin.bin: $(ASMOBJ) $(COBJ)
 	echo + Link testbin.bin
-	$(LD) -g -I/home/joppe/Documents/Projects/Assembly/squire/env/i386-squire/include -T linker.ld -L/home/joppe/Documents/Projects/Assembly/squire/env/i386-squire/lib -o testbin.bin /home/joppe/Documents/Projects/Assembly/squire/env/i386-squire/lib/crt0.o $(ASMOBJ) $(COBJ) -lc -g -lm -lnosys
+	$(LD) -g -I$(LIBC)/include -T linker.ld -L$(LIBC)/lib -o testbin.bin $(LIBC)/lib/crt0.o $(ASMOBJ) $(COBJ) -lc
 	$(OD) -d -M intel-mnemonic testbin.bin > DISASS
 	$(OC) --only-keep-debug testbin.bin DEBUG.sym
 	$(OC) --strip-debug testbin.bin
@@ -45,7 +46,7 @@ testbin.bin: $(ASMOBJ) $(COBJ)
 
 $(COBJ): $(OUTPUTDIR)/%.c.o: %.c
 	echo '>' $<
-	$(CC) -ffreestanding -g -MMD -I/home/joppe/Documents/Projects/Assembly/squire/env/i386-squire/include $(CC_WARNING) -o $@ -c $<
+	$(CC) -ffreestanding -g -MMD -I$(LIBC)/include $(CC_WARNING) -o $@ -c $<
 
 $(ASMOBJ): $(OUTPUTDIR)/%.asm.o: %.asm
 	echo '>' $<

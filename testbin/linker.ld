@@ -25,7 +25,6 @@ SECTIONS
 	}
 
 	g_end = .;
-
 	/DISCARD/ :{
 		*(.comment)
 		*(.eh_frame)
