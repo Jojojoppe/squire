@@ -22,7 +22,7 @@ ARCH			:= "i386"
 
 # Toolchain
 PTH				:= "../env/bin"
-TARGET			:= "$(ARCH)-elf"
+TARGET			:= "$(ARCH)-squire"
 PREFIX			:= "$(PTH)/$(TARGET)"
 
 CC				:= "$(PREFIX)-gcc"

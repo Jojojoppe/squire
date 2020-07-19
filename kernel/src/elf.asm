@@ -115,6 +115,17 @@ elf_load:
 		mov		eax, [edx+elfprogramheader.start_virt]
 		mov		edx, [edx+elfprogramheader.size_mem]
 		mov		ecx, 0 ; TODO FLAGS
+		push	edx
+		and		edx, 0xfff
+		test	edx, edx
+		jz		.noadd
+		pop		edx
+		add		edx, 0x1000
+		jmp		.alloc
+.noadd:
+		pop		edx
+.alloc
+		and		edx, ~0xfff
 		call	vmm_alloc
 		pop		ecx
 		pop		edx

@@ -214,3 +214,5 @@ env_rebuild_newlib:
 	make all -O0; \
 	make uninstall; \
 	make install
+	cp -RT env/i386-squire/include env/usr/include
+	cp -RT env/i386-squire/lib env/usr/lib
