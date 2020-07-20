@@ -1,0 +1,1 @@
+extern interrupts_init

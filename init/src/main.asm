@@ -30,8 +30,8 @@ align 0x04
 
 ; Entry point
 ; -----------
-global _start
-_start:
+global main
+main:
 		push	ebp
 		mov		ebp, esp
 		sub		esp, 12			; -4:	Address of initramfs.tar

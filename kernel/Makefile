@@ -1,9 +1,13 @@
-.SILENT:
+# No all target
+all:
 
-.PHONY: all clean todolist
+include ../makefiles/env.mk
 
-DIRS			:= src
+.PHONY: all clean todolist builddir
+
+DIRS			:= src/$(ARCH)
 OUTPUTDIR		:= build
+TARGET			:= kernel.bin
 
 ASMFILES	 	:= $(shell find $(DIRS) -type f -name "*.asm")
 INCFILES	 	:= $(shell find $(DIRS) -type f -name "*.inc")
@@ -17,35 +21,29 @@ DFILES			:= $(CFILES:%.c=$(OUTPUTDIR)/%.c.d)
 
 ALLFILES		:= $(ASMFILES) $(INCFILES) $(CFILES) $(HFILES)
 
-# TARGET ARCHITECTURE
-ARCH			:= "i386"
-
 # Toolchain
-PTH				:= "../env/bin"
-TARGET			:= "$(ARCH)-squire"
-PREFIX			:= "$(PTH)/$(TARGET)"
-
-CC				:= "$(PREFIX)-gcc"
-AS				:= "nasm"
-LD				:= "$(PREFIX)-ld"
-OC				:= "$(PREFIX)-objcopy"
-OD				:= "$(PREFIX)-objdump"
+CC				:= $(PREFIX)/bin/$(ARCH)-squire-gcc
+AS				:= nasm
+LD				:= $(PREFIX)/bin/$(ARCH)-squire-ld
+OC				:= $(PREFIX)/bin/$(ARCH)-squire-objcopy
+OD				:= $(PREFIX)/bin/$(ARCH)-squire-objdump
 CC_WARNING		:= -Wall -Wextra
-AS_FLAGS		:= -f elf -isrc
+AS_FLAGS		:= -f elf -isrc/$(ARCH)
 
-all:
+builddir: env_check
+	-mkdir -P $(OUTPUTDIR)/src/$(ARCH)
 
-kernel.bin: $(ASMOBJ) $(COBJ)
-	echo + Link kernel.bin
-	$(LD) -g -I inc -T linker.ld -o kernel.bin $(ASMOBJ) $(COBJ)
-	$(OD) -d -M intel-mnemonic kernel.bin > DISASS
-	$(OC) --only-keep-debug kernel.bin DEBUG.sym
-	$(OC) --strip-debug kernel.bin
-	find . -name '*.c' -o -name '*.h' -o -name '*.asm' -o -name '*.inc' | xargs wc -l > LOC
+$(TARGET): builddir $(ASMOBJ) $(COBJ)
+	echo + Link $(TARGET)
+	$(LD) -g -T linker.ld -o $(TARGET) $(ASMOBJ) $(COBJ)
+	$(OD) -d -M intel-mnemonic $(TARGET) > $(OUTPUTDIR)/DISASS
+	$(OC) --only-keep-debug $(TARGET) $(OUTPUTDIR)/DEBUG.sym
+	$(OC) --strip-debug $(TARGET)
+	find . -name '*.c' -o -name '*.h' -o -name '*.asm' -o -name '*.inc' | xargs wc -l > $(OUTPUTDIR)/LOC
 
 $(COBJ): $(OUTPUTDIR)/%.c.o: %.c
 	echo '>' $<
-	$(CC) -ffreestanding -g -MMD -I inc $(CC_WARNING) -o $@ -c $<
+	$(CC) -ffreestanding -g -MMD $(CC_WARNING) -o $@ -c $<
 
 $(ASMOBJ): $(OUTPUTDIR)/%.asm.o: %.asm
 	echo '>' $<
@@ -57,7 +55,7 @@ todolist:
 	#| sed -e 's/:[^:]*//2g' | sed -e 's/^..//' | awk '{print ">"$$1 }' ; fgrep -n -H -e TODO $$file | sed -e 's#.*TODO\(\)#\    #'; done; true
 
 clean:
-	rm -f $(ASMOBJ) $(ASMDFILES) $(COBJ) $(DFILES) kernel.bin DEBUG.sym DISASS
+	rm -f $(ASMOBJ) $(ASMDFILES) $(COBJ) $(DFILES) $(TARGET) $(OUTPUTDIR)/DEBUG.sym $(OUTPUTDIR)/DISASS $(OUTPUTDIR)/LOC
 
 # Header dependencies
 -include $(ASMDFILES)

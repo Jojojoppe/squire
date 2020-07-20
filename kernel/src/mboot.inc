@@ -1,2 +1,0 @@
-extern mboot_get_mmap
-extern mboot_get_mod

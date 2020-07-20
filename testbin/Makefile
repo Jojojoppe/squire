@@ -1,40 +1,53 @@
-.SILENT:
+include ../makefiles/env.mk
 
-.PHONY: all clean todolist
+# No all target
+all:
+
+.PHONY: all clean todolist builddir
 
 DIRS			:= src
 OUTPUTDIR		:= build
+TARGET			:= testbin.bin
+
+ASMFILES	 	:= $(shell find $(DIRS) -type f -name "*.asm")
+INCFILES	 	:= $(shell find $(DIRS) -type f -name "*.inc")
+ASMOBJ			:= $(ASMFILES:%.asm=$(OUTPUTDIR)/%.asm.o)
+ASMDFILES		:= $(ASMFILES:%.asm=$(OUTPUTDIR)/%.asm.d)
 
 CFILES			:= $(shell find $(DIRS) -type f -name "*.c")
 HFILES			:= $(shell find $(DIRS) -type f -name "*.h")
 COBJ			:= $(CFILES:%.c=$(OUTPUTDIR)/%.c.o)
 DFILES			:= $(CFILES:%.c=$(OUTPUTDIR)/%.c.d)
 
-ALLFILES		:= $(CFILES) $(HFILES)
-
-# TARGET ARCHITECTURE
-ARCH			:= i386
+ALLFILES		:= $(ASMFILES) $(INCFILES) $(CFILES) $(HFILES)
 
 # Toolchain
-PTH				:= ../env/bin
-TARGET			:= $(ARCH)-squire
-PREFIX			:= $(PTH)/$(TARGET)
-
-CC				:= $(PREFIX)-gcc
-LD				:= $(PREFIX)-ld
-OC				:= $(PREFIX)-objcopy
-OD				:= $(PREFIX)-objdump
+CC				:= $(PREFIX)/bin/$(ARCH)-squire-gcc
+AS				:= nasm
+LD				:= $(PREFIX)/bin/$(ARCH)-squire-ld
+OC				:= $(PREFIX)/bin/$(ARCH)-squire-objcopy
+OD				:= $(PREFIX)/bin/$(ARCH)-squire-objdump
 CC_WARNING		:= -Wall -Wextra
+AS_FLAGS		:= -f elf -isrc
 
-all:
+builddir: env_check
+	-mkdir -P $(OUTPUTDIR)/src
 
-testbin.bin: $(COBJ)
-	echo + Link testbin.bin
-	$(CC) -g -o testbin.bin $(COBJ)
+$(TARGET): builddir $(ASMOBJ) $(COBJ)
+	echo + Link $(TARGET)
+	$(CC) -g -o $(TARGET) $(ASMOBJ) $(COBJ)
+	$(OD) -d -M intel-mnemonic $(TARGET) > $(OUTPUTDIR)/DISASS
+	$(OC) --only-keep-debug $(TARGET) $(OUTPUTDIR)/DEBUG.sym
+	$(OC) --strip-debug $(TARGET)
+	find . -name '*.c' -o -name '*.h' -o -name '*.asm' -o -name '*.inc' | xargs wc -l > $(OUTPUTDIR)/LOC
 
 $(COBJ): $(OUTPUTDIR)/%.c.o: %.c
 	echo '>' $<
 	$(CC) -g -MMD $(CC_WARNING) -o $@ -c $<
+
+$(ASMOBJ): $(OUTPUTDIR)/%.asm.o: %.asm
+	echo '>' $<
+	$(AS) $(AS_FLAGS) -MD $(OUTPUTDIR)/$<.d -g -o $@ $<
 
 todolist:
 	echo + TODO list
@@ -42,7 +55,8 @@ todolist:
 	#| sed -e 's/:[^:]*//2g' | sed -e 's/^..//' | awk '{print ">"$$1 }' ; fgrep -n -H -e TODO $$file | sed -e 's#.*TODO\(\)#\    #'; done; true
 
 clean:
-	rm -f $(COBJ) $(DFILES) testbin.bin DEBUG.sym DISASS
+	rm -f $(ASMOBJ) $(ASMDFILES) $(COBJ) $(DFILES) $(TARGET) $(OUTPUTDIR)/DEBUG.sym $(OUTPUTDIR)/DISASS $(OUTPUTDIR)/LOC
 
 # Header dependencies
+-include $(ASMDFILES)
 -include $(DFILES)

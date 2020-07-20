@@ -1,0 +1,7 @@
+extern serial_init
+extern serial_out
+extern serial_outs
+extern serial_outhex
+extern serial_outdec
+extern serial_outbase
+extern serial_hexdump

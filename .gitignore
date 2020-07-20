@@ -2,25 +2,17 @@
 *.bin
 *.tar
 
+toolchain
+
 drive
-env
 mnt
 initramfs
 
 kernel/build
 kernel/kernel.bin
-kernel/LOC
-kernel/DISASS
-kernel/DEBUG.sym
 
 init/build
 init/init.bin
-init/LOC
-init/DISASS
-init/DEBUG.sym
 
 testbin/build
 testbin/testbin.bin
-testbin/LOC
-testbin/DISASS
-testbin/DEBUG.sym
