@@ -1,6 +1,8 @@
 *.sym
 *.bin
 *.tar
+*.so
+*.a
 
 toolchain
 
@@ -10,6 +12,9 @@ initramfs
 
 kernel/build
 kernel/kernel.bin
+
+libsquire/build
+libsquire/libsquire.a
 
 init/build
 init/init.bin

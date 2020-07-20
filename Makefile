@@ -3,7 +3,7 @@
 .PHONY: all clean copy
 
 # Complete make
-all: env_check newlib_hosted drive kernel/kernel.bin init/init.bin initramfs.tar copy
+all: env_check newlib drive kernel/kernel.bin libsquire/libsquire.a init/init.bin initramfs.tar copy
 
 # Makefile scripts
 include makefiles/env.mk
@@ -34,6 +34,19 @@ copy: mount
 kernel/kernel.bin: env_check
 	echo + Make kernel
 	cd kernel && ${MAKE} ${MFLAGS} kernel.bin
+
+# Compile libsquire
+libsquire/libsquire.a: env_check libsquire_headers
+	echo + Make libsquire
+	cd libsquire && ${MAKE} ${MFLAGS} libsquire.a
+	cp libsquire/libsquire.a $(PREFIX)/usr/lib
+libsquire_headers: env_check
+	cp -RT libsquire/include $(PREFIX)/usr/include
+
+# Compile newlib
+newlib: env_check libsquire_headers
+	echo + Make newlib
+	${MAKE} ${MFLAGS} newlib_hosted
 
 # Compile init
 init/init.bin: env_check
