@@ -1,7 +1,7 @@
+include ../makefiles/env.mk
+
 # No all target
 all:
-
-include ../makefiles/env.mk
 
 .PHONY: all clean todolist builddir
 
@@ -30,7 +30,7 @@ OD				:= $(PREFIX)/bin/$(ARCH)-squire-objdump
 CC_WARNING		:= -Wall -Wextra
 AS_FLAGS		:= -f elf -isrc/$(ARCH)
 
-builddir: env_check
+builddir:
 	-mkdir -p $(OUTPUTDIR)/src/$(ARCH)
 
 $(TARGET): builddir $(ASMOBJ) $(COBJ)

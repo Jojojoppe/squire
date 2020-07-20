@@ -46,6 +46,8 @@ tar_getfile:
 							; -8:	ecx
 							; -12:	Filename
 							; -16:	start of tar
+		mov		eax, [ebp+12]
+		mov		edx, [ebp+8]
 		mov		[ebp-4], ebx
 		mov		[ebp-8], ecx
 		mov		[ebp-12], edx
@@ -75,6 +77,8 @@ tar_getfile:
 		; Get start of file
 		mov		eax, edx
 		pop		edx
+		mov		ecx, [ebp+16]
+		mov		[ecx], edx
 		add		eax, tarheader.sizeof
 		jmp		.end
 		

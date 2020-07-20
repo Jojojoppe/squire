@@ -3,8 +3,6 @@
 TARGET_BARE			= $(ARCH)-elf
 TARGET_HOSTED		= $(ARCH)-squire
 
-all: newlib_hosted
-
 # DOWNLOAD SOURCES
 # ----------------
 $(PREFIX)/tar/binutils-2.31_squire.tar.gz:
@@ -168,7 +166,7 @@ $(PREFIX)/src/.newlib_configure_hosted:
 	cd $(PREFIX)/src/build-newlib_hosted; \
 		../newlib-2.50_squire/configure --prefix="$(PREFIX)" --target=$(TARGET_HOSTED); \
 		touch ../.newlib_configure_hosted
-newlib_hosted: env_check $(PREFIX)/src/.newlib  $(PREFIX)/src/.automake $(PREFIX)/src/.autoconf $(PREFIX)/src/.binutils_hosted $(PREFIX)/src/.gcc_hosted $(PREFIX)/src/.newlib_configure_hosted
+$(PREFIX)/src/.newlib_hosted: $(PREFIX)/src/.newlib  $(PREFIX)/src/.automake $(PREFIX)/src/.autoconf $(PREFIX)/src/.binutils_hosted $(PREFIX)/src/.gcc_hosted $(PREFIX)/src/.newlib_configure_hosted
 	$(eval export PATH=$(PREFIX)/bin:$(PATH))
 	-rm $(PREFIX)/bin/i386-squire-cc
 	cd $(PREFIX)/bin; \
@@ -180,3 +178,11 @@ newlib_hosted: env_check $(PREFIX)/src/.newlib  $(PREFIX)/src/.automake $(PREFIX
 	-mkdir -p $(PREFIX)/usr/lib
 	cp -RT $(PREFIX)/$(ARCH)-squire/include $(PREFIX)/usr/include
 	cp -RT $(PREFIX)/$(ARCH)-squire/lib $(PREFIX)/usr/lib
+	touch $(PREFIX)/src/.newlib_hosted
+
+newlib: libsquire_headers $(PREFIX)/src/.newlib_hosted
+	echo + Newlib compiled
+
+rebuild_newlib: libsquire_headers
+	rm $(PREFIX)/src/.newlib_hosted
+	${MAKE} ${MFLAGS} newlib

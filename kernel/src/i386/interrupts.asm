@@ -177,6 +177,11 @@ interrupts_init:
 		mov		ecx, isr_syscall
 		call	idt_set_interrupt_user
 
+		; Set syscall interrupt
+		mov		eax, 0x81
+		mov		ecx, isr_syscall_hexdump
+		call	idt_set_interrupt_user
+
 		mov		esp, ebp
 		pop		ebp
 		ret
