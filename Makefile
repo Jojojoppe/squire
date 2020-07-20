@@ -1,9 +1,9 @@
 include makefiles/env.mk
 
-.PHONY: all clean copy
+.PHONY: all clean copy initramfs kernel init libsquire testbin
 
 # Complete make
-all: newlib drive libsquire/libsquire.a kernel/kernel.bin init/init.bin initramfs.tar copy
+all: newlib drive libsquire kernel init initramfs copy
 
 # Makefile scripts
 include makefiles/drive.mk
@@ -30,12 +30,12 @@ copy: mount
 	${MAKE} umount
 
 # Compile the kernel
-kernel/kernel.bin:
+kernel:
 	echo + Make kernel
 	cd kernel && ${MAKE} ${MFLAGS} kernel.bin
 
 # Compile libsquire
-libsquire/libsquire.a: libsquire_headers
+libsquire: libsquire_headers
 	echo + Make libsquire
 	cd libsquire && ${MAKE} ${MFLAGS} libsquire.a
 	cp libsquire/libsquire.a $(PREFIX)/usr/lib
@@ -44,12 +44,12 @@ libsquire_headers:
 	cp -RT libsquire/include $(PREFIX)/usr/include
 
 # Compile init
-init/init.bin:
+init:
 	echo + Make init
 	cd init && ${MAKE} ${MFLAGS} init.bin
 
 # Create initramfs
-initramfs.tar: testbin/testbin.bin
+initramfs: testbin
 	echo + Create initramfs
 	-rm -rf initramfs
 	mkdir initramfs
@@ -58,6 +58,6 @@ initramfs.tar: testbin/testbin.bin
 	cd initramfs && tar -cf ../initramfs.tar *
 
 # Other programs
-testbin/testbin.bin:
+testbin:
 	echo + Create testbin
 	cd testbin && ${MAKE} ${MFLAGS} testbin.bin

@@ -55,6 +55,7 @@ clean-all:
 # Build bare variants
 $(PREFIX)/src/.binutils_configure: $(PREFIX)/src/.binutils_untar
 	$(eval export PATH=$(PREFIX)/bin:$(PATH))
+	-rm -rf $(PREFIX)/src/build-binutils_bare
 	-mkdir $(PREFIX)/src/build-binutils_bare
 	cd $(PREFIX)/src/build-binutils_bare ;\
 		../binutils-2.31_squire/configure --target=$(TARGET_BARE) --prefix="$(PREFIX)" --with-sysroot --disable-nls --disable-werror; \
@@ -68,6 +69,7 @@ $(PREFIX)/src/.binutils: $(PREFIX)/src/.binutils_configure
 
 $(PREFIX)/src/.gcc_configure: $(PREFIX)/src/.gcc_untar
 	$(eval export PATH=$(PREFIX)/bin:$(PATH))
+	-rm -rf $(PREFIX)/src/build-gcc_bare
 	-mkdir $(PREFIX)/src/build-gcc_bare
 	cd $(PREFIX)/src/build-gcc_bare; \
 		../gcc-8.2.0_squire/configure --target=$(TARGET_BARE) --prefix="$(PREFIX)" --disable-nls --enable-languages=c,c++ --without-headers; \
@@ -83,6 +85,7 @@ $(PREFIX)/src/.gcc: $(PREFIX)/src/.binutils $(PREFIX)/src/.gcc_configure
 
 $(PREFIX)/src/.autoconf_configure: $(PREFIX)/src/.autoconf_untar
 	$(eval export PATH=$(PREFIX)/bin:$(PATH))
+	-rm -rf $(PREFIX)/src/build-autoconf_bare
 	-mkdir $(PREFIX)/src/build-autoconf_bare
 	cd $(PREFIX)/src/build-autoconf_bare; \
 		../autoconf-2.65_squire/configure --prefix="$(PREFIX)"; \
@@ -96,6 +99,7 @@ $(PREFIX)/src/.autoconf: $(PREFIX)/src/.autoconf_configure
 
 $(PREFIX)/src/.automake_configure: $(PREFIX)/src/.automake_untar
 	$(eval export PATH=$(PREFIX)/bin:$(PATH))
+	-rm -rf $(PREFIX)/src/build-automake_bare
 	-mkdir $(PREFIX)/src/build-automake_bare
 	cd $(PREFIX)/src/build-automake_bare; \
 		../automake-1.11_squire/configure --prefix="$(PREFIX)"; \
@@ -109,12 +113,15 @@ $(PREFIX)/src/.automake: $(PREFIX)/src/.automake_configure
 
 $(PREFIX)/src/.newlib_configure: $(PREFIX)/src/.newlib_untar
 	$(eval export PATH=$(PREFIX)/bin:$(PATH))
+	-rm -rf $(PREFIX)/src/build-newlib_bare
 	-mkdir $(PREFIX)/src/build-newlib_bare
+	-rm $(PREFIX)/src/.newlib
+	-rm $(PREFIX)/src/.newlib_configure_hosted
 	cd $(PREFIX)/src/build-newlib_bare; \
 		../newlib-2.50_squire/configure --prefix="$(PREFIX)" --target=$(TARGET_HOSTED); \
 		touch ../.newlib_configure
-$(PREFIX)/src/.newlib: $(PREFIX)/src/.autoconf $(PREFIX)/src/.automake $(PREFIX)/src/.binutils $(PREFIX)/src/.gcc $(PREFIX)/src/.newlib_configure
-	$(eval export PATH=$(PREFIX)/bin:$(PATH))
+	-rm $(PREFIX)/src/.binutils_hosted
+	-rm $(PREFIX)/src/.gcc_hosted
 	-rm $(PREFIX)/bin/i386-squire-*
 	cd $(PREFIX)/bin; \
 		ln -s i386-elf-ar i386-squire-ar; \
@@ -122,6 +129,8 @@ $(PREFIX)/src/.newlib: $(PREFIX)/src/.autoconf $(PREFIX)/src/.automake $(PREFIX)
 		ln -s i386-elf-gcc i386-squire-cc; \
 		ln -s i386-elf-gcc i386-squire-gcc; \
 		ln -s i386-elf-ranlib i386-squire-ranlib;
+$(PREFIX)/src/.newlib: $(PREFIX)/src/.autoconf $(PREFIX)/src/.automake $(PREFIX)/src/.binutils $(PREFIX)/src/.gcc $(PREFIX)/src/.newlib_configure
+	$(eval export PATH=$(PREFIX)/bin:$(PATH))
 	cd $(PREFIX)/src/build-newlib_bare ;\
 		make all; \
 		make install
@@ -134,6 +143,7 @@ $(PREFIX)/src/.newlib: $(PREFIX)/src/.autoconf $(PREFIX)/src/.automake $(PREFIX)
 # Build hosted variants
 $(PREFIX)/src/.binutils_configure_hosted:
 	$(eval export PATH=$(PREFIX)/bin:$(PATH))
+	-rm -rf $(PREFIX)/src/build-binutils_hosted
 	-mkdir $(PREFIX)/src/build-binutils_hosted
 	cd $(PREFIX)/src/build-binutils_hosted ;\
 		../binutils-2.31_squire/configure --target=$(TARGET_HOSTED) --prefix="$(PREFIX)" --with-sysroot="$(PREFIX)" --disable-werror; \
@@ -147,6 +157,7 @@ $(PREFIX)/src/.binutils_hosted: $(PREFIX)/src/.binutils_configure_hosted
 
 $(PREFIX)/src/.gcc_configure_hosted:
 	$(eval export PATH=$(PREFIX)/bin:$(PATH))
+	-rm -rf $(PREFIX)/src/build-gcc_hosted
 	-mkdir $(PREFIX)/src/build-gcc_hosted
 	cd $(PREFIX)/src/build-gcc_hosted; \
 		../gcc-8.2.0_squire/configure --target=$(TARGET_HOSTED) --prefix="$(PREFIX)" --with-sysroot="$(PREFIX)" --enable-languages=c,c++; \
@@ -162,15 +173,17 @@ $(PREFIX)/src/.gcc_hosted: $(PREFIX)/src/.newlib $(PREFIX)/src/.binutils_hosted 
 
 $(PREFIX)/src/.newlib_configure_hosted:
 	$(eval export PATH=$(PREFIX)/bin:$(PATH))
+	-rm -rf $(PREFIX)/src/build-newlib_hosted
 	-mkdir $(PREFIX)/src/build-newlib_hosted
+	-rm .$(PREFIX)/src/.newlib_hosted
 	cd $(PREFIX)/src/build-newlib_hosted; \
 		../newlib-2.50_squire/configure --prefix="$(PREFIX)" --target=$(TARGET_HOSTED); \
 		touch ../.newlib_configure_hosted
-$(PREFIX)/src/.newlib_hosted: $(PREFIX)/src/.newlib  $(PREFIX)/src/.automake $(PREFIX)/src/.autoconf $(PREFIX)/src/.binutils_hosted $(PREFIX)/src/.gcc_hosted $(PREFIX)/src/.newlib_configure_hosted
-	$(eval export PATH=$(PREFIX)/bin:$(PATH))
 	-rm $(PREFIX)/bin/i386-squire-cc
 	cd $(PREFIX)/bin; \
 		ln -s i386-squire-gcc i386-squire-cc
+$(PREFIX)/src/.newlib_hosted: $(PREFIX)/src/.newlib  $(PREFIX)/src/.automake $(PREFIX)/src/.autoconf $(PREFIX)/src/.binutils_hosted $(PREFIX)/src/.gcc_hosted $(PREFIX)/src/.newlib_configure_hosted
+	$(eval export PATH=$(PREFIX)/bin:$(PATH))
 	cd $(PREFIX)/src/build-newlib_hosted ;\
 		make all; \
 		make install
