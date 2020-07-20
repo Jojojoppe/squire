@@ -31,7 +31,7 @@ CC_WARNING		:= -Wall -Wextra
 AS_FLAGS		:= -f elf -isrc/$(ARCH)
 
 builddir: env_check
-	-mkdir -P $(OUTPUTDIR)/src/$(ARCH)
+	-mkdir -p $(OUTPUTDIR)/src/$(ARCH)
 
 $(TARGET): builddir $(ASMOBJ) $(COBJ)
 	echo + Link $(TARGET)

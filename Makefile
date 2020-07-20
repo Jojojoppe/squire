@@ -1,15 +1,15 @@
 # SQUIRE MAIN MAKEFILE
 
+.PHONY: all clean copy
+
+# Complete make
+all: env_check newlib_hosted drive kernel/kernel.bin init/init.bin initramfs.tar copy
+
 # Makefile scripts
 include makefiles/env.mk
 include makefiles/drive.mk
 include makefiles/toolchain.mk
 include makefiles/qemu.mk
-
-.PHONY: all clean copy
-
-# Complete make
-all: env_check newlib_hosted drive kernel/kernel.bin init/init.bin initramfs.tar copy
 
 # Clean all
 clean:
