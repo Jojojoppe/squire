@@ -17,9 +17,6 @@ S_TESTBIN		db "testbin.bin", 0
 section .bss
 ; -----------
 
-sc_log			resd 2
-sc_process		resd 2
-
 pid_testbin		resd 1
 
 ; ------------
@@ -40,12 +37,10 @@ main:
 		mov		[ebp-4], eax
 
 		; Print S_00
-		mov		edx, sc_log
-		mov		dword [edx+4*0], S_00
-		mov		dword [edx+4*1], 15
-		mov		ecx, 8
-		mov		eax, 0x10000000
-		int		0x80
+		extern printf
+		mov		eax, S_00
+		push	eax
+		call	printf
 
 		; Get testbin.bin
 		mov		eax, [ebp-4]
@@ -57,16 +52,12 @@ main:
 		jz		.lp0
 
 		; Load new process (testbin.bin)
-		mov		edx, sc_process
-		mov		eax, [ebp-8]
-		mov		dword [edx+4*0], eax
+		extern squire_syscall_process
 		mov		eax, [ebp-12]
-		mov		dword [edx+4*1], eax
-		mov		ecx, 4*2
-		mov		eax, 17
-		int		0x80
-		mov		edx, sc_process
-		mov		eax, [edx+4*0]
+		push	eax
+		mov		eax, [ebp-8]
+		push	eax
+		call	squire_syscall_process
 		mov		[pid_testbin], eax
 
 .lp0:
