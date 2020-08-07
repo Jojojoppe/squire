@@ -33,7 +33,7 @@ AS_FLAGS		:= -f elf -isrc
 builddir:
 	-mkdir -p $(OUTPUTDIR)/src
 
-$(TARGET): $(ASMOBJ) $(COBJ)
+$(TARGET): builddir $(ASMOBJ) $(COBJ)
 	echo + Link $(TARGET)
 	$(CC) -g -o $(TARGET) $(ASMOBJ) $(COBJ)
 	$(OD) -d -M intel-mnemonic $(TARGET) > $(OUTPUTDIR)/DISASS

@@ -3,6 +3,7 @@
 *.tar
 *.so
 *.a
+.vscode
 
 toolchain
 
