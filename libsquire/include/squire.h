@@ -37,6 +37,9 @@ typedef struct squire_params_thread_s squire_params_thread_t;
 struct squire_params_process_s{
 	void *			elf_start;
 	size_t			elf_length;
+	int 			argc;
+	void *			param_data;
+	size_t			param_data_size;
 };
 typedef struct squire_params_process_s squire_params_process_t;
 
@@ -75,7 +78,7 @@ extern "C" {
 
 extern void * squire_syscall_mmap(void * address, size_t length, uint32_t flags);
 extern uint32_t squire_syscall_thread(void (*entry)(void), void * stack, uint32_t flags);
-extern uint32_t squire_syscall_process(void * elf_start, size_t elf_length);
+extern uint32_t squire_syscall_process(void * elf_start, size_t elf_length, int argc, char ** argv);
 extern uint32_t squire_syscall_process();
 extern void squire_syscall_log(char * data, size_t length);
 

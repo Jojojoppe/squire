@@ -392,20 +392,26 @@ proc_thread_new:
 ;	eax:	Code to execute
 ;	edx:	Stack
 ;	ecx:	Process to add thread to, NULL to add to process directly
+;	ebx:	argc
+;	edi:	param data
 ;	->eac:	Thread structure address
 ; -----------------
 global proc_thread_new_user
 proc_thread_new_user:
 		push	ebp
 		mov		ebp, esp
-		sub		esp, 20			; -4:	Code to execute
+		sub		esp, 28			; -4:	Code to execute
 								; -8:	(user) Stack
 								; -12:	Process to add thread to
 								; -16:	Kernel stack
 								; -20:	Thread structure
+								; -24:	argc
+								; -28:	param data
 		mov		[ebp-4], eax
 		mov		[ebp-8], edx
 		mov		[ebp-12], ecx
+		mov		[ebp-24], ebx
+		mov		[ebp-28], edi
 		cli
 
 		; Create kernel stack
@@ -454,11 +460,11 @@ proc_thread_new_user:
 		mov		[edx-12], eax			; Old ebp
 		mov		eax, [ebp-4]
 		mov		[edx-16], eax			; eax
-		mov		eax, 0
+		mov		eax, [ebp-28]
 		mov		[edx-20], eax			; ecx
 		mov		eax, [ebp-8]
 		mov		[edx-24], eax			; edx
-		mov		eax, 0
+		mov		eax, [ebp-24]
 		mov		[edx-28], eax			; ebx
 		mov		eax, [ebp-16]
 		sub		eax, 12
@@ -534,6 +540,8 @@ proc_schedule:
 
 ; Create new process
 ;	eax:	Start of ELF data
+;	edx:	argc
+;	ecx:	param data
 ;	->eax:	Process descriptor
 ; ------------------
 global proc_process_new
@@ -541,10 +549,14 @@ proc_process_new:
 		push	ebp
 		mov		ebp, esp
 		cli
-		sub		esp, 12		; -4:	Start of ELF data
+		sub		esp, 20		; -4:	Start of ELF data
 							; -8:	Process descriptor
 							; -12:	temporary proc_proccurrent
+							; -16:	argc
+							; -20:	param data
 		mov		[ebp-4], eax
+		mov		[ebp-16], edx
+		mov		[ebp-20], ecx
 
 		; Create new process descriptor
 		mov		eax, process.sizeof
@@ -618,6 +630,8 @@ proc_process_new:
 		; Add thread descriptor with [eax] as entry point
 		xor		ecx, ecx
 		mov		edx, 0xc0000000-4
+		mov		ebx, [ebp-16]
+		mov		edi, [ebp-20]
 		call	proc_thread_new_user
 
 		; SWITCH BACK TO OWN PROCESS VAS

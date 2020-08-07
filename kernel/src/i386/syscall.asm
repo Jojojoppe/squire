@@ -16,6 +16,11 @@ section .data
 
 S_00			db "SYSCALL", 0x0a, 0x0d, 0
 
+params 			dd 6
+				db "param", 0
+				dd 6
+				db "abcde", 0
+
 ; -----------
 ; SECTION BSS
 section .bss
@@ -198,6 +203,9 @@ syscall_thread:
 struc params_process
 	.elf_start		resd 1		; Start of ELF executable		[0x00400000 - 0xbfffffff]
 	.elf_length		resd 1		; Length of ELF executable		[0x1000 - 0x10000000]
+	.argc			resd 1
+	.argv			resd 1
+	.argvsize		resd 1
 	.sizeof:
 endstruc
 syscall_process:
@@ -233,6 +241,21 @@ syscall_process:
 		; Create new process
 		push	eax
 		push	edx
+
+		push	edx
+		push	eax
+		mov		eax, [edx+params_process.argvsize]
+		call	kmalloc
+		mov		edi, eax
+		pop		eax
+		pop		edx
+		mov		ecx, [edx+params_process.argvsize]
+		mov		esi, [edx+params_process.argv]
+		push	edi
+	rep	movsb
+		pop		edi
+		mov		ecx, edi
+		mov		edx, [edx+params_process.argc]
 		call	proc_process_new
 		pop		edx
 		pop		ecx
