@@ -7,7 +7,7 @@ TARGET_HOSTED		= $(ARCH)-squire
 # ----------------
 $(PREFIX)/tar/binutils-2.31_squire.tar.gz:
 	-mkdir $(PREFIX)/tar
-	curl -k https://joppeb.nl//projects/squire/tools/alpha/binutils-2.31_squire.tar.gz > $(PREFIX)/tar/binutils-2.31_squire.tar.gz
+	curl -k http://git.joppeb.nl/squire/binutils.git/snapshot/binutils-master.tar.gz > $(PREFIX)/tar/binutils-2.31_squire.tar.gz
 $(PREFIX)/src/.binutils_untar: $(PREFIX)/tar/binutils-2.31_squire.tar.gz
 	-mkdir $(PREFIX)/src
 	tar -xf $(PREFIX)/tar/binutils-2.31_squire.tar.gz -C $(PREFIX)/src
@@ -15,7 +15,7 @@ $(PREFIX)/src/.binutils_untar: $(PREFIX)/tar/binutils-2.31_squire.tar.gz
 
 $(PREFIX)/tar/gcc-8.2.0_squire.tar.gz:
 	-mkdir $(PREFIX)/tar
-	curl -k https://joppeb.nl//projects/squire/tools/alpha/gcc-8.2.0_squire.tar.gz > $(PREFIX)/tar/gcc-8.2.0_squire.tar.gz
+	curl -k http://git.joppeb.nl/squire/gcc.git/snapshot/gcc-master.tar.gz/ > $(PREFIX)/tar/gcc-8.2.0_squire.tar.gz
 $(PREFIX)/src/.gcc_untar: $(PREFIX)/tar/gcc-8.2.0_squire.tar.gz
 	-mkdir $(PREFIX)/src
 	tar -xf $(PREFIX)/tar/gcc-8.2.0_squire.tar.gz -C $(PREFIX)/src
@@ -23,7 +23,7 @@ $(PREFIX)/src/.gcc_untar: $(PREFIX)/tar/gcc-8.2.0_squire.tar.gz
 
 $(PREFIX)/tar/autoconf-2.65_squire.tar.gz:
 	-mkdir $(PREFIX)/tar
-	curl -k https://joppeb.nl//projects/squire/tools/alpha/autoconf-2.65_squire.tar.gz > $(PREFIX)/tar/autoconf-2.65_squire.tar.gz
+	curl -k http://git.joppeb.nl/squire/autoconf.git/snapshot/autoconf-master.tar.gz > $(PREFIX)/tar/autoconf-2.65_squire.tar.gz
 $(PREFIX)/src/.autoconf_untar: $(PREFIX)/tar/autoconf-2.65_squire.tar.gz
 	-mkdir $(PREFIX)/src
 	tar -xf $(PREFIX)/tar/autoconf-2.65_squire.tar.gz -C $(PREFIX)/src
@@ -31,7 +31,7 @@ $(PREFIX)/src/.autoconf_untar: $(PREFIX)/tar/autoconf-2.65_squire.tar.gz
 
 $(PREFIX)/tar/automake-1.11_squire.tar.gz:
 	-mkdir $(PREFIX)/tar
-	curl -k https://joppeb.nl//projects/squire/tools/alpha/automake-1.11_squire.tar.gz > $(PREFIX)/tar/automake-1.11_squire.tar.gz
+	curl -k http://git.joppeb.nl/squire/automake.git/snapshot/automake-master.tar.gz > $(PREFIX)/tar/automake-1.11_squire.tar.gz
 $(PREFIX)/src/.automake_untar: $(PREFIX)/tar/automake-1.11_squire.tar.gz
 	-mkdir $(PREFIX)/src
 	tar -xf $(PREFIX)/tar/automake-1.11_squire.tar.gz -C $(PREFIX)/src
@@ -39,7 +39,7 @@ $(PREFIX)/src/.automake_untar: $(PREFIX)/tar/automake-1.11_squire.tar.gz
 
 $(PREFIX)/tar/newlib-2.50_squire.tar.gz:
 	-mkdir $(PREFIX)/tar
-	curl -k https://joppeb.nl//projects/squire/tools/alpha/newlib-2.50_squire.tar.gz > $(PREFIX)/tar/newlib-2.50_squire.tar.gz
+	curl -k http://git.joppeb.nl/squire/newlib.git/snapshot/newlib-master.tar.gz > $(PREFIX)/tar/newlib-2.50_squire.tar.gz
 $(PREFIX)/src/.newlib_untar: $(PREFIX)/tar/newlib-2.50_squire.tar.gz
 	-mkdir $(PREFIX)/src
 	tar -xf $(PREFIX)/tar/newlib-2.50_squire.tar.gz -C $(PREFIX)/src
@@ -58,7 +58,7 @@ $(PREFIX)/src/.binutils_configure: $(PREFIX)/src/.binutils_untar
 	-rm -rf $(PREFIX)/src/build-binutils_bare
 	-mkdir $(PREFIX)/src/build-binutils_bare
 	cd $(PREFIX)/src/build-binutils_bare ;\
-		../binutils-2.31_squire/configure --target=$(TARGET_BARE) --prefix="$(PREFIX)" --with-sysroot --disable-nls --disable-werror; \
+		../binutils-master/configure --target=$(TARGET_BARE) --prefix="$(PREFIX)" --with-sysroot --disable-nls --disable-werror; \
 		touch ../.binutils_configure
 $(PREFIX)/src/.binutils: $(PREFIX)/src/.binutils_configure
 	$(eval export PATH=$(PREFIX)/bin:$(PATH))
@@ -72,7 +72,7 @@ $(PREFIX)/src/.gcc_configure: $(PREFIX)/src/.gcc_untar
 	-rm -rf $(PREFIX)/src/build-gcc_bare
 	-mkdir $(PREFIX)/src/build-gcc_bare
 	cd $(PREFIX)/src/build-gcc_bare; \
-		../gcc-8.2.0_squire/configure --target=$(TARGET_BARE) --prefix="$(PREFIX)" --disable-nls --enable-languages=c,c++ --without-headers; \
+		../gcc-master/configure --target=$(TARGET_BARE) --prefix="$(PREFIX)" --disable-nls --enable-languages=c,c++ --without-headers; \
 		touch ../.gcc_configure
 $(PREFIX)/src/.gcc: $(PREFIX)/src/.binutils $(PREFIX)/src/.gcc_configure
 	$(eval export PATH=$(PREFIX)/bin:$(PATH))
@@ -88,7 +88,7 @@ $(PREFIX)/src/.autoconf_configure: $(PREFIX)/src/.autoconf_untar
 	-rm -rf $(PREFIX)/src/build-autoconf_bare
 	-mkdir $(PREFIX)/src/build-autoconf_bare
 	cd $(PREFIX)/src/build-autoconf_bare; \
-		../autoconf-2.65_squire/configure --prefix="$(PREFIX)"; \
+		../autoconf-master/configure --prefix="$(PREFIX)"; \
 		touch ../.autoconf_configure
 $(PREFIX)/src/.autoconf: $(PREFIX)/src/.autoconf_configure
 	$(eval export PATH=$(PREFIX)/bin:$(PATH))
@@ -102,7 +102,7 @@ $(PREFIX)/src/.automake_configure: $(PREFIX)/src/.automake_untar
 	-rm -rf $(PREFIX)/src/build-automake_bare
 	-mkdir $(PREFIX)/src/build-automake_bare
 	cd $(PREFIX)/src/build-automake_bare; \
-		../automake-1.11_squire/configure --prefix="$(PREFIX)"; \
+		../automake-master/configure --prefix="$(PREFIX)"; \
 		touch ../.automake_configure
 $(PREFIX)/src/.automake: $(PREFIX)/src/.automake_configure
 	$(eval export PATH=$(PREFIX)/bin:$(PATH))
@@ -118,7 +118,7 @@ $(PREFIX)/src/.newlib_configure: $(PREFIX)/src/.newlib_untar
 	-rm $(PREFIX)/src/.newlib
 	-rm $(PREFIX)/src/.newlib_configure_hosted
 	cd $(PREFIX)/src/build-newlib_bare; \
-		../newlib-2.50_squire/configure --prefix="$(PREFIX)" --target=$(TARGET_HOSTED); \
+		../newlib-master/configure --prefix="$(PREFIX)" --target=$(TARGET_HOSTED); \
 		touch ../.newlib_configure
 	-rm $(PREFIX)/src/.binutils_hosted
 	-rm $(PREFIX)/src/.gcc_hosted
@@ -146,7 +146,7 @@ $(PREFIX)/src/.binutils_configure_hosted:
 	-rm -rf $(PREFIX)/src/build-binutils_hosted
 	-mkdir $(PREFIX)/src/build-binutils_hosted
 	cd $(PREFIX)/src/build-binutils_hosted ;\
-		../binutils-2.31_squire/configure --target=$(TARGET_HOSTED) --prefix="$(PREFIX)" --with-sysroot="$(PREFIX)" --disable-werror; \
+		../binutils-master/configure --target=$(TARGET_HOSTED) --prefix="$(PREFIX)" --with-sysroot="$(PREFIX)" --disable-werror; \
 		touch ../.binutils_configure_hosted
 $(PREFIX)/src/.binutils_hosted: $(PREFIX)/src/.binutils_configure_hosted
 	$(eval export PATH=$(PREFIX)/bin:$(PATH))
@@ -160,7 +160,7 @@ $(PREFIX)/src/.gcc_configure_hosted:
 	-rm -rf $(PREFIX)/src/build-gcc_hosted
 	-mkdir $(PREFIX)/src/build-gcc_hosted
 	cd $(PREFIX)/src/build-gcc_hosted; \
-		../gcc-8.2.0_squire/configure --target=$(TARGET_HOSTED) --prefix="$(PREFIX)" --with-sysroot="$(PREFIX)" --enable-languages=c,c++; \
+		../gcc-master/configure --target=$(TARGET_HOSTED) --prefix="$(PREFIX)" --with-sysroot="$(PREFIX)" --enable-languages=c,c++; \
 		touch ../.gcc_configure_hosted
 $(PREFIX)/src/.gcc_hosted: $(PREFIX)/src/.newlib $(PREFIX)/src/.binutils_hosted $(PREFIX)/src/.gcc_configure_hosted
 	$(eval export PATH=$(PREFIX)/bin:$(PATH))
@@ -177,7 +177,7 @@ $(PREFIX)/src/.newlib_configure_hosted:
 	-mkdir $(PREFIX)/src/build-newlib_hosted
 	-rm .$(PREFIX)/src/.newlib_hosted
 	cd $(PREFIX)/src/build-newlib_hosted; \
-		../newlib-2.50_squire/configure --prefix="$(PREFIX)" --target=$(TARGET_HOSTED); \
+		../newlib-master/configure --prefix="$(PREFIX)" --target=$(TARGET_HOSTED); \
 		touch ../.newlib_configure_hosted
 	-rm $(PREFIX)/bin/i386-squire-cc
 	cd $(PREFIX)/bin; \
