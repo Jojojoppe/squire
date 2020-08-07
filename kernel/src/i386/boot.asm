@@ -50,6 +50,12 @@ S_INITRAMFS						db "initramfs.tar", 0
 
 fpu_test						dw 0x55aa
 
+; Init param section
+init_param						dd 5 
+								db "init", 0
+								dd 4
+								dd 0x40000000
+
 ; -----------
 ; SECTION BSS
 section .bss
@@ -198,7 +204,8 @@ g_start:
 		; Execute code in userspace
 		pop		eax
 		mov		edx, 0xc0000000 - 4
-		mov		ecx, 0x40000000
+		mov		ecx, init_param
+		mov		ebx, 2
 		call	proc_user_exec
 
 .lp:

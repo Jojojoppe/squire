@@ -213,19 +213,57 @@ proc_getmemory:
 ; Sets up user stack and kernel stack and jumps to ring 3
 ;	eax:	Address to jump to
 ;	edx:	User stack address
-;	ecx:	Parameter
+;	ecx:	argv data
+;		word size, data
+; 	ebx:	argc
 ; -------------------------
 global proc_user_exec
 proc_user_exec:
 		push	ebp
 		mov		ebp, esp
 		cli
-		sub		esp, 12		; -4:	Address to jump to
+		sub		esp, 16		; -4:	Address to jump to
 							; -8:	User stack address
-							; -12:	Param
+							; -12:	Param data
+							; -16:	Param count
 		mov		[ebp-4], eax
 		mov		[ebp-8], edx
 		mov		[ebp-12], ecx
+		mov		[ebp-16], ebx
+
+		; Add params to user stack
+		mov		edi, [ebp-8]
+		; Put all data on stack
+		mov		ecx, [ebp-16]
+		mov		edx, [ebp-12]
+.lp:
+		; Get size and push
+		mov		eax, [edx]
+		push	eax
+		; Copy data
+		add		edx, 4
+		sub		edi, eax
+		push	edi
+.lp_cp:
+		mov		bl, [edx]
+		inc 	edx
+		mov		[edi], bl
+		inc		edi
+		dec 	eax
+		jnz		.lp_cp
+		; Done copying
+		; Set size to user stack
+		pop		edi
+		pop		eax
+		sub		edi, 4
+		mov		[edi], eax
+		dec		ecx
+		jnz		.lp
+		mov		ecx, [ebp-16]
+		sub		edi, 4
+		mov		[edi], ecx				; Put argc on stack
+		; Save new stack pointer
+		mov		[ebp-8], edi
 
 		; Load current esp as kernel stack in TSS
 		mov		edx, TSS

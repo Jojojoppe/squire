@@ -151,7 +151,7 @@ $(PREFIX)/src/.binutils_configure_hosted:
 $(PREFIX)/src/.binutils_hosted: $(PREFIX)/src/.binutils_configure_hosted
 	$(eval export PATH=$(PREFIX)/bin:$(PATH))
 	cd $(PREFIX)/src/build-binutils_hosted ;\
-		make; \
+		make -j; \
 		make install; \
 		touch ../.binutils_hosted
 
@@ -165,9 +165,9 @@ $(PREFIX)/src/.gcc_configure_hosted:
 $(PREFIX)/src/.gcc_hosted: $(PREFIX)/src/.newlib $(PREFIX)/src/.binutils_hosted $(PREFIX)/src/.gcc_configure_hosted
 	$(eval export PATH=$(PREFIX)/bin:$(PATH))
 	cd $(PREFIX)/src/build-gcc_hosted ;\
-		make all-gcc; \
+		make all-gcc -j; \
 	   	make install-gcc; \
-		make all-target-libgcc; \
+		make all-target-libgcc -j; \
 		make install-target-libgcc; \
 		touch ../.gcc_hosted
 
@@ -185,7 +185,7 @@ $(PREFIX)/src/.newlib_configure_hosted:
 $(PREFIX)/src/.newlib_hosted: $(PREFIX)/src/.newlib  $(PREFIX)/src/.automake $(PREFIX)/src/.autoconf $(PREFIX)/src/.binutils_hosted $(PREFIX)/src/.gcc_hosted $(PREFIX)/src/.newlib_configure_hosted
 	$(eval export PATH=$(PREFIX)/bin:$(PATH))
 	cd $(PREFIX)/src/build-newlib_hosted ;\
-		make all; \
+		make all -j; \
 		make install
 	-mkdir -p $(PREFIX)/usr/include
 	-mkdir -p $(PREFIX)/usr/lib
@@ -197,5 +197,7 @@ newlib: libsquire_headers $(PREFIX)/src/.newlib_hosted
 	echo + Newlib compiled
 
 rebuild_newlib: libsquire_headers
-	rm $(PREFIX)/src/.newlib_hosted
+	-rm $(PREFIX)/src/.newlib_hosted
+	# rm $(PREFIX)/src/.gcc_hosted
+	# rm $(PREFIX)/src/.binutils_hosted
 	${MAKE} ${MFLAGS} newlib
