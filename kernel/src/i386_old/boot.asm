@@ -3,8 +3,16 @@ bits 32
 ; INCLUDES
 ; --------
 %include "gdt.inc"
+%include "interrupts.inc"
 %include "serial.inc"
 %include "mboot.inc"
+%include "pmm.inc"
+%include "vas.inc"
+%include "kmalloc.inc"
+%include "proc.inc"
+%include "timer.inc"
+%include "vmm.inc"
+%include "elf.inc"
 ; --------
 
 %define KERNEL_virtualbase		0xc0000000
@@ -109,6 +117,9 @@ g_start:
 		; Load GDT
 		call	gdt_install
 
+		; Initialize interrupts
+		call	interrupts_init
+
 		; Initialize serial port
 		call	serial_init
 		; Write kernel name to tty
@@ -117,10 +128,91 @@ g_start:
 
 		; Initialize pmm
 		mov		eax, [ebp-4]
-		push	eax
-		extern	pmm_init
 		call	pmm_init
-		add		esp, 4
+		; Initialize kernel VAS
+		; kernel break is set at 4MiB. Heap starts after that
+		call	vas_init
+
+		; Initialize kmalloc
+		call	kmalloc_init
+
+		; Initialize processing
+		sub		esp, 64			; Make space on stack
+		; Proc_init uses top as kernel stack for start of new kernel thread stack
+		; Since upcomming function calls must be able to return without overwriting set-up stack frame
+		; Space must be made
+		mov		eax, .after_proc_init
+		call	proc_init
+		push	eax
+		push	edx
+
+		; Initialize timer
+		call	timer_init
+
+		; Jump to kernel thread
+		xor		edx, edx
+		pop		eax
+		call	proc_thread_switch
+.after_proc_init:
+		; From here stack frame is reset! From now on running in process 1, thread 1 ([1,1])
+		push	ebp
+		mov		ebp, esp
+
+		; Check support for x87 FPU
+		mov		eax, cr0
+		and		eax, ~(1<<2 | 1<<3)
+		mov		cr0, eax
+		fninit
+		fnstsw	[fpu_test]
+		cmp		word [fpu_test], 0
+		jne		hang
+
+		; Load init.bin
+		mov		eax, S_INIT
+		call	mboot_get_mod
+		; TODO test if succeeded
+		call	elf_load
+		push	eax
+
+		; Load initramfs.tar
+		mov		eax, S_INITRAMFS
+		call	mboot_get_mod
+		; Allocate space in userspace
+		push	eax
+		push	edx
+		call	proc_getmemory
+		mov		edi, eax
+		mov		eax, 0x40000000
+		pop		edx
+		push	edx
+		add		edx, 0x1000			; Add 4KiB to be sure for its size
+		mov		ecx, 0
+		call	vmm_alloc
+		; Copy to newly allocated memory
+		pop		ecx
+		pop		esi
+		mov		edi, 0x40000000
+	rep	movsb
+
+		; Setup user stack
+		call	proc_getmemory
+		mov		edi, eax
+		mov		eax, 0xbfffc000
+		mov		edx, 0x4000
+		mov		ecx, 0
+		call	vmm_alloc
+		; Execute code in userspace
+		pop		eax
+		mov		edx, 0xc0000000 - 4
+		mov		ecx, init_param
+		mov		ebx, 2
+		call	proc_user_exec
+
+.lp:
+		call	timer_print
+		mov		al, 0x0d
+		call	serial_out
+		jmp		.lp
 
 hang:
 		cli

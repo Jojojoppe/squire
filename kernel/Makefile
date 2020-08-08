@@ -28,10 +28,12 @@ LD				:= $(PREFIX)/bin/$(ARCH)-squire-ld
 OC				:= $(PREFIX)/bin/$(ARCH)-squire-objcopy
 OD				:= $(PREFIX)/bin/$(ARCH)-squire-objdump
 CC_WARNING		:= -Wall -Wextra
+CC_FLAGS		:= -Isrc
 AS_FLAGS		:= -f elf -isrc/$(ARCH)
 
 builddir:
 	-mkdir -p $(OUTPUTDIR)/src/{general,$(ARCH)}
+	-mkdir -p  $(OUTPUTDIR)/src/$(ARCH)/memory
 
 $(TARGET): builddir $(ASMOBJ) $(COBJ)
 	echo + Link $(TARGET)
@@ -43,7 +45,7 @@ $(TARGET): builddir $(ASMOBJ) $(COBJ)
 
 $(COBJ): $(OUTPUTDIR)/%.c.o: %.c
 	echo '>' $<
-	$(CC) -ffreestanding -g -MMD $(CC_WARNING) -o $@ -c $<
+	$(CC) $(CC_FLAGS) -ffreestanding -g -MMD $(CC_WARNING) -o $@ -c $<
 
 $(ASMOBJ): $(OUTPUTDIR)/%.asm.o: %.asm
 	echo '>' $<

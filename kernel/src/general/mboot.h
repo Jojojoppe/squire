@@ -37,7 +37,16 @@ typedef struct{
     unsigned int        framebufferHeight;
     unsigned char       framebufferBpp;
     unsigned char       framebufferType;
-    unsigned char       colorInfo[6;]
+    unsigned char       colorInfo[6];
 } __attribute__((packed)) mboot_info_t;
+
+typedef struct{
+    unsigned int        size;
+    unsigned int        base;
+    unsigned int        base_h;
+    unsigned int        length;
+    unsigned int        length_h;
+    unsigned char       type;
+} __attribute__((packed)) mboot_mmap_t;
 
 #endif
