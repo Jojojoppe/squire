@@ -5,7 +5,7 @@ all:
 
 .PHONY: all clean todolist builddir
 
-DIRS			:= src/$(ARCH)
+DIRS			:= src/general src/$(ARCH)
 OUTPUTDIR		:= build
 TARGET			:= kernel.bin
 
@@ -31,7 +31,7 @@ CC_WARNING		:= -Wall -Wextra
 AS_FLAGS		:= -f elf -isrc/$(ARCH)
 
 builddir:
-	-mkdir -p $(OUTPUTDIR)/src/$(ARCH)
+	-mkdir -p $(OUTPUTDIR)/src/{general,$(ARCH)}
 
 $(TARGET): builddir $(ASMOBJ) $(COBJ)
 	echo + Link $(TARGET)
@@ -55,7 +55,7 @@ todolist:
 	#| sed -e 's/:[^:]*//2g' | sed -e 's/^..//' | awk '{print ">"$$1 }' ; fgrep -n -H -e TODO $$file | sed -e 's#.*TODO\(\)#\    #'; done; true
 
 clean:
-	rm -f $(ASMOBJ) $(ASMDFILES) $(COBJ) $(DFILES) $(TARGET) $(OUTPUTDIR)/DEBUG.sym $(OUTPUTDIR)/DISASS $(OUTPUTDIR)/LOC
+	rm -rf $(ASMOBJ) $(ASMDFILES) $(COBJ) $(DFILES) $(TARGET) $(OUTPUTDIR)
 
 # Header dependencies
 -include $(ASMDFILES)
