@@ -11,5 +11,12 @@
 // The architecture configuration
 #include <i386/config.h>
 
+/**
+ * @brief Initialize PMM
+ * 
+ * @param bootinfo MBoot header address
+ * @return zero if successful
+ */
+int pmm_init(void * bootinfo);
 
 #endif

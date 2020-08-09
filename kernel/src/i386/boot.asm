@@ -3,6 +3,7 @@ bits 32
 ; INCLUDES
 ; --------
 %include "gdt.inc"
+%include "idt.inc"
 %include "serial.inc"
 %include "mboot.inc"
 ; --------
@@ -32,21 +33,13 @@ times (1024-KERNEL_pagenum-1)	dd 0
 S_00							db 0x0a, 0x0d,
 								db "+---------------+", 0x0a, 0x0d
 								db "|    SQUIRE     |", 0x0a, 0x0d
-								db "+---------------|", 0x0a, 0x0d
+								db "+---------------+", 0x0a, 0x0d
 								db "| a microkernel |", 0x0a, 0x0d
 								db "+---------------+", 0x0a, 0x0d,
 								db "Copyright (c) 2020, Joppe Blondel", 0x0a, 0x0d, 0x0a, 0x0d, 0
 S_RN							db 0x0a, 0x0d, 0
-S_INIT							db "init.bin", 0
-S_INITRAMFS						db "initramfs.tar", 0
 
 fpu_test						dw 0x55aa
-
-; Init param section
-init_param						dd 5 
-								db "init", 0
-								dd 4
-								dd 0x40000000
 
 ; -----------
 ; SECTION BSS
@@ -121,6 +114,11 @@ g_start:
 		extern	pmm_init
 		call	pmm_init
 		add		esp, 4
+
+		; Initialize interrupts
+		call	idt_install
+		extern	interrupts_init
+		call	interrupts_init
 
 hang:
 		cli

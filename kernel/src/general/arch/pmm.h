@@ -8,14 +8,6 @@
 
 
 /**
- * @brief Initialize PMM
- * 
- * @param bootinfo Architecture specific boot information (like MBOOT)\
- * @return zero if successfull 
- */
-extern int pmm_init(void * bootinfo);
-
-/**
  * @brief Allocate region in physical memory
  * 
  * @param length Length of region

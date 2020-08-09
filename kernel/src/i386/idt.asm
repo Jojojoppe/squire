@@ -85,8 +85,8 @@ global idt_set_interrupt_c
 idt_set_interrupt_c:
 		push	ebp
 		mov		ebp, esp
-		mov		edx, [ebp+8]
-		mov		eax, [ebp+12]
+		mov		edx, [ebp+12]
+		mov		eax, [ebp+8]
 		call	idt_set_interrupt
 		mov		esp, ebp
 		pop		ebp
@@ -126,8 +126,8 @@ global idt_set_interrupt_user_c
 idt_set_interrupt_user_c:
 		push	ebp
 		mov		ebp, esp
-		mov		edx, [ebp+8]
-		mov		eax, [ebp+12]
+		mov		edx, [ebp+12]
+		mov		eax, [ebp+8]
 		call	idt_set_interrupt_user
 		mov		esp, ebp
 		pop		ebp

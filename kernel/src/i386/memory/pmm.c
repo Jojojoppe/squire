@@ -27,7 +27,7 @@ int pmm_init(void * bootinfo){
 
     // Set memory used kernel as used
     // For simplicity use 4MiB kernel size
-    pmm_use(KERNEL_VIRTUAL_BASE/4096, 4*1024*1024/4096);
+    pmm_use(0x100000/4096, 4*1024*1024/4096);
 
     debug_print_sd("Memory free (B): ", pmm_mem_free);
     debug_print_sd("Memory free (KiB): ", pmm_mem_free/1024);
@@ -75,11 +75,32 @@ int pmm_alloc(unsigned int length, void ** address){
     return -1;
 }
 
-int pmm_allocs(unsigned int lengh, void * address){
+int pmm_allocs(unsigned int length, void * address){
+    // Check if correct length
+    if(!length)
+        return -1;
+    // Check if enough free space
+    if(length>pmm_mem_free)
+        return -1;
+
+    int pages = length/4096;
+    unsigned int page = (unsigned int)address/4096;
+
+    for(int i=0; i<pages; i++){
+        int byte = (page+i)/8;
+        int bit = (page+i)%8;
+        if(!((unsigned int)pmm_mem_map[byte]>>bit)&0x01){
+            return -1;
+        }
+    }
+
+    pmm_use(page, pages);
+
     return 0;
 }
 
 int pmm_free(unsigned int length, void * address){
+    pmm_unuse((unsigned int)address/4096, length/4096);
     return 0;
 }
 

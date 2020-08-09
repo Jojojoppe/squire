@@ -13,6 +13,14 @@
 
 #define KERNEL_VIRTUAL_BASE 0xc0000000
 
+// IO FUNCTIONS
+extern void io_outb(unsigned int address, unsigned char b);
+extern void io_outw(unsigned int address, unsigned short b);
+extern void io_outd(unsigned int address, unsigned int b);
+extern unsigned char io_inb(unsigned int address);
+extern unsigned short io_inw(unsigned int address);
+extern unsigned int io_ind(unsigned int address);
+
 // DEBUG FUNCTIONS
 extern void debug_print_s(char * msg);
 extern void debug_print_x(unsigned int num);
