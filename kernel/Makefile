@@ -28,7 +28,7 @@ LD				:= $(PREFIX)/bin/$(ARCH)-squire-ld
 OC				:= $(PREFIX)/bin/$(ARCH)-squire-objcopy
 OD				:= $(PREFIX)/bin/$(ARCH)-squire-objdump
 CC_WARNING		:= -Wall -Wextra
-CC_FLAGS		:= -Isrc
+CC_FLAGS		:= -Isrc -mgeneral-regs-only -mno-red-zone -mno-mmx -mno-sse -mno-sse2 -mno-sse3 -mno-3dnow
 AS_FLAGS		:= -f elf -isrc/$(ARCH)
 
 builddir:
