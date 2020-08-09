@@ -1,0 +1,1 @@
+AS_FLAGS		:= -f elf -isrc/$(ARCH)

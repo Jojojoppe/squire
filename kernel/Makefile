@@ -1,4 +1,5 @@
 include ../makefiles/env.mk
+include src/$(ARCH)/arch.mk
 
 # No all target
 all:
@@ -7,7 +8,7 @@ all:
 
 SQUIRE_VERSION  := "v0.1-1"
 
-DIRS			:= src/general src/$(ARCH)
+DIRS			:= src/$(ARCH) # src/general
 OUTPUTDIR		:= build
 TARGET			:= kernel.bin
 
@@ -31,7 +32,6 @@ OC				:= $(PREFIX)/bin/$(ARCH)-squire-objcopy
 OD				:= $(PREFIX)/bin/$(ARCH)-squire-objdump
 CC_WARNING		:= -Wall -Wextra
 CC_FLAGS		:= -Isrc -mgeneral-regs-only -mno-red-zone -mno-mmx -mno-sse -mno-sse2 -mno-sse3 -mno-3dnow 
-AS_FLAGS		:= -f elf -isrc/$(ARCH)
 DEFS			:= -DSQUIRE_ARCH=\"$(ARCH)\" -DSQUIRE_VERSION=\"$(SQUIRE_VERSION)\"
 
 builddir:
@@ -40,7 +40,7 @@ builddir:
 
 $(TARGET): builddir $(ASMOBJ) $(COBJ)
 	echo + Link $(TARGET)
-	$(LD) -g -T linker.ld -o $(TARGET) $(DEFS) $(ASMOBJ) $(COBJ) -nostdlib -lgcc
+	$(LD) -g -T src/$(ARCH)/linker.ld -o $(TARGET) $(DEFS) $(ASMOBJ) $(COBJ) -nostdlib -lgcc
 	$(OD) -d -M intel-mnemonic $(TARGET) > $(OUTPUTDIR)/DISASS
 	$(OC) --only-keep-debug $(TARGET) $(OUTPUTDIR)/DEBUG.sym
 	$(OC) --strip-debug $(TARGET)

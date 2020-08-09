@@ -122,13 +122,13 @@ $(PREFIX)/src/.newlib_configure: $(PREFIX)/src/.newlib_untar
 		touch ../.newlib_configure
 	-rm $(PREFIX)/src/.binutils_hosted
 	-rm $(PREFIX)/src/.gcc_hosted
-	-rm $(PREFIX)/bin/i386-squire-*
+	-rm $(PREFIX)/bin/$(ARCH)-squire-*
 	cd $(PREFIX)/bin; \
-		ln -s i386-elf-ar i386-squire-ar; \
-		ln -s i386-elf-as i386-squire-as; \
-		ln -s i386-elf-gcc i386-squire-cc; \
-		ln -s i386-elf-gcc i386-squire-gcc; \
-		ln -s i386-elf-ranlib i386-squire-ranlib;
+		ln -s $(ARCH)-elf-ar $(ARCH)-squire-ar; \
+		ln -s $(ARCH)-elf-as $(ARCH)-squire-as; \
+		ln -s $(ARCH)-elf-gcc $(ARCH)-squire-cc; \
+		ln -s $(ARCH)-elf-gcc $(ARCH)-squire-gcc; \
+		ln -s $(ARCH)-elf-ranlib $(ARCH)-squire-ranlib;
 $(PREFIX)/src/.newlib: $(PREFIX)/src/.autoconf $(PREFIX)/src/.automake $(PREFIX)/src/.binutils $(PREFIX)/src/.gcc $(PREFIX)/src/.newlib_configure
 	$(eval export PATH=$(PREFIX)/bin:$(PATH))
 	cd $(PREFIX)/src/build-newlib_bare ;\
@@ -179,9 +179,9 @@ $(PREFIX)/src/.newlib_configure_hosted:
 	cd $(PREFIX)/src/build-newlib_hosted; \
 		../newlib-master/configure --prefix="$(PREFIX)" --target=$(TARGET_HOSTED); \
 		touch ../.newlib_configure_hosted
-	-rm $(PREFIX)/bin/i386-squire-cc
+	-rm $(PREFIX)/bin/$(ARCH)-squire-cc
 	cd $(PREFIX)/bin; \
-		ln -s i386-squire-gcc i386-squire-cc
+		ln -s $(ARCH)-squire-gcc $(ARCH)-squire-cc
 $(PREFIX)/src/.newlib_hosted: $(PREFIX)/src/.newlib  $(PREFIX)/src/.automake $(PREFIX)/src/.autoconf $(PREFIX)/src/.binutils_hosted $(PREFIX)/src/.gcc_hosted $(PREFIX)/src/.newlib_configure_hosted
 	$(eval export PATH=$(PREFIX)/bin:$(PATH))
 	cd $(PREFIX)/src/build-newlib_hosted ;\
