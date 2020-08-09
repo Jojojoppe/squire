@@ -120,6 +120,10 @@ g_start:
 		extern	interrupts_init
 		call	interrupts_init
 
+		; Initialize VAS
+		extern vas_init
+		call	vas_init
+
 hang:
 		cli
 		hlt
