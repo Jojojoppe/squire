@@ -115,8 +115,6 @@ ISR_E("Security Exception", se)
 // ------------------
 
 int interrupts_init(){
-    debug_print_s("Initializing interrupts\r\n");
-
     remap_PIC();
     // Fill PIC interrupts with empty isr
     for(int i=0x20; i<0x30; i++){

@@ -5,6 +5,8 @@ all:
 
 .PHONY: all clean todolist builddir
 
+SQUIRE_VERSION  := "v0.1-1"
+
 DIRS			:= src/general src/$(ARCH)
 OUTPUTDIR		:= build
 TARGET			:= kernel.bin
@@ -24,12 +26,13 @@ ALLFILES		:= $(ASMFILES) $(INCFILES) $(CFILES) $(HFILES)
 # Toolchain
 CC				:= $(PREFIX)/bin/$(ARCH)-squire-gcc
 AS				:= nasm
-LD				:= $(PREFIX)/bin/$(ARCH)-squire-ld
+LD				:= $(PREFIX)/bin/$(ARCH)-squire-gcc
 OC				:= $(PREFIX)/bin/$(ARCH)-squire-objcopy
 OD				:= $(PREFIX)/bin/$(ARCH)-squire-objdump
 CC_WARNING		:= -Wall -Wextra
-CC_FLAGS		:= -Isrc -mgeneral-regs-only -mno-red-zone -mno-mmx -mno-sse -mno-sse2 -mno-sse3 -mno-3dnow
+CC_FLAGS		:= -Isrc -mgeneral-regs-only -mno-red-zone -mno-mmx -mno-sse -mno-sse2 -mno-sse3 -mno-3dnow 
 AS_FLAGS		:= -f elf -isrc/$(ARCH)
+DEFS			:= -DSQUIRE_ARCH=\"$(ARCH)\" -DSQUIRE_VERSION=\"$(SQUIRE_VERSION)\"
 
 builddir:
 	-mkdir -p $(OUTPUTDIR)/src/{general,$(ARCH)}
@@ -37,7 +40,7 @@ builddir:
 
 $(TARGET): builddir $(ASMOBJ) $(COBJ)
 	echo + Link $(TARGET)
-	$(LD) -g -T linker.ld -o $(TARGET) $(ASMOBJ) $(COBJ)
+	$(LD) -g -T linker.ld -o $(TARGET) $(DEFS) $(ASMOBJ) $(COBJ) -nostdlib -lgcc
 	$(OD) -d -M intel-mnemonic $(TARGET) > $(OUTPUTDIR)/DISASS
 	$(OC) --only-keep-debug $(TARGET) $(OUTPUTDIR)/DEBUG.sym
 	$(OC) --strip-debug $(TARGET)
@@ -45,7 +48,7 @@ $(TARGET): builddir $(ASMOBJ) $(COBJ)
 
 $(COBJ): $(OUTPUTDIR)/%.c.o: %.c
 	echo '>' $<
-	$(CC) $(CC_FLAGS) -ffreestanding -g -MMD $(CC_WARNING) -o $@ -c $<
+	$(CC) $(CC_FLAGS) $(DEFS) -ffreestanding -g -MMD $(CC_WARNING) -o $@ -c $<
 
 $(ASMOBJ): $(OUTPUTDIR)/%.asm.o: %.asm
 	echo '>' $<

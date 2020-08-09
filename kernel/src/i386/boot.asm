@@ -28,17 +28,6 @@ times (KERNEL_pagenum-1)		dd 0
 								dd 0x00000083			; First 4MB at 0xc0000000
 times (1024-KERNEL_pagenum-1)	dd 0
 
-; Strings
-; -------
-S_00							db 0x0a, 0x0d,
-								db "+---------------+", 0x0a, 0x0d
-								db "|    SQUIRE     |", 0x0a, 0x0d
-								db "+---------------+", 0x0a, 0x0d
-								db "| a microkernel |", 0x0a, 0x0d
-								db "+---------------+", 0x0a, 0x0d,
-								db "Copyright (c) 2020, Joppe Blondel", 0x0a, 0x0d, 0x0a, 0x0d, 0
-S_RN							db 0x0a, 0x0d, 0
-
 fpu_test						dw 0x55aa
 
 ; -----------
@@ -104,9 +93,6 @@ g_start:
 
 		; Initialize serial port
 		call	serial_init
-		; Write kernel name to tty
-		mov		eax, S_00
-		call	serial_outs
 
 		; Initialize pmm
 		mov		eax, [ebp-4]
@@ -123,6 +109,10 @@ g_start:
 		; Initialize VAS
 		extern vas_init
 		call	vas_init
+
+		; Jump to general C
+		extern squire_init
+		call	squire_init
 
 hang:
 		cli

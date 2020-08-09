@@ -6,6 +6,4 @@
  * The main config file
  */
 
-#define ARCH "NONE"
-
 #endif

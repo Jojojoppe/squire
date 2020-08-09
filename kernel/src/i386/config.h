@@ -8,9 +8,6 @@
 
 #include <general/arch/config.h>
 
-#undef ARCH
-#define ARCH "i386"
-
 #define KERNEL_VIRTUAL_BASE 0xc0000000
 
 // IO FUNCTIONS
