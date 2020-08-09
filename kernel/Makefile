@@ -1,5 +1,4 @@
 include ../makefiles/env.mk
-include src/$(ARCH)/arch.mk
 
 # No all target
 all:
@@ -36,6 +35,8 @@ OD				:= $(PREFIX)/bin/$(ARCH)-squire-objdump
 CC_WARNING		:= -Wall -Wextra
 CC_FLAGS		:= -Isrc -Ibuild/src -mgeneral-regs-only -mno-red-zone -mno-mmx -mno-sse -mno-sse2 -mno-sse3 -mno-3dnow 
 DEFS			:= -DSQUIRE_ARCH=\"$(ARCH)\" -DSQUIRE_VERSION=\"$(SQUIRE_VERSION)\"
+
+include src/$(ARCH)/arch.mk
 
 builddir:
 	-mkdir -p $(OUTPUTDIR)/src/{general,$(ARCH)}

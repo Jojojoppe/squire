@@ -14,12 +14,14 @@ typedef struct heap_block_s{
     size_t size;
 } heap_block_t;
 
-#define HEAP_CHUNK_USED 0
-#define HEAP_CUNK_LAST 1
+#define HEAP_CHUNK_USED 1
+#define HEAP_CHUNK_LAST 2
 typedef struct heap_chunk_s{
     size_t length;
     unsigned int flags;
 } heap_chunk_t;
+
+#define HEAP_CHUNK_MINSIZE 8
 
 /**
  * @brief Initializes the kernel heap
@@ -29,5 +31,7 @@ typedef struct heap_chunk_s{
 int kmalloc_init();
 
 void * kmalloc(size_t length);
+
+void kfree(void * address);
 
 #endif

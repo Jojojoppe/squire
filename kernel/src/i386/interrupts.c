@@ -23,13 +23,14 @@ struct state{
     unsigned int cr3;
     unsigned int cr2;
     unsigned int cr0;
-    unsigned int eflags;
+    unsigned int eip;
     unsigned int gs;
     unsigned int fs;
     unsigned int es;
     unsigned int ds;
     unsigned int ss;
     unsigned int cs;
+    unsigned int eflags;
     unsigned int edi;
     unsigned int esi;
     unsigned int ebp;
@@ -59,6 +60,7 @@ void panic(struct state * s){
     debug_print_s(" GS: "); debug_print_x(s->gs);
 
     debug_print_sx("\r\nEFLAGS: ", s->eflags);
+    debug_print_sx("EIP: ", s->eip);
 
     debug_print_s("CR0: "); debug_print_x(s->cr0);
     debug_print_s(" CR2: "); debug_print_x(s->cr2);

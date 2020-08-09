@@ -2,6 +2,7 @@
 global isr_%1
 isr_%1:
         pushad
+        pushfd
 
         xor eax, eax
         mov ax, cs
@@ -17,7 +18,8 @@ isr_%1:
         mov ax, gs
         push eax
 
-        pushfd
+        mov eax, [esp+15*4]
+        push eax
 
         mov eax, cr0
         push eax
@@ -54,6 +56,7 @@ isr_%1:
 global isr_%1
 isr_%1:
         pushad
+        pushfd
 
         xor eax, eax
         mov ax, cs
@@ -69,7 +72,8 @@ isr_%1:
         mov ax, gs
         push eax
 
-        pushfd
+        mov eax, [esp+16*4]
+        push eax
 
         mov eax, cr0
         push eax
