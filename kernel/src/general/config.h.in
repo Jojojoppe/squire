@@ -6,4 +6,6 @@
  * The main config file
  */
 
+#include <__IN_ARCH_IN__/config.h>
+
 #endif

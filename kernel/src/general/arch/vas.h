@@ -6,6 +6,8 @@
  * Defines the interface of the architecture dependent VAS (virtual address space)
  */
 
+#include <general/stdint.h>
+
 /**
  * @brief Map a physical address page to a virtual page
  * 
@@ -29,6 +31,6 @@ extern int vas_unmap(void * address);
  * @param length Amount of memory to extend
  * @return void* Address of start of new region
  */
-extern void * vas_brk(unsigned int length);
+extern void * vas_brk(size_t length);
 
 #endif

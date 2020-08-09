@@ -6,8 +6,6 @@
  * The main config file of the i386 architecture
  */
 
-#include <general/arch/config.h>
-
 #define KERNEL_VIRTUAL_BASE 0xc0000000
 
 // IO FUNCTIONS

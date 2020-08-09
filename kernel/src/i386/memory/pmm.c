@@ -36,7 +36,7 @@ int pmm_init(void * bootinfo){
     return 0;
 }
 
-int pmm_alloc(unsigned int length, void ** address){
+int pmm_alloc(size_t length, void ** address){
     // Check if correct length
     if(!length)
         return -1;
@@ -75,7 +75,7 @@ int pmm_alloc(unsigned int length, void ** address){
     return -1;
 }
 
-int pmm_allocs(unsigned int length, void * address){
+int pmm_allocs(size_t length, void * address){
     // Check if correct length
     if(!length)
         return -1;
@@ -99,7 +99,7 @@ int pmm_allocs(unsigned int length, void * address){
     return 0;
 }
 
-int pmm_free(unsigned int length, void * address){
+int pmm_free(size_t length, void * address){
     pmm_unuse((unsigned int)address/4096, length/4096);
     return 0;
 }

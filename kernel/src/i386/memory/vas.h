@@ -8,8 +8,7 @@
 
 // The ARCH interface
 #include <general/arch/vas.h>
-// The architecture configuration
-#include <i386/config.h>
+#include <general/config.h>
 
 /**
  * @brief Initialize VAS

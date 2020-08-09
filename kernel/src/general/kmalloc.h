@@ -6,16 +6,18 @@
  * Kernel heap functions
  */
 
+#include <general/stdint.h>
+
 typedef struct heap_block_s{
     struct heap_block_s * next;
-    unsigned int biggest;
-    unsigned int size;
+    size_t biggest;
+    size_t size;
 } heap_block_t;
 
 #define HEAP_CHUNK_USED 0
 #define HEAP_CUNK_LAST 1
 typedef struct heap_chunk_s{
-    unsigned int length;
+    size_t length;
     unsigned int flags;
 } heap_chunk_t;
 
@@ -25,5 +27,7 @@ typedef struct heap_chunk_s{
  * @return zero if successfull
  */
 int kmalloc_init();
+
+void * kmalloc(size_t length);
 
 #endif

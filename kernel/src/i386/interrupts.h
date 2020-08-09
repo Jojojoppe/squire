@@ -6,8 +6,7 @@
  * Main interrupt functions
  */
 
-// The architecture configuration
-#include <i386/config.h>
+#include <general/config.h>
 
 int interrupts_init();
 

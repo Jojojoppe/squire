@@ -6,6 +6,7 @@
  * Defines the interface of the architecture dependent PMM
  */
 
+#include <general/stdint.h>
 
 /**
  * @brief Allocate region in physical memory
@@ -14,7 +15,7 @@
  * @param address Address of variable to store start of region
  * @return zero if successfull
  */
-extern int pmm_alloc(unsigned int length, void ** address);
+extern int pmm_alloc(size_t length, void ** address);
 
 /**
  * @brief Allocate specific region in physical memory
@@ -23,7 +24,7 @@ extern int pmm_alloc(unsigned int length, void ** address);
  * @param address Start of region
  * @return zero if successfull
  */
-extern int pmm_allocs(unsigned int length, void * address);
+extern int pmm_allocs(size_t length, void * address);
 
 /**
  * @brief Free a region in physical memory
@@ -32,6 +33,6 @@ extern int pmm_allocs(unsigned int length, void * address);
  * @param address Start of region
  * @return zero if successfull
  */
-extern int pmm_free(unsigned int lenght, void * address);
+extern int pmm_free(size_t lenght, void * address);
 
 #endif

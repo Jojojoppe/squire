@@ -1,4 +1,5 @@
 #include <general/kprintf.h>
+#include <general/kmalloc.h>
 
 /**
  * @brief Main init function
@@ -19,5 +20,6 @@ void squire_init(){
         "compiled for: %s\r\n" \
     , SQUIRE_VERSION, SQUIRE_ARCH);
 
-    
+    // Initialize kernel heap
+    kmalloc_init();
 }

@@ -46,7 +46,7 @@ int vas_unmap(void * address){
     return 0;;
 }
 
-void * vas_brk(unsigned int length){
+void * vas_brk(size_t length){
     void * physical;
     pmm_alloc(length, &physical);
     for(int i=0; i<length/4096; i++){
