@@ -1,5 +1,8 @@
 #include <general/kprintf.h>
 #include <general/kmalloc.h>
+#include <general/config.h>
+
+#include <general/vmm.h>
 
 /**
  * @brief Main init function
@@ -22,4 +25,9 @@ void squire_init(){
 
     // Initialize kernel heap
     kmalloc_init();
+
+    // Initialize processing
+
+    // Add timer for kernel ticks
+
 }
