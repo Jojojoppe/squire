@@ -7,7 +7,7 @@ TARGET_HOSTED		= $(ARCH)-squire
 # ----------------
 $(PREFIX)/tar/binutils-2.31_squire.tar.gz:
 	-mkdir $(PREFIX)/tar
-	curl -k http://git.joppeb.nl/squire/binutils.git/snapshot/binutils-master.tar.gz > $(PREFIX)/tar/binutils-2.31_squire.tar.gz
+	curl -k https://git.joppeb.nl/squire/binutils.git/snapshot/binutils-master.tar.gz > $(PREFIX)/tar/binutils-2.31_squire.tar.gz
 $(PREFIX)/src/.binutils_untar: $(PREFIX)/tar/binutils-2.31_squire.tar.gz
 	-mkdir $(PREFIX)/src
 	tar -xf $(PREFIX)/tar/binutils-2.31_squire.tar.gz -C $(PREFIX)/src
@@ -15,7 +15,7 @@ $(PREFIX)/src/.binutils_untar: $(PREFIX)/tar/binutils-2.31_squire.tar.gz
 
 $(PREFIX)/tar/gcc-8.2.0_squire.tar.gz:
 	-mkdir $(PREFIX)/tar
-	curl -k http://git.joppeb.nl/squire/gcc.git/snapshot/gcc-master.tar.gz/ > $(PREFIX)/tar/gcc-8.2.0_squire.tar.gz
+	curl -k https://git.joppeb.nl/squire/gcc.git/snapshot/gcc-master.tar.gz/ > $(PREFIX)/tar/gcc-8.2.0_squire.tar.gz
 $(PREFIX)/src/.gcc_untar: $(PREFIX)/tar/gcc-8.2.0_squire.tar.gz
 	-mkdir $(PREFIX)/src
 	tar -xf $(PREFIX)/tar/gcc-8.2.0_squire.tar.gz -C $(PREFIX)/src
@@ -23,7 +23,7 @@ $(PREFIX)/src/.gcc_untar: $(PREFIX)/tar/gcc-8.2.0_squire.tar.gz
 
 $(PREFIX)/tar/autoconf-2.65_squire.tar.gz:
 	-mkdir $(PREFIX)/tar
-	curl -k http://git.joppeb.nl/squire/autoconf.git/snapshot/autoconf-master.tar.gz > $(PREFIX)/tar/autoconf-2.65_squire.tar.gz
+	curl -k https://git.joppeb.nl/squire/autoconf.git/snapshot/autoconf-master.tar.gz > $(PREFIX)/tar/autoconf-2.65_squire.tar.gz
 $(PREFIX)/src/.autoconf_untar: $(PREFIX)/tar/autoconf-2.65_squire.tar.gz
 	-mkdir $(PREFIX)/src
 	tar -xf $(PREFIX)/tar/autoconf-2.65_squire.tar.gz -C $(PREFIX)/src
@@ -31,7 +31,7 @@ $(PREFIX)/src/.autoconf_untar: $(PREFIX)/tar/autoconf-2.65_squire.tar.gz
 
 $(PREFIX)/tar/automake-1.11_squire.tar.gz:
 	-mkdir $(PREFIX)/tar
-	curl -k http://git.joppeb.nl/squire/automake.git/snapshot/automake-master.tar.gz > $(PREFIX)/tar/automake-1.11_squire.tar.gz
+	curl -k https://git.joppeb.nl/squire/automake.git/snapshot/automake-master.tar.gz > $(PREFIX)/tar/automake-1.11_squire.tar.gz
 $(PREFIX)/src/.automake_untar: $(PREFIX)/tar/automake-1.11_squire.tar.gz
 	-mkdir $(PREFIX)/src
 	tar -xf $(PREFIX)/tar/automake-1.11_squire.tar.gz -C $(PREFIX)/src
@@ -39,7 +39,7 @@ $(PREFIX)/src/.automake_untar: $(PREFIX)/tar/automake-1.11_squire.tar.gz
 
 $(PREFIX)/tar/newlib-2.50_squire.tar.gz:
 	-mkdir $(PREFIX)/tar
-	curl -k http://git.joppeb.nl/squire/newlib.git/snapshot/newlib-master.tar.gz > $(PREFIX)/tar/newlib-2.50_squire.tar.gz
+	curl -k https://git.joppeb.nl/squire/newlib.git/snapshot/newlib-master.tar.gz > $(PREFIX)/tar/newlib-2.50_squire.tar.gz
 $(PREFIX)/src/.newlib_untar: $(PREFIX)/tar/newlib-2.50_squire.tar.gz
 	-mkdir $(PREFIX)/src
 	tar -xf $(PREFIX)/tar/newlib-2.50_squire.tar.gz -C $(PREFIX)/src
