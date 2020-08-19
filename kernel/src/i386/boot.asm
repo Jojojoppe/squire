@@ -41,6 +41,14 @@ align 0x1000
 boot_stack_btm					resb KERNEL_stacksize
 global boot_stack_top
 boot_stack_top:
+global boot_stack_top_C
+boot_stack_top_C				resd 1
+
+global tss_btm
+tss_btm							resd 26
+tss_top:
+global TSS
+TSS								resd 1
 
 ; ------------
 ; SECTION TEXT
@@ -109,6 +117,18 @@ g_start:
 		; Initialize VAS
 		extern vas_init
 		call	vas_init
+
+		; Set TSS
+		mov		eax, tss_btm
+		mov		[TSS], eax
+		call	gdt_settss
+
+		; Set boot stack top variable
+		mov		eax, boot_stack_top_C
+		mov		dword [eax], boot_stack_top
+
+		; Create space for stack modification
+		sub		esp, 64
 
 		; Jump to general C
 		extern squire_init

@@ -17,4 +17,6 @@
  */
 int vas_init();
 
+unsigned int vas_getcr3();
+
 #endif

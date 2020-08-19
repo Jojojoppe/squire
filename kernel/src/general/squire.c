@@ -1,8 +1,7 @@
 #include <general/kprintf.h>
+#include <general/arch/proc.h>
 #include <general/kmalloc.h>
 #include <general/config.h>
-
-#include <general/vmm.h>
 
 /**
  * @brief Main init function
@@ -27,6 +26,8 @@ void squire_init(){
     kmalloc_init();
 
     // Initialize processing
+    proc_init();
+    printf("Whithin process!!\r\n");
 
     // Add timer for kernel ticks
 

@@ -106,7 +106,7 @@ gdt_settss:
 		mov		[edx+47], al
 		mov		ax, 0x2b
 		ltr		ax
-
+		
 		mov		esp, ebp
 		pop		ebp
 		ret

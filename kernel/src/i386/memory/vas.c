@@ -81,3 +81,9 @@ void * vas_brk(size_t length){
     vas_k_brk += 4096*(length/4096);
     return (void*)old_brk;
 }
+
+unsigned int vas_getcr3(){
+    unsigned int cr3;
+    __asm__ __volatile__("movl %%""cr3, %%eax":"=a"(cr3));
+    return cr3;
+}

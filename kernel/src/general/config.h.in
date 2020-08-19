@@ -23,6 +23,18 @@
  */
 #define VMM_USERREGION_LENGTH 0
 
+/**
+ * @brief Size of architecture specific data field in proc_proc_t
+ * 
+ */
+#define PROC_PROCDATA_SIZE 0
+
+/**
+ * @brief Size of architecture specific data field in proc_thread_t
+ * 
+ */
+#define PROC_THREADDATA_SIZE 0
+
 
 #include <__IN_ARCH_IN__/config.h>
 
