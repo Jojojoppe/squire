@@ -8,9 +8,10 @@ extern unsigned int * TSS;
 void * proc_create_return_stack_frame(unsigned int * stack, void * retaddr, unsigned int eax, unsigned int ebx, unsigned int ecx, unsigned int edx, unsigned int esi, unsigned int edi);
 void proc_thread_start();
 
-int proc_init(){
-    void * return_addr;
-    __asm__ __volatile__("movl 4(%%ebp), %%eax":"=a"(return_addr));
+int proc_init(void (*return_addr)()){
+    //void * return_addr;
+    //__asm__ __volatile__("movl 4(%%ebp), %%eax":"=a"(return_addr));
+    //printf("return_addr = %08x\r\n", return_addr);
 
     // Initialize the TSS
     TSS[1] = 0 ;        // ESP0
@@ -40,8 +41,8 @@ int proc_init(){
     proc_thread_arch_data_t * t_arch_data = (proc_thread_arch_data_t*)proc_thread_current->arch_data;
     t_arch_data->tss_esp0 = 0;
     extern unsigned int * boot_stack_top_C;
-    t_arch_data->kstack = proc_create_return_stack_frame(boot_stack_top_C, return_addr, 1, 2, 3, 4, 5, 6)-8;
-    printf("kstack = %08x\r\n", t_arch_data->kstack);
+    t_arch_data->kstack = proc_create_return_stack_frame(boot_stack_top_C, return_addr, 1, 2, 3, 4, 5, 6);
+    //printf("kstack = %08x\r\n", t_arch_data->kstack);
 
     // Switch to created process
     proc_thread_switch(proc_thread_current, 0);
@@ -50,29 +51,32 @@ int proc_init(){
 }
 
 void proc_thread_start(){
-    printf("PROC_THREAD_START\r\n");
-    __asm__ __volatile__("int $0");
-    __asm__ __volatile__("sti");
-    __asm__ __volatile__("ret");
+    void (*return_addr)();
+    __asm__ __volatile__("movl 4(%%ebp), %%eax":"=a"(return_addr));
+
+    //__asm__ __volatile__("sti");
+    return_addr();
+
+    for(;;);
 }
 
 void * proc_create_return_stack_frame(unsigned int * stack, void * retaddr, unsigned int eax, unsigned int ebx, unsigned int ecx, unsigned int edx, unsigned int esi, unsigned int edi){
     unsigned int stack_top = (unsigned int)stack;
-    *(--stack) = retaddr;
-    *(--stack) = stack_top;
-    *(--stack) = proc_thread_start;
-    *(--stack) = stack_top;
-    *(--stack) = eax;
-    *(--stack) = ecx;
-    *(--stack) = edx;
-    *(--stack) = ebx;
-    *(--stack) = 0;
-    *(--stack) = stack_top-16;
-    *(--stack) = esi;
-    *(--stack) = edi;
-    *(--stack) = 0x00200202;
 
-    return (void*)(stack);
+    *(stack-2) = retaddr;               // Return address
+    *(stack-3) = proc_thread_start;     // Return address of proc_thread_start
+    *(stack-4) = stack_top;             // Old ebp
+    *(stack-5) = eax;
+    *(stack-6) = ecx;
+    *(stack-7) = edx;
+    *(stack-8) = ebx;
+    *(stack-9) = stack_top-12;          // esp (=ebp)
+    *(stack-10) = stack_top-12;          // ebp
+    *(stack-11) = esi;
+    *(stack-12) = edi;
+    *(stack-13) = 0x00200086;           // EFLAGS
+
+    return (void*)(stack-13);
 }
 
 int proc_thread_switch(proc_thread_t * to, proc_proc_t * from){
@@ -96,7 +100,7 @@ int proc_thread_switch(proc_thread_t * to, proc_proc_t * from){
     __asm__ __volatile__("popfd");
     __asm__ __volatile__("popad");
     __asm__ __volatile__(".att_syntax noprefix");
-    asm("int $0");
+    //asm("int $2");
 
     return 0;
 }

@@ -3,6 +3,8 @@
 #include <general/kmalloc.h>
 #include <general/config.h>
 
+void squire_init2();
+
 /**
  * @brief Main init function
  * 
@@ -26,9 +28,14 @@ void squire_init(){
     kmalloc_init();
 
     // Initialize processing
-    proc_init();
-    printf("Whithin process!!\r\n");
+    proc_init(squire_init2);
+}
 
-    // Add timer for kernel ticks
-
+/**
+ * @brief Rest of main init function
+ * 
+ * This function is called after the process intialization
+ */
+squire_init2(){
+    printf("- Multitasking initialized\r\n");
 }

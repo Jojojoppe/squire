@@ -50,9 +50,10 @@ static unsigned int proc_PID_counter;
  * Sets the current execution as first process/thread and sets it as currently
  * running
  * 
+ * @param return_addr Address to jump to when done with initialization
  * @return zero if successful
  */
-int proc_init();
+int proc_init(void (*return_addr)());
 
 /**
  * @brief Switch to thread
