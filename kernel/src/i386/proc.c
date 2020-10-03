@@ -54,7 +54,6 @@ void proc_thread_start(){
     void (*return_addr)();
     __asm__ __volatile__("movl 4(%%ebp), %%eax":"=a"(return_addr));
 
-    //__asm__ __volatile__("sti");
     return_addr();
 
     for(;;);

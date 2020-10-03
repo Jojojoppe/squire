@@ -1,5 +1,6 @@
 #include <general/kprintf.h>
 #include <general/arch/proc.h>
+#include <general/arch/timer.h>
 #include <general/kmalloc.h>
 #include <general/config.h>
 
@@ -36,6 +37,11 @@ void squire_init(){
  * 
  * This function is called after the process intialization
  */
-squire_init2(){
+void squire_init2(){
+    timer_init();
     printf("- Multitasking initialized\r\n");
+
+    for(;;){
+        printf("\r[%08d] SQUIRE", timer_get());
+    }
 }

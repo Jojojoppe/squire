@@ -1,4 +1,5 @@
 #include <i386/interrupts.h>
+#include <general/arch/timer.h>
 
 extern idt_set_interrupt_c(unsigned int num, void (*handler)());
 extern idt_set_interrupt_user_c(unsigned int num, void (*handler)());
@@ -114,6 +115,14 @@ ISR_N("SIMD Floating-Point Exceptions", si)
 ISR_N("Virtualization Exception", vi)
 ISR_E("Security Exception", se)
 
+
+void isr_c_timer (){ \
+    timer_interrupt();
+    io_outb(0xa0, 0x20);
+    io_outb(0x20, 0x20);
+}
+extern void isr_timer();
+
 // ------------------
 
 int interrupts_init(){
@@ -146,10 +155,15 @@ int interrupts_init(){
     idt_set_interrupt_c(20, isr_vi);
     idt_set_interrupt_c(30, isr_se);
 
+    // Set timer interrupt
+    idt_set_interrupt_c(0x20, isr_timer);
+
     return 0;
 }
 
 void remap_PIC(){
+    unsigned char a1 = io_inb(0x21);
+    unsigned char a2 = io_inb(0xa1);
     io_outb(0x20, 0x11);
     io_outb(0xa0, 0x11);        // Restart PICs
     io_outb(0x21, 0x20);        // PIC1 starts at 0x20
@@ -158,8 +172,8 @@ void remap_PIC(){
     io_outb(0xa1, 0x02);        // Setup cascading
     io_outb(0x21, 0x01);
     io_outb(0xa1, 0x01);        // 8086 mode
-    io_outb(0x21, 0x00);
-    io_outb(0xa1, 0x00);        // Disable all interrupts
+    io_outb(0x21, a1);
+    io_outb(0xa1, a2);          // Restore masks
 }
 
 void isr_empty_N(){

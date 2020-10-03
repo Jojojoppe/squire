@@ -108,6 +108,21 @@ isr_%1:
         iret
 %endmacro
 
+%macro ISR 1
+global isr_%1
+isr_%1:
+        pushad
+        pushfd
+
+        extern isr_c_%1
+        call isr_c_%1
+
+        popfd
+        popad
+        sti
+        iret
+%endmacro
+
 ISR_N dz
 ISR_N db
 ISR_N nmi
@@ -129,3 +144,5 @@ ISR_N mc
 ISR_N si
 ISR_N vi
 ISR_E se
+
+ISR timer
