@@ -65,6 +65,15 @@ int proc_init(void (*return_addr)());
 int proc_thread_switch(proc_thread_t * to, proc_proc_t * from);
 
 /**
+ * @brief Switch to process
+ * 
+ * @param to Process to switch to
+ * @param from Process to switch from. Saves the current state in this structure
+ * @return zero if successfull
+ */
+int proc_proc_switch(proc_proc_t * to, proc_proc_t * from);
+
+/**
  * @brief Execute in user thread
  * 
  * Sets up a user stack and kernel stack and jumps to ring 3. Paramters are stored
@@ -72,5 +81,19 @@ int proc_thread_switch(proc_thread_t * to, proc_proc_t * from);
  * start of a user thread
  */
 void proc_user_exec();
+
+/**
+ * @brief Get current thread
+ * 
+ * @return current thread
+ */
+proc_thread_t * proc_thread_get_current();
+
+/**
+ * @brief Get current process
+ * 
+ * @return current process
+ */
+proc_proc_t * proc_proc_get_current();
 
 #endif

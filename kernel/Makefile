@@ -33,7 +33,7 @@ LD				:= $(PREFIX)/bin/$(ARCH)-squire-gcc
 OC				:= $(PREFIX)/bin/$(ARCH)-squire-objcopy
 OD				:= $(PREFIX)/bin/$(ARCH)-squire-objdump
 CC_WARNING		:= -Wall -Wextra
-CC_FLAGS		:= -Isrc -Ibuild/src -mgeneral-regs-only -mno-red-zone -mno-mmx -mno-sse -mno-sse2 -mno-sse3 -mno-3dnow 
+CC_FLAGS		:= -Isrc -Ibuild/src -mgeneral-regs-only -mno-red-zone -mno-mmx -mno-sse -mno-sse2 -mno-sse3 -mno-3dnow -O0
 DEFS			:= -DSQUIRE_ARCH=\"$(ARCH)\" -DSQUIRE_VERSION=\"$(SQUIRE_VERSION)\"
 
 include src/$(ARCH)/arch.mk

@@ -41,6 +41,7 @@ int proc_init(void (*return_addr)()){
     //printf("kstack = %08x\r\n", t_arch_data->kstack);
 
     // Switch to created process
+    printf("proc_thread_current: %08x\r\n", &proc_thread_current);
     proc_thread_switch(proc_thread_current, 0);
 
     return 0;
@@ -49,6 +50,8 @@ int proc_init(void (*return_addr)()){
 void proc_thread_start(){
     void (*return_addr)();
     __asm__ __volatile__("movl 4(%%ebp), %%eax":"=a"(return_addr));
+
+    printf("proc_thread_current: %08x\r\n", &proc_thread_current);
 
     return_addr();
 
@@ -74,7 +77,7 @@ void * proc_create_return_stack_frame(unsigned int * stack, void * retaddr, unsi
     return (void*)(stack-13);
 }
 
-int proc_thread_switch(proc_thread_t * to, proc_proc_t * from){
+int proc_thread_switch (proc_thread_t * to, proc_proc_t * from){
     __asm__ __volatile__("cli");
     extern unsigned int * TSS;
     proc_thread_current = to;
@@ -85,19 +88,30 @@ int proc_thread_switch(proc_thread_t * to, proc_proc_t * from){
         __asm__ __volatile__("pushad");
         __asm__ __volatile__("pushfd");
         __asm__ __volatile__(".att_syntax noprefix");
-        __asm__ __volatile__("mov %%esp, %%eax":"=a"(((proc_thread_arch_data_t*)from->arch_data)->kstack));
+        __asm__ __volatile__("mov %esp, %esi");
+        __asm__ __volatile__("nop":"=S"(((proc_thread_arch_data_t*)from->arch_data)->kstack));
         ((proc_thread_arch_data_t*)from->arch_data)->tss_esp0 = TSS[4];
+        //asm("int $1");
     }
     TSS[4] = ((proc_thread_arch_data_t*)to->arch_data)->tss_esp0;
     __asm__ __volatile__("frstor (%%eax)"::"a"(((proc_thread_arch_data_t*)(to->arch_data))->fpudata));
-    __asm__ __volatile__("mov %%eax, %%esp"::"a"(((proc_thread_arch_data_t*)to->arch_data)->kstack));
+    __asm__ __volatile__("nop"::"S"(((proc_thread_arch_data_t*)to->arch_data)->kstack));
+    __asm__ __volatile__("mov %esi, %esp");
+    //if(from) asm("int $1");
     __asm__ __volatile__(".intel_syntax noprefix");
     __asm__ __volatile__("popfd");
     __asm__ __volatile__("popad");
     __asm__ __volatile__(".att_syntax noprefix");
-    //asm("int $2");
 
     return 0;
+}
+
+int proc_proc_switch(proc_proc_t * to, proc_proc_t * from){
+    // Set VAS
+    proc_proc_arch_data_t * arch_data = (proc_proc_arch_data_t*)to->arch_data;
+    //__asm__ __volatile__("mov %%eax, %%cr3"::"a"(arch_data->cr3));
+
+    proc_thread_switch(to->threads, proc_thread_current);
 }
 
 /* Paramters:
@@ -155,4 +169,12 @@ void proc_user_exec(){
     __asm__ __volatile__("xor %eax, %eax"); // Param data in eax
 
     __asm__ __volatile__("iret");
+}
+
+proc_thread_t * proc_thread_get_current(){
+    return proc_thread_current;
+}
+
+proc_proc_t * proc_proc_get_current(){
+    return proc_proc_current;
 }

@@ -40,9 +40,10 @@ void squire_init(){
  */
 void squire_init2(){
     timer_init();
+    
     printf("- Multitasking initialized\r\n");
 
     for(;;){
-        printf("\r[%08d] SQUIRE", timer_get());
+        //printf("\r[%08d] SQUIRE", timer_get());
     }
 }
