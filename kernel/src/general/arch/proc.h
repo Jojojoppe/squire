@@ -64,4 +64,13 @@ int proc_init(void (*return_addr)());
  */
 int proc_thread_switch(proc_thread_t * to, proc_proc_t * from);
 
+/**
+ * @brief Execute in user thread
+ * 
+ * Sets up a user stack and kernel stack and jumps to ring 3. Paramters are stored
+ * in archtitecture specific way. This function is used as return address for the
+ * start of a user thread
+ */
+void proc_user_exec();
+
 #endif

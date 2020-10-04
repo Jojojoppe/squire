@@ -9,10 +9,6 @@ void * proc_create_return_stack_frame(unsigned int * stack, void * retaddr, unsi
 void proc_thread_start();
 
 int proc_init(void (*return_addr)()){
-    //void * return_addr;
-    //__asm__ __volatile__("movl 4(%%ebp), %%eax":"=a"(return_addr));
-    //printf("return_addr = %08x\r\n", return_addr);
-
     // Initialize the TSS
     TSS[1] = 0 ;        // ESP0
     TSS[2] = 0x10;      // SS0
@@ -102,4 +98,61 @@ int proc_thread_switch(proc_thread_t * to, proc_proc_t * from){
     //asm("int $2");
 
     return 0;
+}
+
+/* Paramters:
+ *      eax:    Address to jump to
+ *      edx:    User stack address
+ *      ecx:    argv data as pairs of [number of bytes, data]
+ *      ebx:    argc
+ */
+void proc_user_exec(){
+    __asm__ __volatile__("cli");
+
+    // Get parameters
+    unsigned int address, user_stack, argc;
+    unsigned int * argv;
+    __asm__ __volatile__("nop":"=a"(address));
+    __asm__ __volatile__("nop":"=d"(user_stack));
+    __asm__ __volatile__("nop":"=c"(argc));
+    __asm__ __volatile__("nop":"=b"(argv));
+
+    // Load current esp as kernel stack in tss
+    unsigned int esp;
+    __asm__ __volatile__("mov %%esp, %%eax":"=a"(esp));
+    TSS[1] = esp;
+    TSS[2] = 0x10;
+
+    // Get EFLAGS
+    unsigned int EFLAGS;
+    __asm__ __volatile__("pushf");
+    __asm__ __volatile__("pop %%eax":"=a"(EFLAGS));
+    // Re-enable interrupts
+    EFLAGS |= 0x200;
+
+    // Jump to user space
+    __asm__ __volatile__("mov $0x23, %eax");
+    __asm__ __volatile__("mov %ax, %ds");
+    __asm__ __volatile__("mov %ax, %es");
+    __asm__ __volatile__("mov %ax, %fs");
+    __asm__ __volatile__("mov %ax, %gs");
+
+    __asm__ __volatile__("push %eax");
+    __asm__ __volatile__("push %%eax"::"a"(user_stack));
+    __asm__ __volatile__("push %%eax"::"a"(EFLAGS));
+    __asm__ __volatile__("mov $0x1b, %eax");
+    __asm__ __volatile__("push %eax");
+    __asm__ __volatile__("push %%eax"::"a"(address));
+
+    // Clear registers
+    __asm__ __volatile__("xor %eax, %eax");
+    __asm__ __volatile__("mov %eax, %ebx");
+    __asm__ __volatile__("mov %eax, %ecx");
+    __asm__ __volatile__("mov %eax, %edx");
+    __asm__ __volatile__("mov %eax, %esi");
+    __asm__ __volatile__("mov %eax, %edi");
+    __asm__ __volatile__("mov %%eax, %%ebp"::"a"(user_stack));
+    __asm__ __volatile__("xor %eax, %eax"); // Param data in eax
+
+    __asm__ __volatile__("iret");
 }

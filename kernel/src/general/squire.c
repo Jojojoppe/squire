@@ -35,7 +35,8 @@ void squire_init(){
 /**
  * @brief Rest of main init function
  * 
- * This function is called after the process intialization
+ * This function is called after the process intialization. From now on
+ * squire is running in process 1 thread 1
  */
 void squire_init2(){
     timer_init();
