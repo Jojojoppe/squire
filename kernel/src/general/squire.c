@@ -4,6 +4,13 @@
 #include <general/kmalloc.h>
 #include <general/config.h>
 
+void testA(){
+    for(;;){
+        printf("\r[%08d] testA", timer_get());
+    }
+}
+
+
 void squire_init2();
 
 /**
@@ -43,7 +50,10 @@ void squire_init2(){
     
     printf("- Multitasking initialized\r\n");
 
+    void * stack = kmalloc(4096);
+    proc_thread_t * newthread = proc_thread_new(testA, stack, proc_proc_get_current());
+
     for(;;){
-        //printf("\r[%08d] SQUIRE", timer_get());
+        printf("\r[%08d] SQUIRE", timer_get());
     }
 }

@@ -8,7 +8,7 @@ static unsigned long timer_value;
 void timer_interrupt(){
     timer_value++;
 
-    if((timer_value&0x07)==0x07)
+    if((timer_value&0x0f)==0x0f)
         schedule();
 }
 

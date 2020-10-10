@@ -41,7 +41,6 @@ int proc_init(void (*return_addr)()){
     //printf("kstack = %08x\r\n", t_arch_data->kstack);
 
     // Switch to created process
-    printf("proc_thread_current: %08x\r\n", &proc_thread_current);
     proc_thread_switch(proc_thread_current, 0);
 
     return 0;
@@ -51,9 +50,13 @@ void proc_thread_start(){
     void (*return_addr)();
     __asm__ __volatile__("movl 4(%%ebp), %%eax":"=a"(return_addr));
 
-    printf("proc_thread_current: %08x\r\n", &proc_thread_current);
+    printf("proc_thread_current: %08x\r\n", proc_thread_current);
+    printf("proc_proc_current: %08x\r\n", proc_proc_current);
+    __asm__ __volatile__("sti");
 
     return_addr();
+
+    printf("DONE\r\n");
 
     for(;;);
 }
@@ -61,7 +64,8 @@ void proc_thread_start(){
 void * proc_create_return_stack_frame(unsigned int * stack, void * retaddr, unsigned int eax, unsigned int ebx, unsigned int ecx, unsigned int edx, unsigned int esi, unsigned int edi){
     unsigned int stack_top = (unsigned int)stack;
 
-    *(stack-2) = retaddr;               // Return address
+    *(stack-1) = retaddr;
+    *(stack-2) = proc_thread_start;               // Return address
     *(stack-3) = proc_thread_start;     // Return address of proc_thread_start
     *(stack-4) = stack_top;             // Old ebp
     *(stack-5) = eax;
@@ -77,13 +81,16 @@ void * proc_create_return_stack_frame(unsigned int * stack, void * retaddr, unsi
     return (void*)(stack-13);
 }
 
-int proc_thread_switch (proc_thread_t * to, proc_proc_t * from){
+int proc_thread_switch (proc_thread_t * to, proc_thread_t * from){
+    if(to==from)
+        return 1;
+
     __asm__ __volatile__("cli");
     extern unsigned int * TSS;
     proc_thread_current = to;
     if(from){
         // Save current state in from
-        __asm__ __volatile__("fsave (%%eax)"::"a"(((proc_thread_arch_data_t*)(from->arch_data))->fpudata));
+        //__asm__ __volatile__("fsave (%%eax)"::"a"(((proc_thread_arch_data_t*)(from->arch_data))->fpudata));
         __asm__ __volatile__(".intel_syntax noprefix");
         __asm__ __volatile__("pushad");
         __asm__ __volatile__("pushfd");
@@ -91,13 +98,11 @@ int proc_thread_switch (proc_thread_t * to, proc_proc_t * from){
         __asm__ __volatile__("mov %esp, %esi");
         __asm__ __volatile__("nop":"=S"(((proc_thread_arch_data_t*)from->arch_data)->kstack));
         ((proc_thread_arch_data_t*)from->arch_data)->tss_esp0 = TSS[4];
-        //asm("int $1");
     }
     TSS[4] = ((proc_thread_arch_data_t*)to->arch_data)->tss_esp0;
-    __asm__ __volatile__("frstor (%%eax)"::"a"(((proc_thread_arch_data_t*)(to->arch_data))->fpudata));
+    //__asm__ __volatile__("frstor (%%eax)"::"a"(((proc_thread_arch_data_t*)(to->arch_data))->fpudata));
     __asm__ __volatile__("nop"::"S"(((proc_thread_arch_data_t*)to->arch_data)->kstack));
     __asm__ __volatile__("mov %esi, %esp");
-    //if(from) asm("int $1");
     __asm__ __volatile__(".intel_syntax noprefix");
     __asm__ __volatile__("popfd");
     __asm__ __volatile__("popad");
@@ -112,6 +117,7 @@ int proc_proc_switch(proc_proc_t * to, proc_proc_t * from){
     //__asm__ __volatile__("mov %%eax, %%cr3"::"a"(arch_data->cr3));
 
     proc_thread_switch(to->threads, proc_thread_current);
+    return 0;
 }
 
 /* Paramters:
@@ -177,4 +183,22 @@ proc_thread_t * proc_thread_get_current(){
 
 proc_proc_t * proc_proc_get_current(){
     return proc_proc_current;
+}
+
+proc_thread_t * proc_thread_new(void * code, void * stack, proc_proc_t * process){
+    __asm__ __volatile__("cli");
+    proc_thread_t * thread = (proc_thread_t*)kmalloc(sizeof(proc_thread_t));
+    // Link stucture to process
+    proc_thread_t * last = process->threads;
+    while(last->next)
+        last = last->next;
+    last->next = thread;
+    thread->prev = last;
+    // Fill other data
+    thread->id = proc_PID_counter++;
+    proc_thread_arch_data_t * archdata = (proc_thread_arch_data_t*) thread->arch_data;
+    archdata->tss_esp0 = 0;
+    archdata->kstack = proc_create_return_stack_frame(stack, code, 0, 0, 0, 0, 0, 0);
+    __asm__ __volatile__("sti");
+    return thread;
 }

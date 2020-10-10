@@ -116,10 +116,10 @@ ISR_N("Virtualization Exception", vi)
 ISR_E("Security Exception", se)
 
 
-void isr_c_timer (){ \
-    timer_interrupt();
+void isr_c_timer(){
     io_outb(0xa0, 0x20);
     io_outb(0x20, 0x20);
+    timer_interrupt();
 }
 extern void isr_timer();
 

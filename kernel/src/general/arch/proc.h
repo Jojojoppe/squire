@@ -62,7 +62,7 @@ int proc_init(void (*return_addr)());
  * @param from Thread to switch from. Saves the current state in this structure. 0 if not saving
  * @return zero if successfull
  */
-int proc_thread_switch(proc_thread_t * to, proc_proc_t * from);
+int proc_thread_switch(proc_thread_t * to, proc_thread_t * from);
 
 /**
  * @brief Switch to process
@@ -95,5 +95,15 @@ proc_thread_t * proc_thread_get_current();
  * @return current process
  */
 proc_proc_t * proc_proc_get_current();
+
+/**
+ * @brief Create new thread
+ * 
+ * @param code Code to execute
+ * @param stack Stack
+ * @param process Process to add thread to
+ * @return Created thread structure, NULL if not successfull
+ */
+proc_thread_t * proc_thread_new(void * code, void * stack, proc_proc_t * process);
 
 #endif
