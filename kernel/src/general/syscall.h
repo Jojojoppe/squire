@@ -1,8 +1,7 @@
-#ifndef __H_SQUIRE
-#define __H_SQUIRE 1
+#ifndef __H_SYSCALL
+#define __H_SYSCALL 1
 
-#include <stdint.h>
-#include <stdlib.h>
+#include <general/stdint.h>
 
 // -------------------
 // System call numbers
@@ -30,19 +29,11 @@ typedef struct squire_params_log_s squire_params_log_t;
 
 // ----------------------------------
 
-// --------------------
-// System call wrappers
-// --------------------
-#if defined(__cplusplus)
-extern "C" {
-#endif
+enum SYSCALL_ERROR{
+    SYSCALL_ERROR_GENERAL = -1,
+    SYSCALL_ERROR_PARAMS = -2
+};
 
-extern void * squire_syscall_mmap(void * address, size_t length, uint32_t flags);
-extern void squire_syscall_log(char * data, size_t length);
-
-#if defined(__cplusplus)
-} /* extern "C" */
-#endif
-// --------------------
+unsigned syscall(unsigned int opcode, void * param_block, size_t param_len);
 
 #endif

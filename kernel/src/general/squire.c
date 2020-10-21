@@ -92,7 +92,7 @@ void squire_init2(){
     proc_thread_new(init_entry, 0xc0000000-4, proc_proc_get_current());
 
     for(;;){
-        printf("\r[%08d] SQUIRE", timer_get());
+        printf("\r[%08d]\r", timer_get());
     }
 }
 

@@ -1,5 +1,7 @@
 #include <i386/interrupts.h>
 #include <general/arch/timer.h>
+#include <general/syscall.h>
+#include <general/stdint.h>
 
 extern idt_set_interrupt_c(unsigned int num, void (*handler)());
 extern idt_set_interrupt_user_c(unsigned int num, void (*handler)());
@@ -123,6 +125,20 @@ void isr_c_timer(){
 }
 extern void isr_timer();
 
+void isr_c_syscall(){
+    unsigned int opcode;
+    size_t param_len;
+    void * param_block;
+    __asm__ __volatile__("nop":"=a"(opcode));
+    __asm__ __volatile__("nop":"=c"(param_block));
+    __asm__ __volatile__("nop":"=d"(param_len));
+    unsigned int ret = syscall(opcode, param_len, param_block);
+    __asm__ __volatile__("nop"::"a"(ret));
+    __asm__ __volatile__("movl %eax, 40(%ebp)");
+	asm __volatile__("int $0");
+}
+extern void isr_syscall();
+
 // ------------------
 
 int interrupts_init(){
@@ -157,6 +173,9 @@ int interrupts_init(){
 
     // Set timer interrupt
     idt_set_interrupt_c(0x20, isr_timer);
+
+    // Set syscall interrupt
+    idt_set_interrupt_user_c(0x80, isr_syscall);
 
     return 0;
 }

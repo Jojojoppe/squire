@@ -146,3 +146,4 @@ ISR_N vi
 ISR_E se
 
 ISR timer
+ISR syscall

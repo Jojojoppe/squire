@@ -1,2 +1,0 @@
-extern tar_printlist
-extern tar_getfile
