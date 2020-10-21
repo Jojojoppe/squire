@@ -91,7 +91,7 @@ int proc_thread_switch (proc_thread_t * to, proc_thread_t * from){
     proc_thread_current = to;
     if(from){
         // Save current state in from
-        //__asm__ __volatile__("fsave (%%eax)"::"a"(((proc_thread_arch_data_t*)(from->arch_data))->fpudata));
+        __asm__ __volatile__("fsave (%%eax)"::"a"(((proc_thread_arch_data_t*)(from->arch_data))->fpudata));
         __asm__ __volatile__(".intel_syntax noprefix");
         __asm__ __volatile__("pushad");
         __asm__ __volatile__("pushfd");
@@ -101,7 +101,7 @@ int proc_thread_switch (proc_thread_t * to, proc_thread_t * from){
         ((proc_thread_arch_data_t*)from->arch_data)->tss_esp0 = TSS[4];
     }
     TSS[4] = ((proc_thread_arch_data_t*)to->arch_data)->tss_esp0;
-    //__asm__ __volatile__("frstor (%%eax)"::"a"(((proc_thread_arch_data_t*)(to->arch_data))->fpudata));
+    __asm__ __volatile__("frstor (%%eax)"::"a"(((proc_thread_arch_data_t*)(to->arch_data))->fpudata));
     __asm__ __volatile__("nop"::"S"(((proc_thread_arch_data_t*)to->arch_data)->kstack));
     __asm__ __volatile__("mov %esi, %esp");
     __asm__ __volatile__(".intel_syntax noprefix");
@@ -115,7 +115,7 @@ int proc_thread_switch (proc_thread_t * to, proc_thread_t * from){
 int proc_proc_switch(proc_proc_t * to, proc_proc_t * from){
     // Set VAS
     proc_proc_arch_data_t * arch_data = (proc_proc_arch_data_t*)to->arch_data;
-    //__asm__ __volatile__("mov %%eax, %%cr3"::"a"(arch_data->cr3));
+    __asm__ __volatile__("mov %%eax, %%cr3"::"a"(arch_data->cr3));
 
     proc_thread_switch(to->threads, proc_thread_current);
     return 0;

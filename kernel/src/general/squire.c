@@ -5,19 +5,6 @@
 #include <general/schedule.h>
 #include <general/config.h>
 
-void testA(){
-    for(;;){
-        printf("\n\r[%08d] testA", timer_get());
-    }
-}
-
-void testB(){
-    for(;;){
-        printf("\n\r[%08d] testB", timer_get());
-    }
-}
-
-
 void squire_init2();
 
 /**
@@ -57,17 +44,7 @@ void squire_init2(){
     
     printf("- Multitasking initialized\r\n");
 
-    schedule_disable();
-        void * stackA = kmalloc(4096) + 4096 - 4;
-        void * stackB = kmalloc(4096) + 4096 - 4;
-        printf("create testA\r\n");
-        proc_thread_new(testA, stackA, proc_proc_get_current());
-        printf("create testB\r\n");
-        proc_thread_new(testB, stackB, proc_proc_get_current());
-        printf("created test tasks\r\n");
-    schedule_enable();
-
     for(;;){
-        printf("\n\r[%08d] SQUIRE", timer_get());
+        printf("\r[%08d] SQUIRE", timer_get());
     }
 }

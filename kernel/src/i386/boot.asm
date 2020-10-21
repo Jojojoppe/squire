@@ -130,6 +130,15 @@ g_start:
 		; Create space for stack modification
 		sub		esp, 64
 
+		; Check support for x87 FPU
+		mov		eax, cr0
+		and		eax, ~(1<<2 | 1<<3)
+		mov		cr0, eax
+		fninit
+		fnstsw	[fpu_test]
+		cmp		word [fpu_test], 0
+		jne		hang
+
 		; Jump to general C
 		extern squire_init
 		call	squire_init
