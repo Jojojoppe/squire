@@ -21,6 +21,15 @@
 #undef PROC_THREADDATA_SIZE
 #define PROC_THREADDATA_SIZE (8+128)
 
+#undef ELF_CLASS
+#define ELF_CLASS 1
+#undef ELF_DATA
+#define ELF_DATA 1
+#undef ELF_OSABI
+#define ELF_OSABI 0
+#undef ELF_ISA
+#define ELF_ISA 3
+
 
 // ARCHITECTURE ONLY DEFINES
 // -------------------------

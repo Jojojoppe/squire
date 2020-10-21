@@ -4,6 +4,7 @@
 #include <general/kmalloc.h>
 #include <general/schedule.h>
 #include <general/mboot.h>
+#include <general/elf.h>
 #include <general/config.h>
 
 void squire_init2();
@@ -68,13 +69,19 @@ void squire_init2(){
     void * init_address;
     size_t init_length;
     if(mboot_get_mod("init.bin", &init_address, &init_length))
-        error("Could not load init.bin from MBOOT modules");
+        error("Could not find init.bin in MBOOT modules");
+    printf("- init.bin found\r\n");
 
     // Find initramfs.tar
     void * initramfs_address;
     size_t initramfs_length;
     if(mboot_get_mod("initramfs.tar", &initramfs_address, &initramfs_length))
-        error("Could not load initramfs.tar from MBOOT modules");
+        error("Could not find initramfs.tar in MBOOT modules");
+    printf("- initramfs.tar found\r\n");
+
+    // Load init.bin into memory
+    if(elf_load_simple(init_address))
+        error("Could not load init.bin");
 
     for(;;){
         printf("\r[%08d] SQUIRE", timer_get());

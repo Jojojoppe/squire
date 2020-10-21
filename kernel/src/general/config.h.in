@@ -35,6 +35,29 @@
  */
 #define PROC_THREADDATA_SIZE 0
 
+/**
+ * @brief ELF class: 1 for 32b, 2 for 64b
+ * 
+ */
+#define ELF_CLASS 0
+
+/**
+ * @brief ELF endianness: 1 for little, 2 for big
+ * 
+ */
+#define ELF_DATA 0
+
+/**
+ * @brief ELF os ABI
+ * 
+ */
+#define ELF_OSABI 0
+
+/**
+ * @brief ELF ISA
+ * 
+ */
+#define ELF_ISA 0
 
 #include <__IN_ARCH_IN__/config.h>
 
