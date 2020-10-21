@@ -5,6 +5,7 @@
  * @section DESCRIPTION
  * Multiboot structures
  */
+#include <general/stdint.h>
 
 #define MBOOT_MAGIC 0x1badboo2
 #define MBOOT_FLAGS 0x07
@@ -48,5 +49,22 @@ typedef struct{
     unsigned int        length_h;
     unsigned char       type;
 } __attribute__((packed)) mboot_mmap_t;
+
+typedef struct{
+	unsigned int		start;
+	unsigned int		end;
+	unsigned int		string;
+	unsigned int		reserved;
+} __attribute__((packed)) mboot_mod_t;
+
+/**
+ * @brief Get a MBOOT loadable module
+ * 
+ * @param name Name of module to get
+ * @param address Address of the variable storing the address of the module
+ * @param length Address of the variable storing the length of the module
+ * @return Zero if successful
+ */
+unsigned int mboot_get_mod(const char * name, void ** address, size_t * length);
 
 #endif

@@ -36,6 +36,8 @@ section .bss
 align 0x1000
 ; -----------
 
+mboot_header_address			resd 1
+
 ; Boot time kernel stack
 ; ----------------------
 boot_stack_btm					resb KERNEL_stacksize
@@ -95,6 +97,7 @@ g_start:
 		sub		esp, 4
 		add		ebx, KERNEL_virtualbase
 		mov		[ebp-4], ebx
+		mov		[mboot_header_address], ebx
 
 		; Load GDT
 		call	gdt_install
@@ -140,6 +143,10 @@ g_start:
 		jne		hang
 
 		; Jump to general C
+		mov		eax, KERNEL_virtualbase
+		push	eax
+		mov		eax, [mboot_header_address]
+		push	eax
 		extern squire_init
 		call	squire_init
 
