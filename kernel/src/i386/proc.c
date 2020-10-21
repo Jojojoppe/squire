@@ -204,3 +204,7 @@ proc_thread_t * proc_thread_new(void * code, void * stack, proc_proc_t * process
     __asm__ __volatile__("sti");
     return thread;
 }
+
+vmm_region_t * proc_get_memory(){
+    return proc_proc_get_current()->memory;
+}

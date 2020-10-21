@@ -49,26 +49,26 @@ int vmm_alloc(void * base, size_t length, unsigned int flags, vmm_region_t ** li
     // Find the descriptor of the region
     vmm_region_t * region = *list;
     while(region){
-        printf("region?: %08x [%08x] -- %08x [%08x]\n", region->base, region->length, base, length);
+        // printf("region?: %08x [%08x] -- %08x [%08x]\n", region->base, region->length, base, length);
         if((size_t)region->base<=(size_t)base && (size_t)region->base+region->length>(size_t)base){
-            printf("Usable\n");
+            // printf("Usable\n");
             // Within this current region
             // Check if free
             if((region->flags&VMM_FLAGS_USED)!=0){
-                printf("Already in use\n");
+                // printf("Already in use\n");
                 // Already in use
                 return -1;
             }
             // Check if within region bounds (if request is not to large)
             if((size_t)region->base+region->length<(size_t)base+length){
-                printf("Not within bounds\n");
+                // printf("Not within bounds\n");
                 // Request to large
                 return -1;
             }
             // Region usable
             // Check if new region must be made before new one
             if((size_t)base>(size_t)region->base){
-                printf("Make preregion\n");
+                // printf("Make preregion\n");
                 // Create new region before current one
                 vmm_region_t * preregion = kmalloc(sizeof(vmm_region_t));
                 preregion->base = region->base;
@@ -82,11 +82,11 @@ int vmm_alloc(void * base, size_t length, unsigned int flags, vmm_region_t ** li
                 region->prev = preregion;
                 region->length -= preregion->length;
                 region->base = base;
-                printf("preregion %08x [%08x]\n", preregion->base, preregion->length);
+                // printf("preregion %08x [%08x]\n", preregion->base, preregion->length);
             }
             // Check if new region must be made after new one
             if(length<region->length){
-                printf("Make postregion\n");
+                // printf("Make postregion\n");
                 // Create new region after current one
                 vmm_region_t * postregion = kmalloc(sizeof(vmm_region_t));
                 postregion->base = (size_t)region->base + length;
@@ -100,7 +100,7 @@ int vmm_alloc(void * base, size_t length, unsigned int flags, vmm_region_t ** li
                 region->next = postregion;
                 region->length = length;
             }
-            printf("Allocate region\n");
+            // printf("Allocate region\n");
             // Allocate new region
             // Set flags
             region->flags = VMM_FLAGS_USED | flags;

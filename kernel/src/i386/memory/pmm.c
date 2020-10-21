@@ -53,7 +53,7 @@ int pmm_alloc(size_t length, void ** address){
         if(!pmm_mem_map[i])
             continue;
         for(int j=0; j<8; j++){
-            if(((unsigned int)pmm_mem_map[i]>>j)&0x01){
+            if(((unsigned char*)pmm_mem_map)[i] & 1<<j){
                 // Found free bit
                 cont++;
                 if(!streak){
@@ -89,6 +89,7 @@ int pmm_allocs(size_t length, void * address){
     for(int i=0; i<pages; i++){
         int byte = (page+i)/8;
         int bit = (page+i)%8;
+        // TODO check if right
         if(!((unsigned int)pmm_mem_map[byte]>>bit)&0x01){
             return -1;
         }
@@ -137,10 +138,10 @@ int pmm_mboot_get_mmap(mboot_info_t * mboot_info, mboot_mmap_t ** previous, void
 void pmm_unuse(unsigned int pagenum, unsigned int amount){
     for(int i=0; i<amount; i++){
         // Get index of page
-        int index = pagenum>>5;
+        int index = pagenum>>3;
         // Get bit index of page
-        int bit = pagenum&0x1f;
-        ((unsigned int*)pmm_mem_map)[index] |= 1<<bit;
+        int bit = pagenum&0x7;
+        ((unsigned char*)pmm_mem_map)[index] |= 1<<bit;
         pmm_mem_free += 4096;
         pagenum++;
     }
@@ -149,10 +150,10 @@ void pmm_unuse(unsigned int pagenum, unsigned int amount){
 void pmm_use(unsigned int pagenum, unsigned int amount){
     for(int i=0; i<amount; i++){
         // Get index of page
-        int index = pagenum>>5;
+        int index = pagenum>>3;
         // Get bit index of page
-        int bit = pagenum&0x1f;
-        ((unsigned int*)pmm_mem_map)[index] &= ~(1<<bit);
+        int bit = pagenum&0x7;
+        ((unsigned char*)pmm_mem_map)[index] &= ~(1<<bit);
         pmm_mem_free -= 4096;
         pagenum++;
     }

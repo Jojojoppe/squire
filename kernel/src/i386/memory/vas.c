@@ -30,6 +30,7 @@ int vas_map(void * physical, void * address, unsigned int flags){
     }else{
         *((unsigned int*)(KERNEL_PT)+PT) = (unsigned int)physical | 0x05;
     }
+    asm("movl %cr3,%eax; movl %eax,%cr3");
     return 0;
 }
 
@@ -47,6 +48,7 @@ int vas_unmap(void * address){
     }
     // Set PTE
     *((unsigned int*)(KERNEL_PT)+PT) = 0;
+    asm("movl %cr3,%eax; movl %eax,%cr3");
     return 0;;
 }
 
@@ -68,6 +70,7 @@ int vas_unmap_free(void * address){
     }
     // Set PTE
     *((unsigned int*)(KERNEL_PT)+PT) = 0;
+    asm("movl %cr3,%eax; movl %eax,%cr3");
     return 0;;
 }
 

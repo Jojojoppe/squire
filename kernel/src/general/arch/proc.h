@@ -106,4 +106,11 @@ proc_proc_t * proc_proc_get_current();
  */
 proc_thread_t * proc_thread_new(void * code, void * stack, proc_proc_t * process);
 
+/**
+ * @brief Get memory list of process
+ * 
+ * @return vmm_region_t* memory list
+ */
+vmm_region_t * proc_get_memory();
+
 #endif

@@ -113,15 +113,17 @@ enum ELF_ERROR{
     ELF_ERROR_WRONG_CLASS,
     ELF_ERROR_WRONG_ENDIANNESS,
     ELF_ERROR_WRONG_ISA,
-    ELF_ERROR_NOT_EXECUTABLE
+    ELF_ERROR_NOT_EXECUTABLE,
+    ELF_ERROR_MEMORY
 };
 
 /**
  * @brief Load ELF file without dynamic linking
  * 
  * @param address Starting address of ELF file
+ * @param entry Address of variable which stores entry
  * @return Zero if successful
  */
-unsigned int elf_load_simple(void * address);
+unsigned int elf_load_simple(void * address, void (**entry)());
 
 #endif

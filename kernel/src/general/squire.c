@@ -80,8 +80,16 @@ void squire_init2(){
     printf("- initramfs.tar found\r\n");
 
     // Load init.bin into memory
-    if(elf_load_simple(init_address))
+    void (*init_entry)();
+    if(elf_load_simple(init_address, &init_entry))
         error("Could not load init.bin");
+
+    printf("- Entry init.bin at %08x\r\n", init_entry);
+
+    // Crrete user stack
+    vmm_alloc(0xbfffc000,0x4000,VMM_FLAGS_READ|VMM_FLAGS_WRITE,proc_get_memory());
+
+    proc_thread_new(init_entry, 0xc0000000-4, proc_proc_get_current());
 
     for(;;){
         printf("\r[%08d] SQUIRE", timer_get());

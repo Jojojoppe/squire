@@ -1,6 +1,9 @@
 #include <general/elf.h>
+#include <general/arch/proc.h>
+#include <general/vmm.h>
+#include <general/string.h>
 
-unsigned int elf_load_simple(void * address){
+unsigned int elf_load_simple(void * address, void (**entry)()){
 
     elf_header_t * eheader = (elf_header_t*)address;
 
@@ -19,6 +22,24 @@ unsigned int elf_load_simple(void * address){
         return ELF_ERROR_NOT_EXECUTABLE;
     
     elf_header2_t * eheader2 = (elf_header2_t*)(address + sizeof(elf_header_t));
+    vmm_region_t * memory = proc_get_memory();
+
+    // Get program header
+    elf_program_header_t * pheader = (elf_program_header_t*)(address + eheader2->e_phoff);
+    for(int i=0; i<eheader2->e_phnum; i++){
+        // If loadable segment
+        if(pheader[i].p_type==1){
+            size_t length = pheader[i].p_memsz + (0x1000-(pheader[i].p_memsz%0x1000));
+            if(vmm_alloc(pheader[i].p_vaddr, length, VMM_FLAGS_EXEC | VMM_FLAGS_READ | VMM_FLAGS_WRITE, &memory)){
+                printf("Could not allocate memory\r\n");
+                return ELF_ERROR_MEMORY;
+            }
+            memset(pheader[i].p_vaddr,0, length);
+            memcpy(pheader[i].p_vaddr,address+pheader[i].p_offset,pheader[i].p_filesz);
+        }
+    }
+
+    *entry = eheader2->e_entry;
 
     return 0;
 }

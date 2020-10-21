@@ -100,7 +100,7 @@ isr_%1:
         mov ebx, esp
         cld
         extern isr_c_%1
-        mov eax, [esp+8*4]
+        mov eax, [esp+30*4]
         push eax
         push ebx
         call isr_c_%1
