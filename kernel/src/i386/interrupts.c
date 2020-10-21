@@ -135,7 +135,6 @@ void isr_c_syscall(){
     unsigned int ret = syscall(opcode, param_len, param_block);
     __asm__ __volatile__("nop"::"a"(ret));
     __asm__ __volatile__("movl %eax, 40(%ebp)");
-	asm __volatile__("int $0");
 }
 extern void isr_syscall();
 

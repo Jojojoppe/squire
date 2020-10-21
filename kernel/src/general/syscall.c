@@ -6,7 +6,6 @@
 #include <general/vmm.h>
 
 unsigned int syscall_mmap(squire_params_mmap_t * params){
-    printf("vmm_alloc(%08x, %08x)\r\n", params->address, params->length);
     // Check OK memory region
     if(params->length<PAGE_SIZE || params->length>VMM_USERREGION_LENGTH)
         return SYSCALL_ERROR_PARAMS;
@@ -14,8 +13,9 @@ unsigned int syscall_mmap(squire_params_mmap_t * params){
         return SYSCALL_ERROR_PARAMS;
 
     vmm_region_t * memory = proc_get_memory();
-    if(vmm_alloc(params->address, params->length, VMM_FLAGS_READ|VMM_FLAGS_WRITE, memory))
+    if(vmm_alloc(params->address, params->length, VMM_FLAGS_READ|VMM_FLAGS_WRITE, &memory))
         return SYSCALL_ERROR_PARAMS;
+    proc_set_memory(memory);
 
     return 0;
 }
@@ -27,7 +27,6 @@ unsigned int syscall_log(squire_params_log_t * params){
 }
 
 unsigned int syscall(unsigned int opcode, void * param_block, size_t param_len){
-    printf("SYSCALL [%08x] - %08x %d\r\n", opcode, param_block, param_len);
     switch(opcode){
 
         case SQUIRE_SYSCALL_MMAP:{

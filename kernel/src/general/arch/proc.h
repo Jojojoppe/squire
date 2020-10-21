@@ -113,4 +113,11 @@ proc_thread_t * proc_thread_new(void * code, void * stack, proc_proc_t * process
  */
 vmm_region_t * proc_get_memory();
 
+/**
+ * @brief Set memory list
+ * 
+ * @param region 
+ */
+void proc_set_memory(vmm_region_t * region);
+
 #endif

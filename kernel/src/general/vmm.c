@@ -45,6 +45,7 @@ int vmm_destroy(vmm_region_t ** base){
 int vmm_alloc(void * base, size_t length, unsigned int flags, vmm_region_t ** list){
     if(!length)
         return -1;
+    // printf("vmm_alloc(%08x, %08x) @ %08x\r\n", base, length, list);
 
     // Find the descriptor of the region
     vmm_region_t * region = *list;
@@ -99,7 +100,11 @@ int vmm_alloc(void * base, size_t length, unsigned int flags, vmm_region_t ** li
                 }
                 region->next = postregion;
                 region->length = length;
+                // printf("postregion %08x [%08x]\n", postregion->base, postregion->length);
+            }else{
+                region->next = 0;
             }
+            
             // printf("Allocate region\n");
             // Allocate new region
             // Set flags
@@ -117,7 +122,8 @@ int vmm_alloc(void * base, size_t length, unsigned int flags, vmm_region_t ** li
             }
 
             // Check if list is prepended
-            if((*list)->prev){
+            while((*list)->prev){
+                // printf("Set prepend\r\n");
                 *list = (*list)->prev;
             }
             return 0;
@@ -139,13 +145,14 @@ void vmm_debug(vmm_region_t * list){
     vmm_region_t * region = list;
     while(region){
 
-        printf("region:\n");
+        printf("region [%08x]:\n", region);
         printf(" - base:    %08x\n", region->base);
         printf(" - length:  %08x\n", region->length);
         printf(" - flags:   %08x\n", region->flags);
+        printf(" - next:    %08x\r\n", region->next);
 
         // To next region
-        if(region->next){
+        if(region->next && region->next!=region){
             region = region->next;
             continue;
         }

@@ -208,3 +208,7 @@ proc_thread_t * proc_thread_new(void * code, void * stack, proc_proc_t * process
 vmm_region_t * proc_get_memory(){
     return proc_proc_get_current()->memory;
 }
+
+void proc_set_memory(vmm_region_t * region){
+    proc_proc_get_current()->memory = region;
+}

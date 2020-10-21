@@ -40,6 +40,7 @@ unsigned int elf_load_simple(void * address, void (**entry)()){
     }
 
     *entry = eheader2->e_entry;
+    proc_set_memory(memory);
 
     return 0;
 }
