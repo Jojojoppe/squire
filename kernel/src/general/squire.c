@@ -2,11 +2,18 @@
 #include <general/arch/proc.h>
 #include <general/arch/timer.h>
 #include <general/kmalloc.h>
+#include <general/schedule.h>
 #include <general/config.h>
 
 void testA(){
     for(;;){
-        printf("\r[%08d] testA", timer_get());
+        printf("\n\r[%08d] testA", timer_get());
+    }
+}
+
+void testB(){
+    for(;;){
+        printf("\n\r[%08d] testB", timer_get());
     }
 }
 
@@ -50,10 +57,17 @@ void squire_init2(){
     
     printf("- Multitasking initialized\r\n");
 
-    void * stack = kmalloc(4096);
-    proc_thread_t * newthread = proc_thread_new(testA, stack, proc_proc_get_current());
+    schedule_disable();
+        void * stackA = kmalloc(4096) + 4096 - 4;
+        void * stackB = kmalloc(4096) + 4096 - 4;
+        printf("create testA\r\n");
+        proc_thread_new(testA, stackA, proc_proc_get_current());
+        printf("create testB\r\n");
+        proc_thread_new(testB, stackB, proc_proc_get_current());
+        printf("created test tasks\r\n");
+    schedule_enable();
 
     for(;;){
-        printf("\r[%08d] SQUIRE", timer_get());
+        printf("\n\r[%08d] SQUIRE", timer_get());
     }
 }

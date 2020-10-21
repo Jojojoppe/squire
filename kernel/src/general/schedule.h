@@ -16,4 +16,7 @@
  */
 void schedule();
 
+void schedule_disable();
+void schedule_enable();
+
 #endif

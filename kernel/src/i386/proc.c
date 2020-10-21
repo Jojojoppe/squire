@@ -50,13 +50,14 @@ void proc_thread_start(){
     void (*return_addr)();
     __asm__ __volatile__("movl 4(%%ebp), %%eax":"=a"(return_addr));
 
-    printf("proc_thread_current: %08x\r\n", proc_thread_current);
-    printf("proc_proc_current: %08x\r\n", proc_proc_current);
+    // printf("proc_thread_current: %08x\r\n", proc_thread_current);
+    // printf("proc_proc_current: %08x\r\n", proc_proc_current);
+    // printf("proc_proc_current->next: %08x\r\n", proc_proc_current->next);
     __asm__ __volatile__("sti");
 
     return_addr();
 
-    printf("DONE\r\n");
+    // printf("DONE\r\n");
 
     for(;;);
 }
@@ -194,6 +195,7 @@ proc_thread_t * proc_thread_new(void * code, void * stack, proc_proc_t * process
         last = last->next;
     last->next = thread;
     thread->prev = last;
+    thread->next = 0;
     // Fill other data
     thread->id = proc_PID_counter++;
     proc_thread_arch_data_t * archdata = (proc_thread_arch_data_t*) thread->arch_data;
