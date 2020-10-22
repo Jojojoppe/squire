@@ -171,7 +171,7 @@ int interrupts_init(){
     idt_set_interrupt_c(30, isr_se);
 
     // Set timer interrupt
-    idt_set_interrupt_c(0x20, isr_timer);
+    idt_set_interrupt_user_c(0x20, isr_timer);
 
     // Set syscall interrupt
     idt_set_interrupt_user_c(0x80, isr_syscall);

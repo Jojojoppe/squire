@@ -15,7 +15,7 @@ void scpy(char * d, char * s){
 }
 
 uint32_t squire_syscall_process(void * elf_start, size_t elf_length, int argc, char ** argv){
-	int paramsize = argc*4;
+	/*int paramsize = argc*4;
 	for(int i=0; i<argc; i++){
 		paramsize += slen(argv[i])+1;
 	}
@@ -27,14 +27,14 @@ uint32_t squire_syscall_process(void * elf_start, size_t elf_length, int argc, c
 		p += 4;
 		scpy(p, argv[i]);
 		p += len;
-	}
+	}*/
 
 	squire_params_process_t parms;
 	parms.elf_start = elf_start;
 	parms.elf_length = elf_length;
 	parms.argc = argc;
-	parms.param_data = paramdata;
-	parms.param_data_size = paramsize;
+	parms.param_data = 0;
+	parms.param_data_size = 0;
 	asm __volatile__("int $0x80"::"a"(SQUIRE_SYSCALL_PROCESS),"c"(sizeof(parms)),"d"(&parms));
 	return parms.elf_start;
 }

@@ -92,9 +92,7 @@ void squire_init2(){
     vmm_alloc(0xbfffc000,0x4000,VMM_FLAGS_READ|VMM_FLAGS_WRITE,&proc_mem);
     proc_set_memory(proc_mem);
 
-    printf("- Create new user thread for init.bin: ");
     proc_thread_new_user(init_entry, 0xbfffc000, 0x4000, proc_proc_get_current());
-    printf("OK\r\n");
 }
 
 /**

@@ -40,9 +40,9 @@ int proc_init(void (*return_addr)()){
     proc_thread_current->stack_length = 0;  // Stack is embedded in kernel, cant be freed
     // Set architecture specific data
     proc_thread_arch_data_t * t_arch_data = (proc_thread_arch_data_t*)proc_thread_current->arch_data;
-    t_arch_data->tss_esp0 = 0;
     extern unsigned int * boot_stack_top_C;
     t_arch_data->kstack = proc_create_return_stack_frame(boot_stack_top_C, return_addr, 1, 2, 3, 4, 5, 6);
+    t_arch_data->tss_esp0 = 0;
     //printf("kstack = %08x\r\n", t_arch_data->kstack);
 
     // Switch to created process
@@ -53,9 +53,16 @@ int proc_init(void (*return_addr)()){
 
 void proc_thread_start(){
     void (*return_addr)();
+    unsigned int ebx, ecx;
+    __asm__ __volatile__("movl %%ebx, %%eax":"=a"(ebx));
+    __asm__ __volatile__("movl %%ecx, %%eax":"=a"(ecx));
     __asm__ __volatile__("movl 4(%%ebp), %%eax":"=a"(return_addr));
-    __asm__ __volatile__("sti");
 
+    // printf("proc_thread_start(%08x) ebx = %08x ecx = %08x\r\n", return_addr, ebx, ecx);
+
+    __asm__ __volatile__("movl %%eax, %%ebx"::"a"(ebx));
+    __asm__ __volatile__("movl %%eax, %%ecx"::"a"(ecx));
+    __asm__ __volatile__("sti");
     return_addr();
 
     schedule_disable();
@@ -98,6 +105,8 @@ void proc_thread_start(){
 void * proc_create_return_stack_frame(unsigned int * stack, void * retaddr, unsigned int eax, unsigned int ebx, unsigned int ecx, unsigned int edx, unsigned int esi, unsigned int edi){
     unsigned int stack_top = (unsigned int)stack;
 
+    // printf("New stack frame: %08x %08x %08x %08x %08x %08x\r\n", eax, ebx, ecx, edx, esi, edi);
+
     *(stack-1) = retaddr;
     *(stack-2) = proc_thread_start;               // Return address
     *(stack-3) = proc_thread_start;     // Return address of proc_thread_start
@@ -119,8 +128,13 @@ int proc_thread_switch (proc_thread_t * to, proc_thread_t * from){
     if(to==from)
         return 1;
 
-    __asm__ __volatile__("cli");
     extern unsigned int * TSS;
+
+    // printf("* SWITCH %08x -> %08x\r\n", from, to);
+    // printf("    from kstack %08x\r\n", TSS[4]);
+    // printf("    to kstack %08x\r\n", ((proc_thread_arch_data_t*)to->arch_data)->tss_esp0);
+
+    __asm__ __volatile__("cli");
     proc_thread_current = to;
     if(from){
         // Save current state in from
@@ -131,9 +145,9 @@ int proc_thread_switch (proc_thread_t * to, proc_thread_t * from){
         __asm__ __volatile__(".att_syntax noprefix");
         __asm__ __volatile__("mov %esp, %esi");
         __asm__ __volatile__("nop":"=S"(((proc_thread_arch_data_t*)from->arch_data)->kstack));
-        ((proc_thread_arch_data_t*)from->arch_data)->tss_esp0 = TSS[4];
+        ((proc_thread_arch_data_t*)from->arch_data)->tss_esp0 = TSS[1];
     }
-    TSS[4] = ((proc_thread_arch_data_t*)to->arch_data)->tss_esp0;
+    TSS[1] = ((proc_thread_arch_data_t*)to->arch_data)->tss_esp0;
     __asm__ __volatile__("frstor (%%eax)"::"a"(((proc_thread_arch_data_t*)(to->arch_data))->fpudata));
     __asm__ __volatile__("nop"::"S"(((proc_thread_arch_data_t*)to->arch_data)->kstack));
     __asm__ __volatile__("mov %esi, %esp");
@@ -166,10 +180,10 @@ void proc_user_exec(){
     // Get parameters
     unsigned int address, user_stack, argc;
     unsigned int * argv;
-    __asm__ __volatile__("nop":"=D"(address));
-    __asm__ __volatile__("nop":"=d"(user_stack));
-    __asm__ __volatile__("nop":"=c"(argc));
-    __asm__ __volatile__("nop":"=b"(argv));
+    __asm__ __volatile__("nop":"=c"(address));
+    __asm__ __volatile__("nop":"=b"(user_stack));
+    // __asm__ __volatile__("nop":"=c"(argc));
+    // __asm__ __volatile__("nop":"=b"(argv));
 
     // printf("user exec @ %08x stack: %08x\r\n", address, user_stack);
 
@@ -254,14 +268,20 @@ proc_thread_t * proc_thread_new_user(void * code, void * stack, size_t stack_len
     thread->next = 0;
     // Create kernel stack 
     // TODO fix stack stuff
-    void * kstack = kmalloc(4096);
-    thread->stack = kstack;
-    thread->stack_length = 4096;
+    void * kstack = vas_brk(4096);
+    thread->stack = stack;
+    thread->stack_length = stack_length;
     // Fill other data
     thread->id = proc_PID_counter++;
     proc_thread_arch_data_t * archdata = (proc_thread_arch_data_t*) thread->arch_data;
-    archdata->tss_esp0 = 0;
-    archdata->kstack = proc_create_return_stack_frame(kstack+4096-4, proc_user_exec, 0, 0, 0, stack+stack_length-4, 0, code);
+    archdata->tss_esp0 = kstack+4096-4;
+
+    // printf("proc_thread_new_user(%08x, %08x, %08x)\r\n", code, stack, stack_length);
+    // printf("    user stack %08x\r\n", stack+stack_length-4);
+    // printf("    kernel stack %08x\r\n", kstack + 4096 - 4);
+
+    archdata->kstack = proc_create_return_stack_frame(kstack+4096-4, proc_user_exec, 0, stack+stack_length-4, code, 0, 0, 0);
+
     __asm__ __volatile__("sti");
     return thread;
 }

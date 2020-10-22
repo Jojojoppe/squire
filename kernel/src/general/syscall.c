@@ -22,10 +22,14 @@ unsigned int syscall_mmap(squire_params_mmap_t * params){
 }
 
 unsigned int syscall_thread(squire_params_thread_t * params){
-    proc_thread_t * new = proc_thread_new(params->entry, params->stack_base, params->stack_length, proc_proc_get_current());
-    params->entry = new->id;
-    proc_proc_t * pcurrent = proc_proc_get_current();
-    params->stack_base = pcurrent->id;
+    schedule_disable();
+        proc_thread_t * new = proc_thread_new_user(params->entry, params->stack_base, params->stack_length, proc_proc_get_current());
+        params->entry = new->id;
+        proc_proc_t * pcurrent = proc_proc_get_current();
+        params->stack_base = pcurrent->id;
+    schedule_enable();
+    // printf("New thread created\r\n");
+    // asm("int $0");
     return 0;
 }
 
@@ -47,6 +51,11 @@ unsigned int syscall_join(squire_params_join_t * params){
             schedule();
         }
     }
+    return 0;
+}
+
+unsigned int syscall_process(squire_params_process_t * params){
+    // asm("int $0");
     return 0;
 }
 
@@ -81,6 +90,13 @@ unsigned int syscall(unsigned int opcode, void * param_block, size_t param_len){
             squire_params_join_t * params = (squire_params_join_t*)param_block;
             returncode = syscall_join(params);
         } break;
+
+        case SQUIRE_SYSCALL_PROCESS:{
+            if(param_len<sizeof(squire_params_process_t))
+                return SYSCALL_ERROR_GENERAL;
+            squire_params_process_t * params = (squire_params_process_t*)param_block;
+            returncode = syscall_process(params);
+        };
 
         case SQUIRE_SYSCALL_LOG:{
             if(param_len<sizeof(squire_params_log_t))
