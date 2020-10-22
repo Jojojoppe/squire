@@ -70,6 +70,7 @@ int vmm_alloc(void * base, size_t length, unsigned int flags, vmm_region_t ** li
             // Check if new region must be made before new one
             if((size_t)base>(size_t)region->base){
                 // printf("Make preregion\n");
+                // printf("Current region: %08x\r\n", region);
                 // Create new region before current one
                 vmm_region_t * preregion = kmalloc(sizeof(vmm_region_t));
                 preregion->base = region->base;
@@ -77,8 +78,8 @@ int vmm_alloc(void * base, size_t length, unsigned int flags, vmm_region_t ** li
                 preregion->length = (size_t)base - (size_t)region->base;
                 preregion->next = region;
                 preregion->prev = region->prev;
-                if(preregion->prev){
-                    preregion->prev->next = region;
+                if(region->prev){
+                    region->prev->next = preregion;
                 }
                 region->prev = preregion;
                 region->length -= preregion->length;
@@ -122,7 +123,7 @@ int vmm_alloc(void * base, size_t length, unsigned int flags, vmm_region_t ** li
             }
 
             // Check if list is prepended
-            while((*list)->prev){
+            if((*list)->prev){
                 // printf("Set prepend\r\n");
                 *list = (*list)->prev;
             }
