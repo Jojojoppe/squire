@@ -22,7 +22,31 @@ unsigned int syscall_mmap(squire_params_mmap_t * params){
 }
 
 unsigned int syscall_thread(squire_params_thread_t * params){
-    proc_thread_new(params->entry, params->stack_base, params->stack_length, proc_proc_get_current());
+    proc_thread_t * new = proc_thread_new(params->entry, params->stack_base, params->stack_length, proc_proc_get_current());
+    params->entry = new->id;
+    proc_proc_t * pcurrent = proc_proc_get_current();
+    params->stack_base = pcurrent->id;
+    return 0;
+}
+
+unsigned int syscall_join(squire_params_join_t * params){
+    // Find thread with TID
+    proc_thread_t * t = proc_proc_get_current()->threads;
+    unsigned char found = 0;
+    while(t){
+        if(t->id == params->id){
+            found = 1;
+        }
+        t = t->next;
+        if(!t){
+            t = proc_proc_get_current()->threads;
+            if(!found){
+                break;
+            }
+            found = 0;
+            schedule();
+        }
+    }
     return 0;
 }
 
@@ -49,6 +73,13 @@ unsigned int syscall(unsigned int opcode, void * param_block, size_t param_len){
                 return SYSCALL_ERROR_GENERAL;
             squire_params_thread_t * params = (squire_params_thread_t*)param_block;
             returncode = syscall_thread(params);
+        } break;
+
+        case SQUIRE_SYSCALL_JOIN:{
+            if(param_len<sizeof(squire_params_join_t))
+                return SYSCALL_ERROR_GENERAL;
+            squire_params_join_t * params = (squire_params_join_t*)param_block;
+            returncode = syscall_join(params);
         } break;
 
         case SQUIRE_SYSCALL_LOG:{

@@ -9,6 +9,7 @@
 #define SQUIRE_SYSCALL_MMAP			0x00000001
 #define SQUIRE_SYSCALL_THREAD		0x00000010
 #define SQUIRE_SYSCALL_PROCESS		0x00000011
+#define SQUIRE_SYSCALL_JOIN         0x00000012
 #define SQUIRE_SYSCALL_LOG			0x10000000
 // -------------------
 
@@ -39,6 +40,11 @@ struct squire_params_process_s{
 	size_t			param_data_size;
 };
 typedef struct squire_params_process_s squire_params_process_t;
+
+struct squire_params_join_s{
+	unsigned int	id;
+};
+typedef struct squire_params_join_s squire_params_join_t;
 
 struct squire_params_log_s{
 	char *			data;
