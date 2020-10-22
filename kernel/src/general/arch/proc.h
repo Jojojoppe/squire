@@ -110,6 +110,27 @@ proc_proc_t * proc_proc_get_current();
 proc_thread_t * proc_thread_new(void * code, void * stack, size_t stack_length, proc_proc_t * process);
 
 /**
+ * @brief Create new user thread
+ * 
+ * @param code Code to execute
+ * @param stack Stack base
+ * @param stack_length Length of stack
+ * @param process Process to add thread to
+ * @return Created thread structure, NULL if not successfull
+ */
+proc_thread_t * proc_thread_new_user(void * code, void * stack, size_t stack_length, proc_proc_t * process);
+
+
+
+/**
+ * @brief Start a new process
+ * 
+ * @param ELF_start Start of ELF data
+ * @return proc_proc_t* 
+ */
+proc_proc_t * proc_proc_new(void * ELF_start);
+
+/**
  * @brief Get memory list of process
  * 
  * @return vmm_region_t* memory list

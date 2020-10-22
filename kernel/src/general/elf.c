@@ -30,7 +30,12 @@ unsigned int elf_load_simple(void * address, void (**entry)()){
         // If loadable segment
         if(pheader[i].p_type==1){
             size_t length = pheader[i].p_memsz + (0x1000-(pheader[i].p_memsz%0x1000));
-            if(vmm_alloc(pheader[i].p_vaddr, length, VMM_FLAGS_EXEC | VMM_FLAGS_READ | VMM_FLAGS_WRITE, &memory)){
+            // Find flags for allocation
+            unsigned int flags = 0;
+            if(pheader[i].p_flags&1) flags |= VMM_FLAGS_EXEC;
+            if(pheader[i].p_flags&2) flags |= VMM_FLAGS_WRITE;
+            if(pheader[i].p_flags&4) flags |= VMM_FLAGS_READ;
+            if(vmm_alloc(pheader[i].p_vaddr, length, flags, &memory)){
                 printf("Could not allocate memory\r\n");
                 return ELF_ERROR_MEMORY;
             }

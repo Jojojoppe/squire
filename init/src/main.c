@@ -18,7 +18,7 @@ int main(int argc, char ** argv){
 	squire_syscall_join(threadB);
 
 	printf("A\r\n");
-
 	for(;;){
 	}
 }
+ 

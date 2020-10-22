@@ -49,6 +49,7 @@ isr_%1:
         push eax
         call isr_c_%1
         popad
+        popfd
         iret
 %endmacro
 
@@ -100,11 +101,13 @@ isr_%1:
         mov ebx, esp
         cld
         extern isr_c_%1
-        mov eax, [esp+30*4]
+        mov eax, [esp+26*4]
         push eax
         push ebx
         call isr_c_%1
         popad
+        popfd
+        add esp, 4
         iret
 %endmacro
 

@@ -2,7 +2,9 @@
 #include <general/kmalloc.h>
 #include <general/vmm.h>
 #include <i386/memory/vas.h>
+#include <general/arch/pmm.h>
 #include <general/schedule.h>
+#include <general/string.h>
 
 extern unsigned int * TSS;
 
@@ -153,7 +155,7 @@ int proc_proc_switch(proc_proc_t * to, proc_proc_t * from){
 }
 
 /* Paramters:
- *      eax:    Address to jump to
+ *      edi:    Address to jump to
  *      edx:    User stack address
  *      ecx:    argv data as pairs of [number of bytes, data]
  *      ebx:    argc
@@ -164,10 +166,12 @@ void proc_user_exec(){
     // Get parameters
     unsigned int address, user_stack, argc;
     unsigned int * argv;
-    __asm__ __volatile__("nop":"=a"(address));
+    __asm__ __volatile__("nop":"=D"(address));
     __asm__ __volatile__("nop":"=d"(user_stack));
     __asm__ __volatile__("nop":"=c"(argc));
     __asm__ __volatile__("nop":"=b"(argv));
+
+    // printf("user exec @ %08x stack: %08x\r\n", address, user_stack);
 
     // Load current esp as kernel stack in tss
     unsigned int esp;
@@ -238,10 +242,66 @@ proc_thread_t * proc_thread_new(void * code, void * stack, size_t stack_length, 
     return thread;
 }
 
+proc_thread_t * proc_thread_new_user(void * code, void * stack, size_t stack_length, proc_proc_t * process){
+    __asm__ __volatile__("cli");
+    proc_thread_t * thread = (proc_thread_t*)kmalloc(sizeof(proc_thread_t));
+    // Link stucture to process
+    proc_thread_t * last = process->threads;
+    while(last->next)
+        last = last->next;
+    last->next = thread;
+    thread->prev = last;
+    thread->next = 0;
+    // Create kernel stack 
+    // TODO fix stack stuff
+    void * kstack = kmalloc(4096);
+    thread->stack = kstack;
+    thread->stack_length = 4096;
+    // Fill other data
+    thread->id = proc_PID_counter++;
+    proc_thread_arch_data_t * archdata = (proc_thread_arch_data_t*) thread->arch_data;
+    archdata->tss_esp0 = 0;
+    archdata->kstack = proc_create_return_stack_frame(kstack+4096-4, proc_user_exec, 0, 0, 0, stack+stack_length-4, 0, code);
+    __asm__ __volatile__("sti");
+    return thread;
+}
+
 vmm_region_t * proc_get_memory(){
     return proc_proc_get_current()->memory;
 }
 
 void proc_set_memory(vmm_region_t * region){
     proc_proc_get_current()->memory = region;
+}
+
+proc_proc_t * proc_proc_new(void * ELF_start){
+    schedule_disable();
+
+    // Create new process descriptor
+    proc_proc_t * pnew = (proc_proc_t*)kmalloc(sizeof(proc_proc_t));
+    proc_proc_t * pcur = proc_proc_get_current();
+    // Link new process in list after current
+    pnew->next = pcur->next;
+    pnew->prev = pcur;
+    pcur->next->prev = pnew;
+    pcur->next = pnew;
+    // Set data
+    pnew->id = proc_PID_counter++;
+    // Create vmm memory region list
+    vmm_create(&pnew->memory);
+
+    // Create new PD table and copy kernel space into it (use page 0 as tmp)
+    void * newpd_phys;
+    pmm_alloc(4096, &newpd_phys);
+    vas_map(newpd_phys, 0, VAS_FLAGS_WRITE|VAS_FLAGS_READ);
+    // Copy kernel PD into new one
+    memcpy(768*4, 0xfffff000+768*4, 255*4);
+    *((unsigned int*)(768*4+4)) = (unsigned int)newpd_phys | 0x07;
+    // Clear first part to be sure
+    memset(0, 0, 256*4*3);
+
+    // TODO switch to new VAS, load elf, setup user stack, add thread discriptor
+    // and go back to own VAS
+
+    schedule_enable();
 }
