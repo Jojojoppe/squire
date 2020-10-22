@@ -92,7 +92,7 @@ void squire_init2(){
     vmm_alloc(0xbfffc000,0x4000,VMM_FLAGS_READ|VMM_FLAGS_WRITE,&proc_mem);
     proc_set_memory(proc_mem);
 
-    proc_thread_new(init_entry, 0xc0000000-4, proc_proc_get_current());
+    proc_thread_new(init_entry, 0xbfffc000, 0x4000, proc_proc_get_current());
 }
 
 /**

@@ -22,7 +22,7 @@ unsigned int syscall_mmap(squire_params_mmap_t * params){
 }
 
 unsigned int syscall_thread(squire_params_thread_t * params){
-    proc_thread_new(params->entry, params->stack, proc_proc_get_current());
+    proc_thread_new(params->entry, params->stack_base, params->stack_length, proc_proc_get_current());
     return 0;
 }
 

@@ -14,6 +14,8 @@ typedef struct proc_thread_s{
     struct proc_thread_s * next;
     struct proc_thread_s * prev;
     unsigned int id;
+    void * stack;
+    size_t stack_length;
     unsigned char arch_data[PROC_THREADDATA_SIZE];
 } proc_thread_t;
 
@@ -100,11 +102,12 @@ proc_proc_t * proc_proc_get_current();
  * @brief Create new thread
  * 
  * @param code Code to execute
- * @param stack Stack
+ * @param stack Stack base
+ * @param stack_length Length of stack
  * @param process Process to add thread to
  * @return Created thread structure, NULL if not successfull
  */
-proc_thread_t * proc_thread_new(void * code, void * stack, proc_proc_t * process);
+proc_thread_t * proc_thread_new(void * code, void * stack, size_t stack_length, proc_proc_t * process);
 
 /**
  * @brief Get memory list of process

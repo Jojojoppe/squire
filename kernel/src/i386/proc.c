@@ -2,6 +2,7 @@
 #include <general/kmalloc.h>
 #include <general/vmm.h>
 #include <i386/memory/vas.h>
+#include <general/schedule.h>
 
 extern unsigned int * TSS;
 
@@ -33,6 +34,8 @@ int proc_init(void (*return_addr)()){
     proc_thread_current->next = 0;
     proc_thread_current->prev = 0;
     proc_thread_current->id = 2;
+    proc_thread_current->stack = 0;
+    proc_thread_current->stack_length = 0;  // Stack is embedded in kernel, cant be freed
     // Set architecture specific data
     proc_thread_arch_data_t * t_arch_data = (proc_thread_arch_data_t*)proc_thread_current->arch_data;
     t_arch_data->tss_esp0 = 0;
@@ -49,17 +52,45 @@ int proc_init(void (*return_addr)()){
 void proc_thread_start(){
     void (*return_addr)();
     __asm__ __volatile__("movl 4(%%ebp), %%eax":"=a"(return_addr));
-
-    // printf("proc_thread_current: %08x\r\n", proc_thread_current);
-    // printf("proc_proc_current: %08x\r\n", proc_proc_current);
-    // printf("proc_proc_current->next: %08x\r\n", proc_proc_current->next);
     __asm__ __volatile__("sti");
 
     return_addr();
 
-    // printf("DONE\r\n");
+    schedule_disable();
+        // Remove thread from process
+        // TODO create function for this (proc_thread_kill)
 
-    for(;;);
+        // Check if stack need to be deallocated
+        proc_thread_t * current = proc_thread_get_current();
+        if(current->stack && current->stack_length){
+            // printf("Need to free stack\r\n");
+            // TODO how to delete stack of running code?
+            // Now running from kernel stack. How to delete user stack?
+            // Stack set in thread structure is user stack except for thread
+            // started from kernel
+        }
+
+        // Unlink current thread block
+
+        if(current->prev){
+            current->prev->next = current->next;
+        }else{
+            // thread 1 of process should be deleted
+            proc_proc_t * pcurrent = proc_proc_get_current();
+            pcurrent->threads = current->next;
+            // TODO check if process must be deleted if no threads are there anymore
+            // TODO how to delete VAS of running code?
+        }
+        if(current->next){
+            current->next->prev = current->prev;
+        }
+        kfree(current);
+    schedule_enable();
+
+    schedule();
+
+    for(;;){
+    }
 }
 
 void * proc_create_return_stack_frame(unsigned int * stack, void * retaddr, unsigned int eax, unsigned int ebx, unsigned int ecx, unsigned int edx, unsigned int esi, unsigned int edi){
@@ -186,7 +217,7 @@ proc_proc_t * proc_proc_get_current(){
     return proc_proc_current;
 }
 
-proc_thread_t * proc_thread_new(void * code, void * stack, proc_proc_t * process){
+proc_thread_t * proc_thread_new(void * code, void * stack, size_t stack_length, proc_proc_t * process){
     __asm__ __volatile__("cli");
     proc_thread_t * thread = (proc_thread_t*)kmalloc(sizeof(proc_thread_t));
     // Link stucture to process
@@ -196,11 +227,13 @@ proc_thread_t * proc_thread_new(void * code, void * stack, proc_proc_t * process
     last->next = thread;
     thread->prev = last;
     thread->next = 0;
+    thread->stack = stack;
+    thread->stack_length = stack_length;
     // Fill other data
     thread->id = proc_PID_counter++;
     proc_thread_arch_data_t * archdata = (proc_thread_arch_data_t*) thread->arch_data;
     archdata->tss_esp0 = 0;
-    archdata->kstack = proc_create_return_stack_frame(stack, code, 0, 0, 0, 0, 0, 0);
+    archdata->kstack = proc_create_return_stack_frame(stack+stack_length-4, code, 0, 0, 0, 0, 0, 0);
     __asm__ __volatile__("sti");
     return thread;
 }

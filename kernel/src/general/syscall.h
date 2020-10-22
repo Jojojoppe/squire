@@ -25,7 +25,8 @@ typedef struct squire_params_mmap_s squire_params_mmap_t;
 
 struct squire_params_thread_s{
 	void 			(*entry)(void);
-	void *			stack;
+	void *			stack_base;
+    size_t          stack_length;
 	uint32_t		flags;
 };
 typedef struct squire_params_thread_s squire_params_thread_t;
