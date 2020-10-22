@@ -68,6 +68,8 @@ extern uint32_t squire_syscall_process(void * elf_start, size_t elf_length, int 
 extern void squire_syscall_join(unsigned int id);
 extern void squire_syscall_log(char * data, size_t length);
 
+extern void squire_thread_end();
+
 #if defined(__cplusplus)
 } /* extern "C" */
 #endif

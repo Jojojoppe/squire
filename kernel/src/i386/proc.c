@@ -65,6 +65,8 @@ void proc_thread_start(){
     __asm__ __volatile__("sti");
     return_addr();
 
+    for(;;);
+
     schedule_disable();
         // Remove thread from process
         // TODO create function for this (proc_thread_kill)
@@ -131,7 +133,7 @@ int proc_thread_switch (proc_thread_t * to, proc_thread_t * from){
     extern unsigned int * TSS;
 
     // printf("* SWITCH %08x -> %08x\r\n", from, to);
-    // printf("    from kstack %08x\r\n", TSS[4]);
+    // printf("    from kstack %08x\r\n", TSS[1]);
     // printf("    to kstack %08x\r\n", ((proc_thread_arch_data_t*)to->arch_data)->tss_esp0);
 
     __asm__ __volatile__("cli");
@@ -261,8 +263,9 @@ proc_thread_t * proc_thread_new_user(void * code, void * stack, size_t stack_len
     proc_thread_t * thread = (proc_thread_t*)kmalloc(sizeof(proc_thread_t));
     // Link stucture to process
     proc_thread_t * last = process->threads;
-    while(last->next)
+    while(last->next){
         last = last->next;
+    }
     last->next = thread;
     thread->prev = last;
     thread->next = 0;
@@ -276,9 +279,11 @@ proc_thread_t * proc_thread_new_user(void * code, void * stack, size_t stack_len
     proc_thread_arch_data_t * archdata = (proc_thread_arch_data_t*) thread->arch_data;
     archdata->tss_esp0 = kstack+4096-4;
 
-    // printf("proc_thread_new_user(%08x, %08x, %08x)\r\n", code, stack, stack_length);
+    // printf("proc_thread_new_user(%08x, %08x, %08x) [%08x]\r\n", code, stack, stack_length, thread);
     // printf("    user stack %08x\r\n", stack+stack_length-4);
     // printf("    kernel stack %08x\r\n", kstack + 4096 - 4);
+    // printf("    last %08x\r\n", last);
+    // printf("    last->next %08x\r\n", last->next);
 
     archdata->kstack = proc_create_return_stack_frame(kstack+4096-4, proc_user_exec, 0, stack+stack_length-4, code, 0, 0, 0);
 
