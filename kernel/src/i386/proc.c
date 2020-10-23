@@ -33,6 +33,7 @@ int proc_init(void (*return_addr)()){
     // Create first thread structure
     proc_thread_current = (proc_thread_t*)kmalloc(sizeof(proc_thread_t));
     proc_proc_current->threads = proc_thread_current;
+    proc_proc_current->killed_threads = 0;
     proc_thread_current->next = 0;
     proc_thread_current->prev = 0;
     proc_thread_current->id = 2;
@@ -65,41 +66,9 @@ void proc_thread_start(){
     __asm__ __volatile__("sti");
     return_addr();
 
-    for(;;);
-
-    schedule_disable();
-        // Remove thread from process
-        // TODO create function for this (proc_thread_kill)
-
-        // Check if stack need to be deallocated
-        proc_thread_t * current = proc_thread_get_current();
-        if(current->stack && current->stack_length){
-            // printf("Need to free stack\r\n");
-            // TODO how to delete stack of running code?
-            // Now running from kernel stack. How to delete user stack?
-            // Stack set in thread structure is user stack except for thread
-            // started from kernel
-        }
-
-        // Unlink current thread block
-
-        if(current->prev){
-            current->prev->next = current->next;
-        }else{
-            // thread 1 of process should be deleted
-            proc_proc_t * pcurrent = proc_proc_get_current();
-            pcurrent->threads = current->next;
-            // TODO check if process must be deleted if no threads are there anymore
-            // TODO how to delete VAS of running code?
-        }
-        if(current->next){
-            current->next->prev = current->prev;
-        }
-        kfree(current);
-    schedule_enable();
+    proc_thread_kill(proc_thread_get_current(), proc_proc_get_current(), 0);
 
     schedule();
-
     for(;;){
     }
 }
@@ -329,4 +298,71 @@ proc_proc_t * proc_proc_new(void * ELF_start){
     // and go back to own VAS
 
     schedule_enable();
+}
+
+int proc_thread_kill(proc_thread_t * thread, proc_proc_t * process, int retval){
+
+    // Check if thread is in process
+    proc_thread_t * t = process->threads;
+    while(t){
+        if(thread==t){
+            schedule_disable();
+
+            // Unlink thread from thread list
+            if(process->threads==thread){
+                // Set next as first if needed
+                process->threads = thread->next;
+            }else{
+                // Set previous
+                thread->prev->next = thread->next;
+            }
+            if(thread->next){
+                thread->next->prev = thread->prev;
+            }
+
+            // Relink to killed threads list
+            // Find last in killed threads
+            proc_thread_t * kt = process->killed_threads;
+            thread->next = 0;
+            if(kt==0){
+                process->killed_threads = thread;
+                thread->prev = 0;
+            }else{
+                while(kt->next){
+                    kt = kt->next;
+                }
+                kt->next = thread;
+                thread->prev = kt;
+            }
+            
+            thread->retval = retval;
+
+            // TODO if all threads are killed: set process retval as last thread retval and
+            // kill process itself
+
+            schedule_enable();
+            return 0;
+        }
+        t = t->next;
+    }
+    // Thread not in process: ERROR
+    return 1;
+}
+
+void proc_debug(){
+    proc_proc_t * p = proc_proc_get_current();
+    printf("Processes:\r\n");
+    do{
+        printf("+ P[%d]\r\n", p->id);
+        proc_thread_t * t = p->threads;
+        while(t){
+            printf("  - T[%d] /w %08x (%08x) \r\n", t->id, t->stack, t->stack_length);
+            t = t->next;
+        }
+        t = p->killed_threads;
+        while(t){
+            printf("  - KT[%d] -> %08x\r\n", t->id, t->retval);
+            t = t->next;
+        }
+    }while(p!=proc_proc_get_current());
 }

@@ -16,6 +16,7 @@ typedef struct proc_thread_s{
     unsigned int id;
     void * stack;
     size_t stack_length;
+    int retval;
     unsigned char arch_data[PROC_THREADDATA_SIZE];
 } proc_thread_t;
 
@@ -25,6 +26,7 @@ typedef struct proc_proc_s{
     unsigned int id;
     vmm_region_t * memory;
     proc_thread_t * threads;
+    proc_thread_t * killed_threads;
     unsigned char arch_data[PROC_PROCDATA_SIZE];
 } proc_proc_t;
 
@@ -120,7 +122,15 @@ proc_thread_t * proc_thread_new(void * code, void * stack, size_t stack_length, 
  */
 proc_thread_t * proc_thread_new_user(void * code, void * stack, size_t stack_length, proc_proc_t * process);
 
-
+/**
+ * @brief Stop a thread
+ * 
+ * @param thread Thread to stop
+ * @param process Process in which thread runs
+ * @param retval Return value of thread
+ * @return Zero if successful
+ */
+int proc_thread_kill(proc_thread_t * thread, proc_proc_t * process, int retval);
 
 /**
  * @brief Start a new process
@@ -143,5 +153,11 @@ vmm_region_t * proc_get_memory();
  * @param region 
  */
 void proc_set_memory(vmm_region_t * region);
+
+/**
+ * @brief Print process list with all threads
+ * 
+ */
+void proc_debug();
 
 #endif

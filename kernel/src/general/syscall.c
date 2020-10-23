@@ -35,6 +35,7 @@ unsigned int syscall_thread(squire_params_thread_t * params){
 
 unsigned int syscall_join(squire_params_join_t * params){
     // Find thread with TID
+    params->retval = 0;
     proc_thread_t * t = proc_proc_get_current()->threads;
     unsigned char found = 0;
     while(t){
@@ -45,12 +46,28 @@ unsigned int syscall_join(squire_params_join_t * params){
         if(!t){
             t = proc_proc_get_current()->threads;
             if(!found){
+                // Get thread from killed list
+                t = proc_proc_get_current()->killed_threads;
+                while(t->id!=params->id){
+                    t = t->next;
+                    if(!t){
+                        // ERROR!!! THREAD NOT IN KILLED LIST
+                        return 1;
+                    }
+                }
+                params->retval = t->retval;
                 break;
             }
             found = 0;
             schedule();
         }
     }
+    return 0;
+}
+
+unsigned int syscall_exit(squire_params_exit_t * params){
+    proc_thread_kill(proc_thread_get_current(), proc_proc_get_current(), params->retval);
+    // proc_debug();
     return 0;
 }
 
@@ -90,6 +107,13 @@ unsigned int syscall(unsigned int opcode, void * param_block, size_t param_len){
             squire_params_join_t * params = (squire_params_join_t*)param_block;
             returncode = syscall_join(params);
         } break;
+
+        case SQUIRE_SYSCALL_EXIT:{
+            if(param_len<sizeof(squire_params_exit_t))
+                return SYSCALL_ERROR_GENERAL;
+            squire_params_exit_t * params = (squire_params_exit_t*)param_block;
+            returncode = syscall_exit(params);
+        }
 
         case SQUIRE_SYSCALL_PROCESS:{
             if(param_len<sizeof(squire_params_process_t))

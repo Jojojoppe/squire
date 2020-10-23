@@ -1,8 +1,7 @@
 #include "../include/squire.h"
 
 void squire_thread_end(){
-	// TODO execute exit syscall to close thread
-	squire_syscall_log("THIS IS END OF THREAD\r\n", 24);
+	squire_syscall_exit(0);
 	for(;;);
 }
 
@@ -16,4 +15,10 @@ uint32_t squire_syscall_thread(void (*entry)(void), void * stack_base, size_t st
 	unsigned int * s = (unsigned int*)(stack_base + stack_length);
 	*(s-1) = squire_thread_end;
 	return parms.entry;
+}
+
+void squire_syscall_exit(int retval){
+	squire_params_exit_t parms;
+	parms.retval = retval;
+	asm __volatile__("int $0x80"::"a"(SQUIRE_SYSCALL_EXIT),"c"(sizeof(parms)),"d"(&parms));
 }
