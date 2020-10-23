@@ -5,6 +5,7 @@
 
 #include <general/arch/proc.h>
 #include <general/vmm.h>
+#include <general/message.h>
 
 unsigned int syscall_mmap(squire_params_mmap_t * params){
     // Check OK memory region
@@ -20,6 +21,8 @@ unsigned int syscall_mmap(squire_params_mmap_t * params){
 
     return 0;
 }
+
+
 
 unsigned int syscall_thread(squire_params_thread_t * params){
     schedule_disable();
@@ -76,6 +79,20 @@ unsigned int syscall_process(squire_params_process_t * params){
     return 0;
 }
 
+
+unsigned int syscall_simple_send(squire_params_simple_send_t * params){
+    unsigned int status = message_simple_send(params->to, params->length, params->data);
+    params->status = status;
+    return status;
+}
+
+unsigned int syscall_simple_recv(squire_params_simple_recv_t * params){
+    unsigned int status = message_simple_receive(params->buffer, &params->length, &params->from);
+    params->status = status;
+    return status;
+}
+
+
 unsigned int syscall_log(squire_params_log_t * params){
     for(int i=0; i<params->length; i++)
         printf("%c", params->data[i]);
@@ -93,6 +110,8 @@ unsigned int syscall(unsigned int opcode, void * param_block, size_t param_len){
             squire_params_mmap_t * params = (squire_params_mmap_t*)param_block;
             returncode =  syscall_mmap(params);
         } break;
+
+
 
         case SQUIRE_SYSCALL_THREAD:{
             if(param_len<sizeof(squire_params_thread_t))
@@ -113,14 +132,31 @@ unsigned int syscall(unsigned int opcode, void * param_block, size_t param_len){
                 return SYSCALL_ERROR_GENERAL;
             squire_params_exit_t * params = (squire_params_exit_t*)param_block;
             returncode = syscall_exit(params);
-        }
+        } break;
 
         case SQUIRE_SYSCALL_PROCESS:{
             if(param_len<sizeof(squire_params_process_t))
                 return SYSCALL_ERROR_GENERAL;
             squire_params_process_t * params = (squire_params_process_t*)param_block;
             returncode = syscall_process(params);
-        };
+        } break;
+
+
+
+        case SQUIRE_SYSCALL_SIMPLE_SEND:{
+            if(param_len<sizeof(squire_params_simple_send_t))
+                return SYSCALL_ERROR_GENERAL;
+            squire_params_simple_send_t * params = (squire_params_simple_send_t*)param_block;
+            returncode = syscall_simple_send(params);
+        } break;
+
+        case SQUIRE_SYSCALL_SIMPLE_RECV:{
+            if(param_len<sizeof(squire_params_simple_recv_t))
+                return SYSCALL_ERROR_GENERAL;
+            squire_params_simple_recv_t * params = (squire_params_simple_recv_t*)param_block;
+            returncode = syscall_simple_recv(params);
+        } break;
+
 
         case SQUIRE_SYSCALL_LOG:{
             if(param_len<sizeof(squire_params_log_t))

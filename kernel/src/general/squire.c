@@ -7,6 +7,7 @@
 #include <general/elf.h>
 #include <general/config.h>
 #include <general/message.h>
+#include <general/string.h>
 
 void squire_init2();
 void error(const char *);
@@ -86,17 +87,29 @@ void squire_init2(){
         error("Could not load init.bin");
 
     printf("- Entry init.bin at %08x\r\n", init_entry);
+    printf("- initramfs.tar at %08x\r\n", initramfs_address);
 
-    // Crrete user stack
+    // Create user stack
+    // TODO addresses are hardcoded here
     printf("- Create user stack\r\n");
     vmm_region_t * proc_mem = proc_get_memory();
     vmm_alloc(0xbfffc000,0x4000,VMM_FLAGS_READ|VMM_FLAGS_WRITE,&proc_mem);
+
+    // Copy initramfs.tar to user space
+    vmm_alloc(0x50000000, (initramfs_length/4096+1)*4096, VMM_FLAGS_READ, &proc_mem);
     proc_set_memory(proc_mem);
 
-    // Send init.bin params as message
-    unsigned int params_data[2] = {0x11223344, 0x55667788};
-    message_simple_send(1, 8, params_data);
-    printf("- Params message sent\r\n");
+    // Send init.bin params as messages
+    // First argc with length of data
+    unsigned int params_data1[2] = {2, 9+sizeof(void*)+2*sizeof(unsigned int)};
+    message_simple_send(1, 8, params_data1);
+    unsigned int * params_data2 = (unsigned int*) kmalloc(params_data1[1]);
+    params_data2[0] = 9;
+    params_data2[1] = sizeof(void*);
+    strcpy(params_data2+2, "init.bin");
+    *((unsigned int*)((char*)(params_data2+2)+9)) = 0x50000000;
+    message_simple_send(1, params_data1[1], params_data2);
+    kfree(params_data2);
 
     proc_thread_new_user(init_entry, 0xbfffc000, 0x4000, proc_proc_get_current());
 }

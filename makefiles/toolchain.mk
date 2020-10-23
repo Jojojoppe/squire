@@ -197,7 +197,10 @@ newlib: libsquire_headers $(PREFIX)/src/.newlib_hosted
 	echo + Newlib compiled
 
 rebuild_newlib: libsquire_headers
+	cd $(PREFIX)/src/build-newlib_hosted ;\
+		make clean
 	-rm $(PREFIX)/src/.newlib_hosted
+	# -rm $(PREFIX)/src/.newlib_configure_hosted
 	# rm $(PREFIX)/src/.gcc_hosted
 	# rm $(PREFIX)/src/.binutils_hosted
 	${MAKE} ${MFLAGS} newlib

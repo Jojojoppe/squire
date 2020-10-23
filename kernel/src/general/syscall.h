@@ -11,6 +11,8 @@
 #define SQUIRE_SYSCALL_PROCESS		0x00000011
 #define SQUIRE_SYSCALL_JOIN         0x00000012
 #define SQUIRE_SYSCALL_EXIT			0x00000013
+#define SQUIRE_SYSCALL_SIMPLE_SEND	0x00000020
+#define SQUIRE_SYSCALL_SIMPLE_RECV	0x00000021
 #define SQUIRE_SYSCALL_LOG			0x10000000
 // -------------------
 
@@ -25,10 +27,12 @@ struct squire_params_mmap_s{
 };
 typedef struct squire_params_mmap_s squire_params_mmap_t;
 
+// ---
+
 struct squire_params_thread_s{
 	void 			(*entry)(void);
 	void *			stack_base;
-    size_t          stack_length;
+	size_t			stack_length;
 	uint32_t		flags;
 };
 typedef struct squire_params_thread_s squire_params_thread_t;
@@ -44,7 +48,7 @@ typedef struct squire_params_process_s squire_params_process_t;
 
 struct squire_params_join_s{
 	unsigned int	id;
-    int             retval;
+	int				retval;
 };
 typedef struct squire_params_join_s squire_params_join_t;
 
@@ -52,6 +56,26 @@ struct squire_params_exit_s{
 	int				retval;
 };
 typedef struct squire_params_exit_s squire_params_exit_t;
+
+// ---
+
+struct squire_params_simple_send_s{
+	unsigned int 	to;
+	void *			data;
+	size_t			length;
+    unsigned int    status;
+};
+typedef struct squire_params_simple_send_s squire_params_simple_send_t;
+
+struct squire_params_simple_recv_s{
+	unsigned int	from;
+	void *			buffer;
+	size_t			length;
+    unsigned int    status;
+};
+typedef struct squire_params_simple_recv_s squire_params_simple_recv_t;
+
+// ---
 
 struct squire_params_log_s{
 	char *			data;

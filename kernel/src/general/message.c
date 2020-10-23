@@ -32,10 +32,12 @@ unsigned int message_simple_send(unsigned int to, size_t length, void * data){
     }else{
         // Find the last one
         message_simple_t * last = rec->message_info.simple;
+        message_simple_t * m = last;
         for(int i=0; i<rec->message_info.simple_number; i++){
+            m = last;
             last = last->next;
         }
-        last->next = msg;
+        m->next = msg;
         rec->message_info.simple_number++;
     }
 
