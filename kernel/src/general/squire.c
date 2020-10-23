@@ -98,6 +98,7 @@ void squire_init2(){
     // Copy initramfs.tar to user space
     vmm_alloc(0x50000000, (initramfs_length/4096+1)*4096, VMM_FLAGS_READ, &proc_mem);
     proc_set_memory(proc_mem);
+    memcpy(0x50000000, initramfs_address, initramfs_length);
 
     // Send init.bin params as messages
     // First argc with length of data
