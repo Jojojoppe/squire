@@ -5,6 +5,7 @@
 
 #include <general/arch/proc.h>
 #include <general/vmm.h>
+#include <general/arch/vas.h>
 #include <general/message.h>
 
 unsigned int syscall_mmap(squire_params_mmap_t * params){
@@ -15,8 +16,13 @@ unsigned int syscall_mmap(squire_params_mmap_t * params){
         return SYSCALL_ERROR_PARAMS;
 
     vmm_region_t * memory = proc_get_memory();
-    if(vmm_alloc(params->address, params->length, VMM_FLAGS_READ|VMM_FLAGS_WRITE, &memory))
+    // printf("vmm_alloc(%08x, %08x)\r\n", params->address, params->length);
+    // printf("current vas: %08x\r\n", memory);
+    // printf("current proc: %08x\r\n", proc_proc_get_current());
+    if(vmm_alloc(params->address, params->length, VMM_FLAGS_READ|VMM_FLAGS_WRITE, &memory)){
+        // printf("ERROR\r\n");
         return SYSCALL_ERROR_PARAMS;
+    }
     proc_set_memory(memory);
 
     return 0;
@@ -75,7 +81,21 @@ unsigned int syscall_exit(squire_params_exit_t * params){
 }
 
 unsigned int syscall_process(squire_params_process_t * params){
-    // asm("int $0");
+    // printf("Creating process\r\n");
+    // Copy ELF to kernel
+    // TODO something else than vas_brk!!!
+    void * newelf = vas_brk((params->elf_length/4096+1)*4096);
+    memcpy(newelf, params->elf_start, params->elf_length);
+    proc_proc_t * pnew = proc_proc_new(newelf);
+
+    unsigned int params_data1[2];
+    params_data1[0] = params->argc;
+    params_data1[1] = params->param_data_size;
+    unsigned int status = message_simple_send(pnew->id, sizeof(unsigned int)*2, params_data1);
+    message_simple_send(pnew->id, params_data1[1], params->param_data);
+    params->pid = pnew->id;
+    // printf("Process created!\r\n");
+
     return 0;
 }
 
@@ -101,6 +121,7 @@ unsigned int syscall_log(squire_params_log_t * params){
 
 unsigned int syscall(unsigned int opcode, void * param_block, size_t param_len){
     unsigned int returncode;
+    // printf("SYSCALL %08x\r\n", opcode);
 
     switch(opcode){
 

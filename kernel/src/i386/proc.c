@@ -5,6 +5,7 @@
 #include <general/arch/pmm.h>
 #include <general/schedule.h>
 #include <general/string.h>
+#include <general/elf.h>
 
 extern unsigned int * TSS;
 
@@ -135,14 +136,16 @@ int proc_thread_switch (proc_thread_t * to, proc_thread_t * from){
 }
 
 int proc_proc_switch(proc_proc_t * to, proc_proc_t * from){
-    // Set VAS
-    proc_proc_arch_data_t * arch_data = (proc_proc_arch_data_t*)to->arch_data;
-    __asm__ __volatile__("mov %%eax, %%cr3"::"a"(arch_data->cr3));
 
     if(!to->threads){
         return 1;
     }
 
+    // Set VAS
+    proc_proc_arch_data_t * arch_data = (proc_proc_arch_data_t*)to->arch_data;
+    __asm__ __volatile__("mov %%eax, %%cr3"::"a"(arch_data->cr3));
+
+    proc_proc_current = to;
     proc_thread_switch(to->threads, proc_thread_current);
     return 0;
 }
@@ -240,11 +243,16 @@ proc_thread_t * proc_thread_new_user(void * code, void * stack, size_t stack_len
     proc_thread_t * thread = (proc_thread_t*)kmalloc(sizeof(proc_thread_t));
     // Link stucture to process
     proc_thread_t * last = process->threads;
-    while(last->next){
-        last = last->next;
+    if(last){
+        while(last->next){
+            last = last->next;
+        }
+        last->next = thread;
+        thread->prev = last;
+    }else{
+        process->threads = thread;
+        thread->prev = 0;
     }
-    last->next = thread;
-    thread->prev = last;
     thread->next = 0;
     // Create kernel stack 
     // TODO fix stack stuff
@@ -298,14 +306,45 @@ proc_proc_t * proc_proc_new(void * ELF_start){
     vas_map(newpd_phys, 0, VAS_FLAGS_WRITE|VAS_FLAGS_READ);
     // Copy kernel PD into new one
     memcpy(768*4, 0xfffff000+768*4, 255*4);
-    *((unsigned int*)(768*4+4)) = (unsigned int)newpd_phys | 0x07;
+    *((unsigned int*)(768*4+255*4)) = (unsigned int)newpd_phys | 0x07;
     // Clear first part to be sure
     memset(0, 0, 256*4*3);
+    proc_proc_arch_data_t * arch_data = (proc_proc_arch_data_t*) pnew->arch_data;
+    arch_data->cr3 = newpd_phys;
+
+
+    // switch to new VAS
+    unsigned int own_vas = ((proc_proc_arch_data_t*)(pcur->arch_data))->cr3;
+    proc_proc_current = pnew;
+    __asm__ __volatile__("movl %%eax, %%cr3"::"a"(newpd_phys));
+
+    // Load ELF
+    void (*entry)();
+    elf_load_simple(ELF_start, &entry);
+
+    // Create new thread
+    // printf("Create new user stack\r\n");
+    vmm_region_t * proc_mem = proc_get_memory();
+    vmm_alloc(0xbfffc000,0x4000,VMM_FLAGS_READ|VMM_FLAGS_WRITE,&proc_mem);
+    // printf("Create new user thread\r\n");
+    pnew->threads = 0;
+    pnew->killed_threads = 0;
+    proc_thread_new_user(entry, 0xbfffc000, 0x4000, pnew);
+    // printf("Done\r\n");
+    proc_set_memory(proc_mem);
+
+    // switch back to old VAS
+    proc_proc_current = pcur;
+    __asm__ __volatile__("movl %%eax, %%cr3"::"a"(own_vas));
 
     // TODO switch to new VAS, load elf, setup user stack, add thread discriptor
     // and go back to own VAS
+    // Setup messaging info
+    message_init_info(&pnew->message_info);
+    // printf("messages initialized\r\n");
 
     schedule_enable();
+    return pnew;
 }
 
 int proc_thread_kill(proc_thread_t * thread, proc_proc_t * process, int retval){
@@ -359,9 +398,12 @@ int proc_thread_kill(proc_thread_t * thread, proc_proc_t * process, int retval){
 
 void proc_debug(){
     proc_proc_t * p = proc_proc_get_current();
+    proc_proc_t * current = p;
     printf("Processes:\r\n");
     do{
-        printf("+ P[%d]\r\n", p->id);
+        printf("+ P[%d] - %08x\r\n", p->id, p);
+        printf("  next: %08x\r\n", p->next);
+        printf("  prev: %08x\r\n", p->prev);
         proc_thread_t * t = p->threads;
         while(t){
             printf("  - T[%d] /w %08x (%08x) \r\n", t->id, t->stack, t->stack_length);
@@ -372,19 +414,22 @@ void proc_debug(){
             printf("  - KT[%d] -> %08x\r\n", t->id, t->retval);
             t = t->next;
         }
-    }while(p!=proc_proc_get_current());
+        p = p->next;
+    }while(p!=current);
 }
 
 proc_proc_t * proc_get(unsigned int pid){
     proc_proc_t * proc = 0;
 
     proc_proc_t * p = proc_proc_get_current();
+    proc_proc_t * current = p;
     do{
         if(p->id==pid){
             proc = p;
             break;
         }
-    }while(p!=proc_proc_get_current());
+        p = p->next;
+    }while(p!=current);
 
     return proc;
 }

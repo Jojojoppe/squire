@@ -36,7 +36,8 @@ unsigned int elf_load_simple(void * address, void (**entry)()){
             if(pheader[i].p_flags&2) flags |= VMM_FLAGS_WRITE;
             if(pheader[i].p_flags&4) flags |= VMM_FLAGS_READ;
             if(vmm_alloc(pheader[i].p_vaddr, length, flags, &memory)){
-                printf("Could not allocate memory\r\n");
+                printf("Could not allocate memory [%08x] %08x\r\n", pheader[i].p_vaddr, length);
+                vmm_debug(memory);
                 return ELF_ERROR_MEMORY;
             }
             memset(pheader[i].p_vaddr,0, length);

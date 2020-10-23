@@ -43,6 +43,7 @@ struct squire_params_process_s{
 	int 			argc;
 	void *			param_data;
 	size_t			param_data_size;
+    unsigned int    pid;
 };
 typedef struct squire_params_process_s squire_params_process_t;
 

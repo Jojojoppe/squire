@@ -103,7 +103,7 @@ void squire_init2(){
     // Send init.bin params as messages
     // First argc with length of data
     unsigned int params_data1[2] = {2, 9+sizeof(void*)+2*sizeof(unsigned int)};
-    message_simple_send(1, 8, params_data1);
+    message_simple_send(1, sizeof(unsigned int)*2, params_data1);
     unsigned int * params_data2 = (unsigned int*) kmalloc(params_data1[1]);
     params_data2[0] = 9;
     params_data2[1] = sizeof(void*);

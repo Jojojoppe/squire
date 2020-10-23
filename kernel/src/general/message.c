@@ -11,7 +11,7 @@ void message_init_info(message_info_t * info){
 unsigned int message_simple_send(unsigned int to, size_t length, void * data){
     if(length<8)
         return MESSAGE_SIMPLE_ERROR_MESSAGE_TO_SHORT;
-    
+
     // Get message info structure of receiver
     proc_proc_t * rec = proc_get(to);
     if(!rec)
