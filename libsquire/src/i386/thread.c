@@ -1,7 +1,9 @@
 #include "../include/squire.h"
 
 void squire_thread_end(){
-	squire_syscall_exit(0);
+	int eax;
+	__asm__ __volatile__("nop":"=a"(eax));
+	squire_syscall_exit(eax);
 	for(;;);
 }
 

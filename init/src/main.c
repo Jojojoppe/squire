@@ -1,9 +1,9 @@
 #include <stdio.h>
 #include <squire.h>
 
-void test(void * p){
+int test(void * p){
 	printf("p = %08x\r\n", p);
-	squire_syscall_exit((unsigned int)p*2);
+	return (int)p * 2;
 }
 
 int main(int argc, char ** argv){
