@@ -32,6 +32,7 @@ typedef struct message_simple_s{
 typedef struct{
     message_simple_t * simple;
     unsigned int simple_number;
+    unsigned int simple_recv_thread;
 } message_info_t;
 
 /**
@@ -46,7 +47,8 @@ enum MESSAGE_SIMPLE_ERROR{
     MESSAGE_SIMPLE_ERROR_MESSAGE_TO_SHORT,
     MESSAGE_SIMPLE_ERROR_TO_NONEXIST,
     MESSAGE_SIMPLE_ERROR_BUFFER_TO_SHORT,
-    MESSAGE_SIMPLE_ERROR_NO_MESSAGES
+    MESSAGE_SIMPLE_ERROR_NO_MESSAGES,
+    MESSAGE_SIMPLE_ERROR_ALREADY_BLOCKED_RECEIVE
 };
 
 /**
@@ -68,5 +70,15 @@ unsigned int message_simple_send(unsigned int to, size_t length, void * data);
  * @return Zero if successfull
  */
 unsigned int message_simple_receive(void * buffer, size_t * length, unsigned int * from);
+
+/**
+ * @brief Receive a simple message blocking the thread
+ * 
+ * @param buffer Pointer to large enough receive buffer
+ * @param length Length of receive buffer
+ * @param from Pointer to place to store sender PID
+ * @return Zero if successfull
+ */
+unsigned int message_simple_receive_blocking(void * buffer, size_t * length, unsigned int * from);
 
 #endif

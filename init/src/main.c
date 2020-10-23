@@ -22,9 +22,17 @@ int main(int argc, char ** argv){
 	unsigned int testbin_pid = squire_syscall_process(testbin, length, 2, testbin_argv);
 	printf("Testbin PID = %d\r\n", testbin_pid);
 
+	for(int i=0; i<500000000; i++);
+	char * test0 = "This is a test message which will be sent to testbin.bin";
+	length = strlen(test0);
+	squire_syscall_simple_send(testbin_pid, length, test0);
+
+	for(int i=0; i<500000000; i++);
+	char * test1 = "This is another test message which will be sent to testbin.bin";
+	length = strlen(test1);
+	squire_syscall_simple_send(testbin_pid, length, test1);
+
 	for(;;){
-		for(int i=0; i<100000000; i++);
-		printf("init.bin\r\n");
 	}
 
 	return 0;

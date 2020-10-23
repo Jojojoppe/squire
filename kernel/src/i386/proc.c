@@ -37,6 +37,7 @@ int proc_init(void (*return_addr)()){
     proc_proc_current->killed_threads = 0;
     proc_thread_current->next = 0;
     proc_thread_current->prev = 0;
+    proc_thread_current->state = PROC_TRHEAD_STATE_RUNNING;
     proc_thread_current->id = 2;
     proc_thread_current->stack = 0;
     proc_thread_current->stack_length = 0;  // Stack is embedded in kernel, cant be freed
@@ -146,7 +147,7 @@ int proc_proc_switch(proc_proc_t * to, proc_proc_t * from){
     __asm__ __volatile__("mov %%eax, %%cr3"::"a"(arch_data->cr3));
 
     proc_proc_current = to;
-    proc_thread_switch(to->threads, proc_thread_current);
+    // proc_thread_switch(to->threads, proc_thread_current);
     return 0;
 }
 
@@ -227,6 +228,7 @@ proc_thread_t * proc_thread_new(void * code, void * stack, size_t stack_length, 
     last->next = thread;
     thread->prev = last;
     thread->next = 0;
+    thread->state = PROC_TRHEAD_STATE_RUNNING;
     thread->stack = stack;
     thread->stack_length = stack_length;
     // Fill other data
@@ -254,6 +256,7 @@ proc_thread_t * proc_thread_new_user(void * code, void * stack, size_t stack_len
         thread->prev = 0;
     }
     thread->next = 0;
+    thread->state = PROC_TRHEAD_STATE_RUNNING;
     // Create kernel stack 
     // TODO fix stack stuff
     void * kstack = vas_brk(4096);
@@ -342,6 +345,8 @@ proc_proc_t * proc_proc_new(void * ELF_start){
     // Setup messaging info
     message_init_info(&pnew->message_info);
     // printf("messages initialized\r\n");
+
+    // pnew->threads->state = PROC_THREAD_STATE_WAITING;
 
     schedule_enable();
     return pnew;
@@ -432,4 +437,21 @@ proc_proc_t * proc_get(unsigned int pid){
     }while(p!=current);
 
     return proc;
+}
+
+
+proc_thread_t * proc_thread_get(unsigned int tid, unsigned int pid){
+    proc_proc_t * p = proc_proc_get_current();
+    proc_proc_t * current = p;
+    do{
+        proc_thread_t * t = p->threads;
+        while(t){
+            if(t->id == tid && p->id == pid){
+                return t;
+            }
+            t = t->next;
+        }
+        p = p->next;
+    }while(p!=current);
+    return 0;
 }

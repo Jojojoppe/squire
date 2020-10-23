@@ -5,7 +5,7 @@ all:
 
 .PHONY: all clean todolist builddir infiles
 
-SQUIRE_VERSION  := "v0.1-1"
+SQUIRE_VERSION  := "v0.2-0"
 
 DIRS			:= src/$(ARCH) src/general
 OUTPUTDIR		:= build

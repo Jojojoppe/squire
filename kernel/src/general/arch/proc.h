@@ -11,6 +11,11 @@
 #include <general/vmm.h>
 #include <general/message.h>
 
+typedef enum proc_thread_state_e{
+    PROC_TRHEAD_STATE_RUNNING = 0,
+    PROC_THREAD_STATE_WAITING
+} proc_thread_state_t;
+
 typedef struct proc_thread_s{
     struct proc_thread_s * next;
     struct proc_thread_s * prev;
@@ -18,6 +23,7 @@ typedef struct proc_thread_s{
     void * stack;
     size_t stack_length;
     int retval;
+    proc_thread_state_t state;
     unsigned char arch_data[PROC_THREADDATA_SIZE];
 } proc_thread_t;
 
@@ -169,5 +175,14 @@ void proc_debug();
  * @return The process structure, NULL if not found
  */
 proc_proc_t * proc_get(unsigned int PID);
+
+/**
+ * @brief Get the thread structure from its id
+ * 
+ * @param tid 
+ * @param pid 
+ * @return proc_thread_t* 
+ */
+proc_thread_t * proc_thread_get(unsigned int tid, unsigned int pid);
 
 #endif

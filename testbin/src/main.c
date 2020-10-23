@@ -1,5 +1,22 @@
 #include <stdio.h>
 #include <unistd.h>
+#include <string.h>
+#include <squire.h>
+
+int message_queue(void * p){
+
+	char * buffer = malloc(1024);
+	memset(buffer, 0, 1024);
+	size_t length = 1024;
+	unsigned int from;
+
+	while(!squire_syscall_simple_recv_blocked(buffer, &length, &from)){
+		printf("from %d: length: %d %s\r\n", from, length, buffer);
+		length = 1024;
+	}
+
+	return 0;
+}
 
 int main(int argc, char ** argv){
 	printf("This is testbin!!!\r\n");
@@ -7,9 +24,10 @@ int main(int argc, char ** argv){
 	for(int i=0; i<argc; i++)
 		printf("argv[%d] = %s\r\n", i, argv[i]);
 
+	void * stack = malloc(4096);
+	squire_syscall_thread(message_queue, stack, 4096, 0, 0);
+
 	for(;;){
-		for(int i=0; i<100000000; i++);
-		printf("testbin.bin\r\n");
 	}
 
 	return 0;

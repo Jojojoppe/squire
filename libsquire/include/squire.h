@@ -74,6 +74,7 @@ struct squire_params_simple_recv_s{
 	void *			buffer;
 	size_t			length;
 	unsigned int	status;
+	unsigned char	blocked;
 };
 typedef struct squire_params_simple_recv_s squire_params_simple_recv_t;
 
@@ -103,6 +104,7 @@ extern void squire_syscall_exit(int retval);
 
 extern unsigned int squire_syscall_simple_send(unsigned int to, size_t length, void * data);
 extern unsigned int squire_syscall_simple_recv(void * buffer, size_t * length, unsigned int * from);
+extern unsigned int squire_syscall_simple_recv_blocked(void * buffer, size_t * length, unsigned int * from);
 
 extern void squire_syscall_log(char * data, size_t length);
 

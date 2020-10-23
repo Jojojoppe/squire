@@ -107,8 +107,14 @@ unsigned int syscall_simple_send(squire_params_simple_send_t * params){
 }
 
 unsigned int syscall_simple_recv(squire_params_simple_recv_t * params){
-    unsigned int status = message_simple_receive(params->buffer, &params->length, &params->from);
+    unsigned int status = 0;
+    size_t length = params->length;
+    if(params->blocked)
+        status = message_simple_receive_blocking(params->buffer, &length, &params->from);
+    else
+        status = message_simple_receive(params->buffer, &length, &params->from);
     params->status = status;
+    params->length = length;
     return status;
 }
 

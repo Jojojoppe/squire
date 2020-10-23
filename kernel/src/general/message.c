@@ -2,10 +2,12 @@
 #include <general/arch/proc.h>
 #include <general/string.h>
 #include <general/kmalloc.h>
+#include <general/schedule.h>
 
 void message_init_info(message_info_t * info){
     info->simple = 0;
     info->simple_number = 0;
+    info->simple_recv_thread = 0;
 }
 
 unsigned int message_simple_send(unsigned int to, size_t length, void * data){
@@ -41,6 +43,13 @@ unsigned int message_simple_send(unsigned int to, size_t length, void * data){
         rec->message_info.simple_number++;
     }
 
+    // Wake up thread of receiving side if needed
+    if(rec->message_info.simple_recv_thread){
+        proc_thread_t * thread = proc_thread_get(rec->message_info.simple_recv_thread, to);
+        thread->state = PROC_TRHEAD_STATE_RUNNING;
+        rec->message_info.simple_recv_thread = 0;
+    }
+
     return MESSAGE_SIMPLE_ERROR_NOERROR;
 }
 
@@ -58,6 +67,33 @@ unsigned int message_simple_receive(void * buffer, size_t * length, unsigned int
     info->simple = msg->next;
     info->simple_number--;
 
+    *from = msg->from;
+    *length = msg->length;
+    memcpy(buffer, msg->data, msg->length);
+
+    return MESSAGE_SIMPLE_ERROR_NOERROR;
+}
+
+unsigned int message_simple_receive_blocking(void * buffer, size_t * length, unsigned int * from){
+    if(*length<8)
+        return MESSAGE_SIMPLE_ERROR_BUFFER_TO_SHORT;
+
+    // Get own message info structure
+    proc_proc_t * current = proc_proc_get_current();
+    message_info_t * info = &current->message_info;
+    if(info->simple_recv_thread)
+        return MESSAGE_SIMPLE_ERROR_ALREADY_BLOCKED_RECEIVE;
+    while(!info->simple_number){
+        proc_thread_get_current()->state = PROC_THREAD_STATE_WAITING;
+        info->simple_recv_thread = proc_thread_get_current()->id;
+        schedule();
+    }
+
+    message_simple_t * msg = info->simple;
+    info->simple = msg->next;
+    info->simple_number--;
+
+    memset(buffer, 0, *length);
     *from = msg->from;
     *length = msg->length;
     memcpy(buffer, msg->data, msg->length);

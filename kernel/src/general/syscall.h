@@ -73,6 +73,7 @@ struct squire_params_simple_recv_s{
 	void *			buffer;
 	size_t			length;
     unsigned int    status;
+    unsigned char   blocked;
 };
 typedef struct squire_params_simple_recv_s squire_params_simple_recv_t;
 
