@@ -9,6 +9,7 @@
 #include <general/config.h>
 #include <general/stdint.h>
 #include <general/vmm.h>
+#include <general/message.h>
 
 typedef struct proc_thread_s{
     struct proc_thread_s * next;
@@ -27,6 +28,7 @@ typedef struct proc_proc_s{
     vmm_region_t * memory;
     proc_thread_t * threads;
     proc_thread_t * killed_threads;
+    message_info_t message_info;
     unsigned char arch_data[PROC_PROCDATA_SIZE];
 } proc_proc_t;
 
@@ -159,5 +161,13 @@ void proc_set_memory(vmm_region_t * region);
  * 
  */
 void proc_debug();
+
+/**
+ * @brief Get the process structure from its id
+ * 
+ * @param PID The process ID
+ * @return The process structure, NULL if not found
+ */
+proc_proc_t * proc_get(unsigned int PID);
 
 #endif

@@ -8,6 +8,7 @@ int test(void * p){
 
 int main(int argc, char ** argv){
 	printf("Main thread of init.bin\r\n");
+	printf("argc: %08x argv: %08x\r\n", argc, argv);
 
 	void * stack = malloc(4096);
 	unsigned int threadB = squire_syscall_thread(test, stack, 4096, 0, 0x11223344);
@@ -15,8 +16,6 @@ int main(int argc, char ** argv){
 
 	int retB = squire_syscall_join(threadB);
 	printf("retB = %08x\r\n", retB);
-
-	for(;;);
 
 	return 0;
 }

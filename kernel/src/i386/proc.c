@@ -46,6 +46,9 @@ int proc_init(void (*return_addr)()){
     t_arch_data->tss_esp0 = 0;
     //printf("kstack = %08x\r\n", t_arch_data->kstack);
 
+    // Initialize message structure of process
+    message_init_info(&proc_proc_current->message_info);
+
     // Switch to created process
     proc_thread_switch(proc_thread_current, 0);
 
@@ -135,6 +138,10 @@ int proc_proc_switch(proc_proc_t * to, proc_proc_t * from){
     // Set VAS
     proc_proc_arch_data_t * arch_data = (proc_proc_arch_data_t*)to->arch_data;
     __asm__ __volatile__("mov %%eax, %%cr3"::"a"(arch_data->cr3));
+
+    if(!to->threads){
+        return 1;
+    }
 
     proc_thread_switch(to->threads, proc_thread_current);
     return 0;
@@ -366,4 +373,18 @@ void proc_debug(){
             t = t->next;
         }
     }while(p!=proc_proc_get_current());
+}
+
+proc_proc_t * proc_get(unsigned int pid){
+    proc_proc_t * proc = 0;
+
+    proc_proc_t * p = proc_proc_get_current();
+    do{
+        if(p->id==pid){
+            proc = p;
+            break;
+        }
+    }while(p!=proc_proc_get_current());
+
+    return proc;
 }

@@ -6,6 +6,7 @@
 #include <general/mboot.h>
 #include <general/elf.h>
 #include <general/config.h>
+#include <general/message.h>
 
 void squire_init2();
 void error(const char *);
@@ -91,6 +92,11 @@ void squire_init2(){
     vmm_region_t * proc_mem = proc_get_memory();
     vmm_alloc(0xbfffc000,0x4000,VMM_FLAGS_READ|VMM_FLAGS_WRITE,&proc_mem);
     proc_set_memory(proc_mem);
+
+    // Send init.bin params as message
+    unsigned int params_data[2] = {0x11223344, 0x55667788};
+    message_simple_send(1, 8, params_data);
+    printf("- Params message sent\r\n");
 
     proc_thread_new_user(init_entry, 0xbfffc000, 0x4000, proc_proc_get_current());
 }
