@@ -64,6 +64,7 @@ void proc_thread_start(){
     __asm__ __volatile__("movl %%eax, %%ebx"::"a"(ebx));
     __asm__ __volatile__("movl %%eax, %%ecx"::"a"(ecx));
     __asm__ __volatile__("sti");
+    schedule();
     return_addr();
 
     proc_thread_kill(proc_thread_get_current(), proc_proc_get_current(), 0);

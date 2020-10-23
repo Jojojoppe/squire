@@ -70,7 +70,7 @@ extern "C" {
 #endif
 
 extern void * squire_syscall_mmap(void * address, size_t length, uint32_t flags);
-extern uint32_t squire_syscall_thread(void (*entry)(void), void * stack_base, size_t stack_length, uint32_t flags);
+extern uint32_t squire_syscall_thread(void (*entry)(void), void * stack_base, size_t stack_length, uint32_t flags, void * param);
 extern uint32_t squire_syscall_process(void * elf_start, size_t elf_length, int argc, char ** argv);
 extern int squire_syscall_join(unsigned int id);
 extern void squire_syscall_exit(int retval);
