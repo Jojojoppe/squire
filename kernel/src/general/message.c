@@ -50,6 +50,8 @@ unsigned int message_simple_send(unsigned int to, size_t length, void * data){
         rec->message_info.simple_recv_thread = 0;
     }
 
+    // printf("MSG[%08x]: to %08x %08x %08x %08x\r\n", msg, to, msg->length, msg->data, msg->next);
+
     return MESSAGE_SIMPLE_ERROR_NOERROR;
 }
 
@@ -64,12 +66,15 @@ unsigned int message_simple_receive(void * buffer, size_t * length, unsigned int
         return MESSAGE_SIMPLE_ERROR_NO_MESSAGES;
 
     message_simple_t * msg = info->simple;
+    // printf("MSG[%08x]: from %08x %08x %08x %08x\r\n", msg, msg->from, msg->length, msg->data, msg->next);
     info->simple = msg->next;
     info->simple_number--;
 
     *from = msg->from;
     *length = msg->length;
     memcpy(buffer, msg->data, msg->length);
+
+    kfree(msg);
 
     return MESSAGE_SIMPLE_ERROR_NOERROR;
 }
@@ -98,5 +103,24 @@ unsigned int message_simple_receive_blocking(void * buffer, size_t * length, uns
     *length = msg->length;
     memcpy(buffer, msg->data, msg->length);
 
+    kfree(msg);
+
     return MESSAGE_SIMPLE_ERROR_NOERROR;
+}
+
+void message_simple_debug(){
+    proc_proc_t * current = proc_proc_get_current();
+    message_info_t * info = &current->message_info;
+    if(!info->simple_number){
+        printf("No messages in queue\r\n");
+        return;
+    }   
+
+    message_simple_t * msg = info->simple;
+    printf("Messages:\r\n");
+    while(msg){
+        printf("- MSG[%08x]: from %08x %08x %08x %08x\r\n", msg, msg->from, msg->length, msg->data, msg->next);
+        msg = msg->next;
+    }
+
 }

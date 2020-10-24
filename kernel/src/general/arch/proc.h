@@ -20,8 +20,12 @@ typedef struct proc_thread_s{
     struct proc_thread_s * next;
     struct proc_thread_s * prev;
     unsigned int id;
+
     void * stack;
     size_t stack_length;
+    void * kernel_stack;
+    size_t kernel_stack_length;
+
     int retval;
     proc_thread_state_t state;
     unsigned char arch_data[PROC_THREADDATA_SIZE];
@@ -32,8 +36,12 @@ typedef struct proc_proc_s{
     struct proc_proc_s * prev;
     unsigned int id;
     vmm_region_t * memory;
+
     proc_thread_t * threads;
     proc_thread_t * killed_threads;
+
+    unsigned int kernel_stacks;
+
     message_info_t message_info;
     unsigned char arch_data[PROC_PROCDATA_SIZE];
 } proc_proc_t;

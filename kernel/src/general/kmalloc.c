@@ -21,6 +21,7 @@ int kmalloc_init(){
 }
 
 void * kmalloc(size_t length){
+    // printf("kmalloc(%08x)\r\n", length);
     heap_block_t * block = heap_start;
     while(block){
         // Check if block is usable
@@ -30,9 +31,10 @@ void * kmalloc(size_t length){
                 // Check if chunk is usable
                 if((chunk->flags&HEAP_CHUNK_USED)==0 && chunk->length>=length){
                     // Check if chunk can be split
-                    if(chunk->length-(length+sizeof(heap_chunk_t))>HEAP_CHUNK_MINSIZE){
+                    int rest = (int)chunk->length - length - sizeof(heap_chunk_t);
+                    if(rest>HEAP_CHUNK_MINSIZE){
                         // Splitting chunk
-                        heap_chunk_t * newchunk = (heap_chunk_t*)((size_t)(chunk+1) + length);
+                        heap_chunk_t * newchunk = (heap_chunk_t*)((void*)(chunk+1) + length);
                         newchunk->flags = chunk->flags;
                         // Now it is known current chunk is not last
                         chunk->flags &= ~HEAP_CHUNK_LAST;
@@ -45,13 +47,13 @@ void * kmalloc(size_t length){
                 }
                 // Chunk not usable, goto next
                 if((chunk->flags&HEAP_CHUNK_LAST)==0){
-                    chunk = (heap_chunk_t*)((size_t)(chunk+1) + chunk->length);
+                    chunk = (heap_chunk_t*)((void*)(chunk+1) + chunk->length);
                     continue;
                 }
                 break;
             }
         }
-        return 0;
+        // return 0;
         // Block not usable, goto next
         if(block->next){
             block = block;
@@ -76,12 +78,13 @@ void * kmalloc(size_t length){
 
 void kfree(void * address){
     // Get chunk header
-    heap_chunk_t * chunk = (heap_chunk_t*)address - 1;
+    heap_chunk_t * chunk = (heap_chunk_t*)(address - sizeof(heap_chunk_t));
     chunk->flags &= ~HEAP_CHUNK_USED;
     kmalloc_clean();
 }
 
 void kmalloc_clean(){
+    // printf("kmalloc_clean()\r\n");
     heap_block_t * block = heap_start;
     while(block){
         heap_chunk_t * chunk = (heap_chunk_t*)(block+1);
@@ -103,11 +106,13 @@ void kmalloc_clean(){
                 if(biggest<chunk->length){
                     biggest = chunk->length;
                 }
+            }else{
+                prev= 0;
             }
 
             // goto next
             if((chunk->flags&HEAP_CHUNK_LAST)==0){
-                chunk = (heap_chunk_t*)((size_t)(chunk+1) + chunk->length);
+                chunk = (heap_chunk_t*)((void*)(chunk+1) + chunk->length);
                 continue;
             }
             break;
@@ -117,7 +122,7 @@ void kmalloc_clean(){
 
         // goto next
         if(block->next != 0){
-            block = block;
+            block = block->next;
             continue;
         }
         // No next block

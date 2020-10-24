@@ -1,9 +1,6 @@
 #include <i386/memory/vas.h>
 #include <i386/memory/pmm.h>
 
-#define KERNEL_PT 0xffc00000
-#define KERNEL_PD 0xfffff000
-
 #define COW_BIT 9
 #define AOA_BIT 10
 
@@ -56,7 +53,7 @@ int vas_unmap(void * address){
     }
     // Set PTE
     *((unsigned int*)(KERNEL_PT)+PT) = 0;
-    asm("movl %cr3,%eax; movl %eax,%cr3");
+    // asm("movl %r3,%eax; movl %eax,%cr3");
     return 0;
 }
 
@@ -112,6 +109,12 @@ unsigned int vas_get_pte(void * addr){
 }
 
 int vas_pagefault(void * addr, unsigned int error){
+    // printf("PF: %08x %08x : ", addr, error);
+
+    unsigned int P = (error>>0)&1;
+    unsigned int RW = (error>>1)&1;
+    unsigned int US = (error>>2)&1;
+
     // Get PD and PT
     unsigned int PT = (unsigned int)addr>>12;
     unsigned int PD = PT>>10;
@@ -119,13 +122,10 @@ int vas_pagefault(void * addr, unsigned int error){
     unsigned int PDE = *((unsigned int*)(KERNEL_PD)+PD);
     if(!PDE&0x01){
         // There is no PD entry
+        printf("\r\nPAGE FAULT\r\n----------\r\nP  [%d]\tRW [%d]\tUS [%d]\r\n", P, RW, US);
         return 1;
     }
     unsigned int PTE = *((unsigned int*)(KERNEL_PT)+PT);
-
-    unsigned int P = (error>>0)&1;
-    unsigned int RW = (error>>1)&1;
-    unsigned int US = (error>>2)&1;
 
     // Check for AOA
     if(P==0 && PTE&(1<<AOA_BIT)){
@@ -136,12 +136,13 @@ int vas_pagefault(void * addr, unsigned int error){
         *((unsigned int*)(KERNEL_PT)+PT) &= ~(1<<AOA_BIT);
 
         unsigned int PTE = *((unsigned int*)(KERNEL_PT)+PT);
-        
+        // printf("\r\n"); 
         return 0;
     }
 
     printf("\r\nPAGE FAULT\r\n----------\r\nP  [%d]\tRW [%d]\tUS [%d]\r\n", P, RW, US);
     printf("COW[%d]\tAOA[%d]\r\n", (PTE>>COW_BIT)&1, (PTE>>AOA_BIT)&1);
+    printf("PTE = %08x\r\n", PTE);
     printf("----------");
 
     return 1;

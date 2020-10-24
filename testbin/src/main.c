@@ -4,6 +4,7 @@
 #include <squire.h>
 
 int message_queue(void * p){
+	printf("Starting message queue\r\n");
 
 	char * buffer = malloc(1024);
 	memset(buffer, 0, 1024);

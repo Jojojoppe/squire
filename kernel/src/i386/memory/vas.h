@@ -23,4 +23,7 @@ int vas_pagefault(void * addr, unsigned int error);
 
 unsigned int vas_get_pte(void * addr);
 
+#define KERNEL_PT 0xffc00000
+#define KERNEL_PD 0xfffff000
+
 #endif
