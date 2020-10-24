@@ -21,4 +21,6 @@ unsigned int vas_getcr3();
 
 int vas_pagefault(void * addr, unsigned int error);
 
+unsigned int vas_get_pte(void * addr);
+
 #endif

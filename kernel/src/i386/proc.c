@@ -486,14 +486,64 @@ proc_proc_t * proc_proc_fork(){
     proc_proc_arch_data_t * arch_data = (proc_proc_arch_data_t*) pnew->arch_data;
     arch_data->cr3 = newpd_phys;
 
-    // switch to new VAS
-    unsigned int own_vas = ((proc_proc_arch_data_t*)(pcur->arch_data))->cr3;
-    proc_proc_current = pnew;
-    __asm__ __volatile__("movl %%eax, %%cr3"::"a"(newpd_phys));
+    // Copy memory to new process
+    vmm_region_t * region = pcur->memory;
+    while(region){
+        printf("region [%08x]:\n", region);
+        printf(" - base:    %08x\n", region->base);
+        printf(" - length:  %08x\n", region->length);
+        printf(" - flags:   %08x\n", region->flags);
+        printf(" - next:    %08x\r\n", region->next);
 
-    // switch back to old VAS
-    proc_proc_current = pcur;
-    __asm__ __volatile__("movl %%eax, %%cr3"::"a"(own_vas));
+        // switch to new VAS
+        unsigned int own_vas = ((proc_proc_arch_data_t*)(pcur->arch_data))->cr3;
+        proc_proc_current = pnew;
+        __asm__ __volatile__("movl %%eax, %%cr3"::"a"(newpd_phys));
+
+        // Allocate region in new VAS
+        vmm_alloc(region->base, region->length, region->flags, &pnew->memory);
+
+        // switch back to old VAS
+        proc_proc_current = pcur;
+        __asm__ __volatile__("movl %%eax, %%cr3"::"a"(own_vas));
+
+        for(int i=0; i<region->length/4096; i++){
+            // Get physical page of page to copy
+            unsigned phys = vas_get_pte(region->base+4096*i)&0xfffff000;
+
+            // switch to new VAS
+            unsigned int own_vas = ((proc_proc_arch_data_t*)(pcur->arch_data))->cr3;
+            proc_proc_current = pnew;
+            __asm__ __volatile__("movl %%eax, %%cr3"::"a"(newpd_phys));
+
+            // Map physical to temporary page here
+            vas_map(phys, 0, VAS_FLAGS_READ);
+
+            // Copy data to new page
+            memcpy(region->base+i*4096, 0, 4096);
+
+            // Unmap old physical
+            vas_unmap(0);
+
+            // switch back to old VAS
+            proc_proc_current = pcur;
+            __asm__ __volatile__("movl %%eax, %%cr3"::"a"(own_vas));
+        }
+
+        // To next region
+        if(region->next && region->next!=region){
+            region = region->next;
+            continue;
+        }
+        // No more regions
+        break;
+    }   
+
+    // Copy threads to new process
+    proc_thread_t * curt = pcur->threads;
+    while(curt){
+        curt = curt->next;
+    }
 
     schedule_enable();
     return pnew;
