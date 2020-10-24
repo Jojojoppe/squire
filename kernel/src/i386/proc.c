@@ -312,6 +312,7 @@ proc_proc_t * proc_proc_new(void * ELF_start){
     *((unsigned int*)(768*4+255*4)) = (unsigned int)newpd_phys | 0x07;
     // Clear first part to be sure
     memset(0, 0, 256*4*3);
+    vas_unmap(0);
     proc_proc_arch_data_t * arch_data = (proc_proc_arch_data_t*) pnew->arch_data;
     arch_data->cr3 = newpd_phys;
 
@@ -454,4 +455,46 @@ proc_thread_t * proc_thread_get(unsigned int tid, unsigned int pid){
         p = p->next;
     }while(p!=current);
     return 0;
+}
+
+proc_proc_t * proc_proc_fork(){
+    schedule_disable();
+
+    // Create new process descriptor
+    proc_proc_t * pnew = (proc_proc_t*)kmalloc(sizeof(proc_proc_t));
+    proc_proc_t * pcur = proc_proc_get_current();
+    // Link new process in list after current
+    pnew->next = pcur->next;
+    pnew->prev = pcur;
+    pcur->next->prev = pnew;
+    pcur->next = pnew;
+    // Set data
+    pnew->id = proc_PID_counter++;
+    // Create vmm memory region list
+    vmm_create(&pnew->memory);
+
+    // Create new PD table and copy kernel space into it (use page 0 as tmp)
+    void * newpd_phys;
+    pmm_alloc(4096, &newpd_phys);
+    vas_map(newpd_phys, 0, VAS_FLAGS_WRITE|VAS_FLAGS_READ);
+    // Copy kernel PD into new one
+    memcpy(768*4, 0xfffff000+768*4, 255*4);
+    *((unsigned int*)(768*4+255*4)) = (unsigned int)newpd_phys | 0x07;
+    // Clear first part to be sure
+    memset(0, 0, 256*4*3);
+    vas_unmap(0);
+    proc_proc_arch_data_t * arch_data = (proc_proc_arch_data_t*) pnew->arch_data;
+    arch_data->cr3 = newpd_phys;
+
+    // switch to new VAS
+    unsigned int own_vas = ((proc_proc_arch_data_t*)(pcur->arch_data))->cr3;
+    proc_proc_current = pnew;
+    __asm__ __volatile__("movl %%eax, %%cr3"::"a"(newpd_phys));
+
+    // switch back to old VAS
+    proc_proc_current = pcur;
+    __asm__ __volatile__("movl %%eax, %%cr3"::"a"(own_vas));
+
+    schedule_enable();
+    return pnew;
 }

@@ -19,4 +19,6 @@ int vas_init();
 
 unsigned int vas_getcr3();
 
+int vas_pagefault(void * addr, unsigned int error);
+
 #endif

@@ -86,15 +86,6 @@ int proc_thread_switch(proc_thread_t * to, proc_thread_t * from);
 int proc_proc_switch(proc_proc_t * to, proc_proc_t * from);
 
 /**
- * @brief Execute in user thread
- * 
- * Sets up a user stack and kernel stack and jumps to ring 3. Paramters are stored
- * in archtitecture specific way. This function is used as return address for the
- * start of a user thread
- */
-void proc_user_exec();
-
-/**
  * @brief Get current thread
  * 
  * @return current thread
@@ -184,5 +175,12 @@ proc_proc_t * proc_get(unsigned int PID);
  * @return proc_thread_t* 
  */
 proc_thread_t * proc_thread_get(unsigned int tid, unsigned int pid);
+
+/**
+ * @brief Fork the current process
+ * 
+ * @return The new process structure of the child
+ */
+proc_proc_t * proc_proc_fork();
 
 #endif

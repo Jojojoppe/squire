@@ -2,6 +2,7 @@
 #include <general/arch/timer.h>
 #include <general/syscall.h>
 #include <general/stdint.h>
+#include <i386/memory/vas.h>
 
 extern idt_set_interrupt_c(unsigned int num, void (*handler)());
 extern idt_set_interrupt_user_c(unsigned int num, void (*handler)());
@@ -109,7 +110,7 @@ ISR_E("Invalid TSS", ts)
 ISR_E("Segment Not Present", sn)
 ISR_E("Stack-Segment Fault", ss)
 ISR_E("General Protection Fault", gp)
-ISR_E("Page Fault", pf)
+//ISR_E("Page Fault", pf)
 ISR_N("x87 Floating-Point Exception", 87)
 ISR_E("Alignment Check", ac)
 ISR_N("Machine Check", mc)
@@ -137,6 +138,14 @@ void isr_c_syscall(){
     __asm__ __volatile__("movl %eax, 40(%ebp)");
 }
 extern void isr_syscall();
+
+void isr_c_pf(struct state * s, unsigned int error){
+    if(!vas_pagefault(s->cr2, error))
+        return;
+    panic(s);
+    for(;;);
+}
+extern void isr_pf();
 
 // ------------------
 

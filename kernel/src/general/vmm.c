@@ -117,9 +117,13 @@ int vmm_alloc(void * base, size_t length, unsigned int flags, vmm_region_t ** li
             if(flags&VMM_FLAGS_WRITE)
                 vas_flags |= VAS_FLAGS_WRITE;
             void * physical_mem;
-            pmm_alloc(length, &physical_mem);
+            // pmm_alloc(length, &physical_mem);
+            // for(int i=0; i<length/PAGE_SIZE; i++){
+                // vas_map(physical_mem + i*PAGE_SIZE, base + i*PAGE_SIZE, vas_flags);
+            // }
+            vas_flags |= VAS_FLAGS_AOA;
             for(int i=0; i<length/PAGE_SIZE; i++){
-                vas_map(physical_mem + i*PAGE_SIZE, base + i*PAGE_SIZE, vas_flags);
+                vas_map(0, base + i*PAGE_SIZE, vas_flags);
             }
 
             // Check if list is prepended

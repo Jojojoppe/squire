@@ -20,5 +20,13 @@ typedef struct {
     unsigned char fpudata[128];
 } proc_thread_arch_data_t;
 
+/**
+ * @brief Execute in user thread
+ * 
+ * Sets up a user stack and kernel stack and jumps to ring 3. Paramters are stored
+ * in archtitecture specific way. This function is used as return address for the
+ * start of a user thread
+ */
+void proc_user_exec();
 
 #endif

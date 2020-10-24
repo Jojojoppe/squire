@@ -48,8 +48,9 @@ isr_%1:
         extern isr_c_%1
         push eax
         call isr_c_%1
-        popad
+        add esp, 4*18
         popfd
+        popad
         iret
 %endmacro
 
@@ -105,8 +106,9 @@ isr_%1:
         push eax
         push ebx
         call isr_c_%1
-        popad
+        add esp, 4*19
         popfd
+        popad
         add esp, 4
         iret
 %endmacro

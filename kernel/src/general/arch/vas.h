@@ -10,7 +10,8 @@
 
 #define VAS_FLAGS_READ 0
 #define VAS_FLAGS_WRITE 2
-// TODO flag for COW AOW?
+#define VAS_FLAGS_COW 4
+#define VAS_FLAGS_AOA 8
 
 /**
  * @brief Map a physical address page to a virtual page
