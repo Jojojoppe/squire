@@ -248,8 +248,8 @@ proc_thread_t * proc_thread_new_user(void * code, void * stack, size_t stack_len
     thread->state = PROC_TRHEAD_STATE_RUNNING;
 
     // Create kernel stack 
-    // void * kstack_base = KERNEL_STACK_TOP - (1+process->kernel_stacks)*KERNEL_STACK_SIZE;
-    void * kstack_base = KERNEL_STACK_TOP - (1+kernel_stacks_total)*KERNEL_STACK_SIZE;
+    void * kstack_base = KERNEL_STACK_TOP - (1+process->kernel_stacks)*KERNEL_STACK_SIZE;
+    // void * kstack_base = KERNEL_STACK_TOP - (1+kernel_stacks_total)*KERNEL_STACK_SIZE;
     void * physicals;
     pmm_alloc(KERNEL_STACK_SIZE, &physicals);
     for(int i=0; i<KERNEL_STACK_SIZE/4096; i++){
@@ -323,7 +323,7 @@ proc_proc_t * _0_proc_proc_new(void * ELF_start){
 
     unsigned int amount_stack_pagetables = (pcur->kernel_stacks/4096+1);
     for(int i=0; i<amount_stack_pagetables; i++){
-        // *((unsigned int*)(768*4+255*4-4-4*i)) = 0;
+        *((unsigned int*)(768*4+255*4-4-4*i)) = 0;
         printf("Clear one stack page for kstack\r\n");
     }
 
