@@ -74,22 +74,8 @@ int proc_init(void (*return_addr)()){
 }
 
 void proc_thread_start(){
-    void (*return_addr)();
-    unsigned int ebx, ecx;
-    __asm__ __volatile__("movl %%ebx, %%eax":"=a"(ebx));
-    __asm__ __volatile__("movl %%ecx, %%eax":"=a"(ecx));
-    __asm__ __volatile__("movl 4(%%ebp), %%eax":"=a"(return_addr));
-
-    printf("proc_thread_start(%08x) ebx = %08x ecx = %08x\r\n", return_addr, ebx, ecx);
-
-    __asm__ __volatile__("movl %%eax, %%ebx"::"a"(ebx));
-    __asm__ __volatile__("movl %%eax, %%ecx"::"a"(ecx));
-    __asm__ __volatile__("sti");
-    schedule();
-    return_addr();
-
+    __asm__ __volatile__("mov 4(%ebp), %eax; sti; call %eax");
     proc_thread_kill(proc_thread_get_current(), proc_proc_get_current(), 0);
-
     schedule();
     for(;;){
     }
