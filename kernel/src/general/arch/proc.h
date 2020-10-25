@@ -76,22 +76,14 @@ static unsigned int proc_PID_counter;
 int proc_init(void (*return_addr)());
 
 /**
- * @brief Switch to thread
+ * @brief 
  * 
- * @param to  Thread to switch to
- * @param from Thread to switch from. Saves the current state in this structure. 0 if not saving
- * @return zero if successfull
+ * @param tto 
+ * @param tfon 
+ * @param pto 
+ * @param pfrom 
  */
-int proc_thread_switch(proc_thread_t * to, proc_thread_t * from);
-
-/**
- * @brief Switch to process
- * 
- * @param to Process to switch to
- * @param from Process to switch from. Saves the current state in this structure
- * @return zero if successfull
- */
-int proc_proc_switch(proc_proc_t * to, proc_proc_t * from);
+void proc_switch(proc_thread_t * tto, proc_thread_t * tfon, proc_proc_t * pto, proc_proc_t * pfrom);
 
 /**
  * @brief Get current thread

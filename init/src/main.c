@@ -6,6 +6,8 @@
 int main(int argc, char ** argv){
 	printf("Main thread of init.bin\r\n");
 
+	// for(;;);
+
 	void * tar_start = (void*)(*((unsigned int*)argv[1]));
 	printf("initramfs content:\r\n");
 	tar_print_list(tar_start);

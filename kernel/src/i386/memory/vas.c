@@ -13,7 +13,7 @@ int vas_init(){
 }
 
 int vas_map(void * physical, void * address, unsigned int flags){
-    printf("vas_map(%08x, %08x, %08x)\r\n", physical, address, flags);
+    // printf("vas_map(%08x, %08x, %08x)\r\n", physical, address, flags);
     // Get PD and PT
     unsigned int PT = (unsigned int)address>>12;
     unsigned int PD = PT>>10;
@@ -24,7 +24,7 @@ int vas_map(void * physical, void * address, unsigned int flags){
         // There is no PD entry, create page table
         void * newpt_physical;
         pmm_alloc(4096, &newpt_physical);
-        printf("Create new PDE @ %08x\r\n", newpt_physical);
+        // printf("Create new PDE @ %08x\r\n", newpt_physical);
         PDE = *((unsigned int*)(KERNEL_PD)+PD) = (unsigned int)newpt_physical | 0x07;
     }
     // Set PTE
@@ -147,7 +147,7 @@ int vas_pagefault(void * addr, unsigned int error){
         pmm_alloc(4096, &physical);
         *((unsigned int*)(KERNEL_PT)+PT) = (unsigned int)physical | (PTE&0xfff) | 1;
         *((unsigned int*)(KERNEL_PT)+PT) &= ~(1<<AOA_BIT);
-        printf("vas_map(%08x, %08x, AOA)\r\n", physical , addr);
+        // printf("vas_map(%08x, %08x, AOA)\r\n", physical , addr);
 
         unsigned int PTE = *((unsigned int*)(KERNEL_PT)+PT);
         memset((unsigned int)addr&0xfffff000, 0, 4096);

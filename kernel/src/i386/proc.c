@@ -42,7 +42,7 @@ int proc_init(void (*return_addr)()){
 
     // Allocate first thread kernel stack
     for(int i=0; i<KERNEL_STACK_SIZE/4096; i++){
-        printf("map %08x\r\n", KERNEL_STACK_TOP-(i+1)*4096);
+        // printf("map %08x\r\n", KERNEL_STACK_TOP-(i+1)*4096);
         vas_map(0, KERNEL_STACK_TOP-(i+1)*4096, VAS_FLAGS_READ|VAS_FLAGS_WRITE|VAS_FLAGS_AOA);
     }
 
@@ -64,13 +64,13 @@ int proc_init(void (*return_addr)()){
     proc_thread_arch_data_t * t_arch_data = (proc_thread_arch_data_t*)proc_thread_current->arch_data;
     t_arch_data->kstack = proc_create_return_stack_frame(KERNEL_STACK_TOP-4, return_addr, 1, 2, 3, 4, 5, 6);
     t_arch_data->tss_esp0 = 0;
-    //printf("kstack = %08x\r\n", t_arch_data->kstack);
+    printf("kstack = %08x\r\n", t_arch_data->kstack);
 
     // Initialize message structure of process
     message_init_info(&proc_proc_current->message_info);
 
     // Switch to created process
-    proc_thread_switch(proc_thread_current, 0);
+    proc_switch(proc_thread_current, 0, proc_proc_current, 0);
 
     return 0;
 }
@@ -105,61 +105,39 @@ void * proc_create_return_stack_frame(unsigned int * stack, void * retaddr, unsi
     return (void*)(stack-13);
 }
 
-int proc_thread_switch (proc_thread_t * to, proc_thread_t * from){
-    if(to==from)
-        return 1;
+void proc_switch(proc_thread_t * tto, proc_thread_t * tfrom, proc_proc_t * pto, proc_proc_t * pfrom){
+    __asm__ __volatile__("cli");
 
     extern unsigned int * TSS;
 
-    // printf("* SWITCH %08x -> %08x\r\n", from, to);
-    // printf("    from kstack %08x\r\n", TSS[1]);
-    // printf("    to kstack %08x\r\n", ((proc_thread_arch_data_t*)to->arch_data)->tss_esp0);
+    // printf("proc_switch(%08x, %08x, %08x, %08x)\r\n", tto, tfrom, pto, pfrom);
 
-    __asm__ __volatile__("cli");
-    proc_thread_current = to;
-    if(from){
+    proc_proc_current = pto;
+    proc_thread_current = tto;
+    unsigned int newcr3 = ((proc_proc_arch_data_t*)&pto->arch_data)->cr3;
+    if(tfrom){
         // Save current state in from
-        __asm__ __volatile__("fsave (%%eax)"::"a"(((proc_thread_arch_data_t*)(from->arch_data))->fpudata));
+        __asm__ __volatile__("fsave (%%eax)"::"a"(((proc_thread_arch_data_t*)(tfrom->arch_data))->fpudata));
         __asm__ __volatile__(".intel_syntax noprefix");
         __asm__ __volatile__("pushad");
         __asm__ __volatile__("pushfd");
         __asm__ __volatile__(".att_syntax noprefix");
         __asm__ __volatile__("mov %esp, %esi");
-        __asm__ __volatile__("nop":"=S"(((proc_thread_arch_data_t*)from->arch_data)->kstack));
-        ((proc_thread_arch_data_t*)from->arch_data)->tss_esp0 = TSS[1];
+        __asm__ __volatile__("nop":"=S"(((proc_thread_arch_data_t*)tfrom->arch_data)->kstack));
+        ((proc_thread_arch_data_t*)tfrom->arch_data)->tss_esp0 = TSS[1];
     }
-    TSS[1] = ((proc_thread_arch_data_t*)to->arch_data)->tss_esp0;
-    __asm__ __volatile__("frstor (%%eax)"::"a"(((proc_thread_arch_data_t*)(to->arch_data))->fpudata));
-    __asm__ __volatile__("nop"::"S"(((proc_thread_arch_data_t*)to->arch_data)->kstack));
+    TSS[1] = ((proc_thread_arch_data_t*)tto->arch_data)->tss_esp0;
+    __asm__ __volatile__("frstor (%%eax)"::"a"(((proc_thread_arch_data_t*)(tto->arch_data))->fpudata));
+    __asm__ __volatile__("nop"::"S"(((proc_thread_arch_data_t*)tto->arch_data)->kstack));
+    __asm__ __volatile__("movl %%eax, %%cr3;"::"a"(newcr3));
     __asm__ __volatile__("mov %esi, %esp");
     __asm__ __volatile__(".intel_syntax noprefix");
     __asm__ __volatile__("popfd");
     __asm__ __volatile__("popad");
     __asm__ __volatile__(".att_syntax noprefix");
+    __asm__ __volatile__("leave; ret");
 
-    return 0;
-}
-
-int proc_proc_switch(proc_proc_t * to, proc_proc_t * from){
-    __asm__ __volatile("cli");
-
-    // Set VAS
-    proc_proc_arch_data_t * arch_data = (proc_proc_arch_data_t*)to->arch_data;
-    // printf(" cr3->%08x ", arch_data->cr3);
-
-    // if(to!=from){
-    // vas_map(arch_data->cr3, 0, VAS_FLAGS_WRITE|VAS_FLAGS_READ);
-    // hexDump("\r\nNew PD", 0, 4096);
-    // printf("\r\n");
-    // vas_unmap(0);
-    // }
-
-    proc_proc_current = to;
-    __asm__ __volatile__("mov %%eax, %%cr3"::"a"(arch_data->cr3));
-
-    // proc_thread_switch(to->threads, proc_thread_current);
-    __asm__ __volatile("sti");
-    return 0;
+    return;
 }
 
 /* Paramters:
@@ -270,8 +248,8 @@ proc_thread_t * proc_thread_new_user(void * code, void * stack, size_t stack_len
     thread->state = PROC_TRHEAD_STATE_RUNNING;
 
     // Create kernel stack 
-    void * kstack_base = KERNEL_STACK_TOP - (1+process->kernel_stacks)*KERNEL_STACK_SIZE;
-    // void * kstack_base = KERNEL_STACK_TOP - (1+kernel_stacks_total)*KERNEL_STACK_SIZE;
+    // void * kstack_base = KERNEL_STACK_TOP - (1+process->kernel_stacks)*KERNEL_STACK_SIZE;
+    void * kstack_base = KERNEL_STACK_TOP - (1+kernel_stacks_total)*KERNEL_STACK_SIZE;
     void * physicals;
     pmm_alloc(KERNEL_STACK_SIZE, &physicals);
     for(int i=0; i<KERNEL_STACK_SIZE/4096; i++){
@@ -345,7 +323,7 @@ proc_proc_t * _0_proc_proc_new(void * ELF_start){
 
     unsigned int amount_stack_pagetables = (pcur->kernel_stacks/4096+1);
     for(int i=0; i<amount_stack_pagetables; i++){
-        *((unsigned int*)(768*4+255*4-4-4*i)) = 0;
+        // *((unsigned int*)(768*4+255*4-4-4*i)) = 0;
         printf("Clear one stack page for kstack\r\n");
     }
 

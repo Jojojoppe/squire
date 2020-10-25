@@ -97,7 +97,7 @@ void panic(struct state * s){
     extern void isr_ ## shortname ();
 
 ISR_N("Divide-by-zero", dz)
-ISR_N("Debug", db)
+// ISR_N("Debug", db)
 ISR_N("Non-maskable Interrupt", nmi)
 ISR_N("Breakpoint", br)
 ISR_N("Overflow", of)
@@ -146,6 +146,13 @@ void isr_c_pf(struct state * s, unsigned int error){
     for(;;);
 }
 extern void isr_pf();
+
+void isr_c_db(struct state * s){
+    printf("\r\nDEBUG\r\n");
+    panic(s);\
+    printf("\r\n-----\r\n");
+}
+extern void isr_db();
 
 // ------------------
 
