@@ -122,6 +122,7 @@ void squire_init2(){
 
     proc_thread_new_user(init_entry, 0xbfffc000, 0x4000, proc_proc_get_current());
     printf("- init.bin is started\r\n");
+
 }
 
 /**

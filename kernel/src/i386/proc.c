@@ -86,7 +86,7 @@ void proc_thread_start(){
 void * proc_create_return_stack_frame(unsigned int * stack, void * retaddr, unsigned int eax, unsigned int ebx, unsigned int ecx, unsigned int edx, unsigned int esi, unsigned int edi){
     unsigned int stack_top = (unsigned int)stack;
 
-    // printf("New stack frame [%08x]: %08x %08x %08x %08x %08x %08x\r\n", stack, eax, ebx, ecx, edx, esi, edi);
+    printf("New stack frame [%08x]: %08x %08x %08x %08x %08x %08x\r\n", stack, eax, ebx, ecx, edx, esi, edi);
 
     *(stack-1) = retaddr;
     *(stack-2) = proc_thread_start;               // Return address
@@ -141,17 +141,24 @@ int proc_thread_switch (proc_thread_t * to, proc_thread_t * from){
 }
 
 int proc_proc_switch(proc_proc_t * to, proc_proc_t * from){
-
-    if(!to->threads){
-        return 1;
-    }
+    __asm__ __volatile("cli");
 
     // Set VAS
     proc_proc_arch_data_t * arch_data = (proc_proc_arch_data_t*)to->arch_data;
-    __asm__ __volatile__("mov %%eax, %%cr3"::"a"(arch_data->cr3));
+    // printf(" cr3->%08x ", arch_data->cr3);
+
+    // if(to!=from){
+    // vas_map(arch_data->cr3, 0, VAS_FLAGS_WRITE|VAS_FLAGS_READ);
+    // hexDump("\r\nNew PD", 0, 4096);
+    // printf("\r\n");
+    // vas_unmap(0);
+    // }
 
     proc_proc_current = to;
+    __asm__ __volatile__("mov %%eax, %%cr3"::"a"(arch_data->cr3));
+
     // proc_thread_switch(to->threads, proc_thread_current);
+    __asm__ __volatile("sti");
     return 0;
 }
 
@@ -263,11 +270,16 @@ proc_thread_t * proc_thread_new_user(void * code, void * stack, size_t stack_len
     thread->state = PROC_TRHEAD_STATE_RUNNING;
 
     // Create kernel stack 
-    // void * kstack_base = KERNEL_STACK_TOP - (1+process->kernel_stacks)*KERNEL_STACK_SIZE;
-    void * kstack_base = KERNEL_STACK_TOP - (1+kernel_stacks_total)*KERNEL_STACK_SIZE;
+    void * kstack_base = KERNEL_STACK_TOP - (1+process->kernel_stacks)*KERNEL_STACK_SIZE;
+    // void * kstack_base = KERNEL_STACK_TOP - (1+kernel_stacks_total)*KERNEL_STACK_SIZE;
+    void * physicals;
+    pmm_alloc(KERNEL_STACK_SIZE, &physicals);
     for(int i=0; i<KERNEL_STACK_SIZE/4096; i++){
-        vas_map(0, kstack_base+i*4096, VAS_FLAGS_READ|VAS_FLAGS_WRITE|VAS_FLAGS_AOA);
+        vas_map(physicals + i*4096, kstack_base+i*4096, VAS_FLAGS_READ|VAS_FLAGS_WRITE);
     }
+    printf("New kernel stack at %08x (stack nr %d)\r\n", kstack_base, process->kernel_stacks);
+    printf("kstack pde: %08x\r\n", vas_get_pde(kstack_base));
+    printf("kstack pte: %08x\r\n", vas_get_pte(kstack_base));
     // kstack_base = vas_brk(KERNEL_STACK_SIZE);
     thread->stack = stack;
     thread->stack_length = stack_length;
@@ -289,7 +301,7 @@ proc_thread_t * proc_thread_new_user(void * code, void * stack, size_t stack_len
 
     archdata->kstack = proc_create_return_stack_frame(kstack_base+KERNEL_STACK_SIZE-4, proc_user_exec, 0, stack+stack_length-4, code, 0, 0, 0);
 
-    // proc_debug();
+    proc_debug();
 
     schedule_enable();
     return thread;
@@ -321,14 +333,28 @@ proc_proc_t * _0_proc_proc_new(void * ELF_start){
     void * newpd_phys;
     pmm_alloc(4096, &newpd_phys);
     vas_map(newpd_phys, 0, VAS_FLAGS_WRITE|VAS_FLAGS_READ);
+    memset(0, 0, 4096);
     // Copy kernel PD into new one
     memcpy(768*4, 0xfffff000+768*4, 255*4);
     *((unsigned int*)(768*4+255*4)) = (unsigned int)newpd_phys | 0x07;
-    // Clear first part to be sure
-    memset(0, 0, 256*4*3);
-    vas_unmap(0);
+
+    // Get current kstack pde
+    printf("current kstack pde: %08x\r\n", vas_get_pde(0xffbff000));
+    printf("current kstack pte: %08x\r\n", vas_get_pte(0xffbff000));
+    // hexDump("Current PT of stacks", 0xffffe000, 4096);
+
+    unsigned int amount_stack_pagetables = (pcur->kernel_stacks/4096+1);
+    for(int i=0; i<amount_stack_pagetables; i++){
+        *((unsigned int*)(768*4+255*4-4-4*i)) = 0;
+        printf("Clear one stack page for kstack\r\n");
+    }
+
     proc_proc_arch_data_t * arch_data = (proc_proc_arch_data_t*) pnew->arch_data;
     arch_data->cr3 = newpd_phys;
+
+    // hexDump("\r\nThe new PD\r\n", 0, 4096);
+
+    vas_unmap(0);
 
     // switch to new VAS
     unsigned int own_vas = ((proc_proc_arch_data_t*)(pcur->arch_data))->cr3;
@@ -336,7 +362,7 @@ proc_proc_t * _0_proc_proc_new(void * ELF_start){
     __asm__ __volatile__("movl %%eax, %%cr3"::"a"(newpd_phys));
 
     // Load ELF
-    printf("Loading ELF");
+    printf("Loading ELF\r\n");
     void (*entry)();
     elf_load_simple(ELF_start, &entry);
     printf("ELF loaded\r\n");
@@ -392,8 +418,6 @@ proc_proc_t * proc_proc_new(void * ELF_start){
 
     message_init_info(&pnew->message_info);
     // printf("messages initialized\r\n");
-
-    // proc_debug();
 
     schedule_enable();
     return pnew;
@@ -453,12 +477,12 @@ void proc_debug(){
     proc_proc_t * current = p;
     printf("Processes:\r\n");
     do{
-        printf("+ P[%d] - %08x\r\n", p->id, p);
+        printf("+ P[%d] - %08x cr3(%08x)\r\n", p->id, p, ((proc_proc_arch_data_t*)&p->arch_data)->cr3);
         printf("  next: %08x\r\n", p->next);
         printf("  prev: %08x\r\n", p->prev);
         proc_thread_t * t = p->threads;
         while(t){
-            printf("  - T[%d] /w %08x (%08x) \r\n", t->id, t->stack, t->stack_length);
+            printf("  - T[%d](%08x) /w %08x (%08x) %08x (%08x)\r\n", t->id, t, t->stack, t->stack_length, t->kernel_stack, t->kernel_stack_length);
             t = t->next;
         }
         t = p->killed_threads;

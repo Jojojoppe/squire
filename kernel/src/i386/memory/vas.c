@@ -13,15 +13,18 @@ int vas_init(){
 }
 
 int vas_map(void * physical, void * address, unsigned int flags){
+    printf("vas_map(%08x, %08x, %08x)\r\n", physical, address, flags);
     // Get PD and PT
     unsigned int PT = (unsigned int)address>>12;
     unsigned int PD = PT>>10;
     // Get PDE
     unsigned int PDE = *((unsigned int*)(KERNEL_PD)+PD);
-    if(!PDE&0x01){
+    // printf("PDE at %08x = %08x\r\n", KERNEL_PD + 4*PD, PDE);
+    if((PDE&0x01)==0){
         // There is no PD entry, create page table
         void * newpt_physical;
         pmm_alloc(4096, &newpt_physical);
+        printf("Create new PDE @ %08x\r\n", newpt_physical);
         PDE = *((unsigned int*)(KERNEL_PD)+PD) = (unsigned int)newpt_physical | 0x07;
     }
     // Set PTE
@@ -79,9 +82,9 @@ int vas_unmap_free(void * address){
 
 void * vas_brk(size_t length){
     void * physical;
-    pmm_alloc(length, &physical);
+    // pmm_alloc(length, &physical);
     for(int i=0; i<length/4096; i++){
-        vas_map((unsigned int)physical+4096*i, vas_k_brk+4096*i, VAS_FLAGS_READ|VAS_FLAGS_WRITE|VAS_FLAGS_AOA);
+        vas_map(0, vas_k_brk+4096*i, VAS_FLAGS_READ|VAS_FLAGS_WRITE|VAS_FLAGS_AOA);
     }
     unsigned int old_brk = vas_k_brk;
     vas_k_brk += 4096*(length/4096);
@@ -108,6 +111,15 @@ unsigned int vas_get_pte(void * addr){
     return PTE;
 }
 
+unsigned int vas_get_pde(void * addr){
+    // Get PD and PT
+    unsigned int PT = (unsigned int)addr>>12;
+    unsigned int PD = PT>>10;
+    // Get PDE
+    unsigned int PDE = *((unsigned int*)(KERNEL_PD)+PD);
+    return PDE;
+}
+
 int vas_pagefault(void * addr, unsigned int error){
     // printf("PF: %08x %08x : ", addr, error);
 
@@ -129,13 +141,16 @@ int vas_pagefault(void * addr, unsigned int error){
 
     // Check for AOA
     if(P==0 && PTE&(1<<AOA_BIT)){
+        // printf("AOA %08x\r\n", addr);
         // Allocate space now
         void * physical;
         pmm_alloc(4096, &physical);
         *((unsigned int*)(KERNEL_PT)+PT) = (unsigned int)physical | (PTE&0xfff) | 1;
         *((unsigned int*)(KERNEL_PT)+PT) &= ~(1<<AOA_BIT);
+        printf("vas_map(%08x, %08x, AOA)\r\n", physical , addr);
 
         unsigned int PTE = *((unsigned int*)(KERNEL_PT)+PT);
+        memset((unsigned int)addr&0xfffff000, 0, 4096);
         // printf("\r\n"); 
         return 0;
     }
