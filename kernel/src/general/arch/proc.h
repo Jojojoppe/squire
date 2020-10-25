@@ -41,6 +41,7 @@ typedef struct proc_proc_s{
     proc_thread_t * killed_threads;
 
     unsigned int kernel_stacks;
+    unsigned int tid_counter;
 
     message_info_t message_info;
     unsigned char arch_data[PROC_PROCDATA_SIZE];

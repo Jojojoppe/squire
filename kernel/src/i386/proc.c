@@ -25,7 +25,7 @@ int proc_init(void (*return_addr)()){
     TSS[2] = 0x10;      // SS0
     TSS[25] = 104;      // IOPB
 
-    proc_PID_counter = 3;
+    proc_PID_counter = 2;
 
     // Create main process structure
     proc_proc_current = (proc_proc_t*)kmalloc(sizeof(proc_proc_t));
@@ -33,6 +33,7 @@ int proc_init(void (*return_addr)()){
     proc_proc_current->prev = proc_proc_current;
     proc_proc_current->id = 1;
     proc_proc_current->kernel_stacks = 1;
+    proc_proc_current->tid_counter = 2;
     kernel_stacks_total++;
     // Create memory region
     vmm_create(&proc_proc_current->memory);
@@ -55,7 +56,7 @@ int proc_init(void (*return_addr)()){
     proc_thread_current->next = 0;
     proc_thread_current->prev = 0;
     proc_thread_current->state = PROC_TRHEAD_STATE_RUNNING;
-    proc_thread_current->id = 2;
+    proc_thread_current->id = 1;
     proc_thread_current->stack = 0;
     proc_thread_current->stack_length = 0; // No user stack
     proc_thread_current->kernel_stack = KERNEL_STACK_TOP-KERNEL_STACK_SIZE;
@@ -221,7 +222,7 @@ proc_thread_t * proc_thread_new(void * code, void * stack, size_t stack_length, 
     thread->stack = stack;
     thread->stack_length = stack_length;
     // Fill other data
-    thread->id = proc_PID_counter++;
+    thread->id = process->tid_counter++;
     proc_thread_arch_data_t * archdata = (proc_thread_arch_data_t*) thread->arch_data;
     archdata->tss_esp0 = 0;
     archdata->kstack = proc_create_return_stack_frame(stack+stack_length-4, code, 0, 0, 0, 0, 0, 0);
@@ -267,7 +268,7 @@ proc_thread_t * proc_thread_new_user(void * code, void * stack, size_t stack_len
     kernel_stacks_total++;
 
     // Fill other data
-    thread->id = proc_PID_counter++;
+    thread->id = process->tid_counter++;
     proc_thread_arch_data_t * archdata = (proc_thread_arch_data_t*) thread->arch_data;
     archdata->tss_esp0 = 4; //kstack_base+KERNEL_STACK_SIZE-4;
 
@@ -304,6 +305,7 @@ proc_proc_t * _0_proc_proc_new(void * ELF_start){
     pcur->next = pnew;
     // Set data
     pnew->id = proc_PID_counter++;
+    pnew->tid_counter = 1;
     // Create vmm memory region list
     vmm_create(&pnew->memory);
 
