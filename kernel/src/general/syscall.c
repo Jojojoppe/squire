@@ -92,7 +92,7 @@ unsigned int syscall_process(squire_params_process_t * params){
     params_data1[0] = params->argc;
     params_data1[1] = params->param_data_size;
     unsigned int status = message_simple_send(pnew->id, sizeof(unsigned int)*2, params_data1);
-    message_simple_send(pnew->id, params_data1[1], params->param_data);
+    status = message_simple_send(pnew->id, params_data1[1], params->param_data);
     params->pid = pnew->id;
     // printf("Process created!\r\n");
 

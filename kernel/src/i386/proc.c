@@ -17,6 +17,8 @@ unsigned int kernel_stacks_total = 0;
 void * proc_create_return_stack_frame(unsigned int * stack, void * retaddr, unsigned int eax, unsigned int ebx, unsigned int ecx, unsigned int edx, unsigned int esi, unsigned int edi);
 void proc_thread_start();
 
+extern unsigned int boot_stack_top_C;
+
 int proc_init(void (*return_addr)()){
     // Initialize the TSS
     TSS[1] = 0 ;        // ESP0
@@ -84,7 +86,7 @@ void proc_thread_start(){
 void * proc_create_return_stack_frame(unsigned int * stack, void * retaddr, unsigned int eax, unsigned int ebx, unsigned int ecx, unsigned int edx, unsigned int esi, unsigned int edi){
     unsigned int stack_top = (unsigned int)stack;
 
-    printf("New stack frame [%08x]: %08x %08x %08x %08x %08x %08x\r\n", stack, eax, ebx, ecx, edx, esi, edi);
+    // printf("New stack frame [%08x]: %08x %08x %08x %08x %08x %08x\r\n", stack, eax, ebx, ecx, edx, esi, edi);
 
     *(stack-1) = retaddr;
     *(stack-2) = proc_thread_start;               // Return address
@@ -243,7 +245,7 @@ proc_thread_t * proc_thread_new(void * code, void * stack, size_t stack_length, 
 }
 
 proc_thread_t * proc_thread_new_user(void * code, void * stack, size_t stack_length, proc_proc_t * process){
-    __asm__ __volatile__("cli");
+    schedule_disable();
     proc_thread_t * thread = (proc_thread_t*)kmalloc(sizeof(proc_thread_t));
     // Link stucture to process
     proc_thread_t * last = process->threads;
@@ -287,7 +289,9 @@ proc_thread_t * proc_thread_new_user(void * code, void * stack, size_t stack_len
 
     archdata->kstack = proc_create_return_stack_frame(kstack_base+KERNEL_STACK_SIZE-4, proc_user_exec, 0, stack+stack_length-4, code, 0, 0, 0);
 
-    __asm__ __volatile__("sti");
+    // proc_debug();
+
+    schedule_enable();
     return thread;
 }
 
@@ -299,9 +303,7 @@ void proc_set_memory(vmm_region_t * region){
     proc_proc_get_current()->memory = region;
 }
 
-proc_proc_t * proc_proc_new(void * ELF_start){
-    schedule_disable();
-
+proc_proc_t * _0_proc_proc_new(void * ELF_start){
     // Create new process descriptor
     proc_proc_t * pnew = (proc_proc_t*)kmalloc(sizeof(proc_proc_t));
     proc_proc_t * pcur = proc_proc_get_current();
@@ -357,10 +359,41 @@ proc_proc_t * proc_proc_new(void * ELF_start){
     // TODO switch to new VAS, load elf, setup user stack, add thread discriptor
     // and go back to own VAS
     // Setup messaging info
+
+
+    // pnew->threads->state = PROC_THREAD_STATE_WAITING;
+
+    return pnew;
+}
+
+proc_proc_t * proc_proc_new(void * ELF_start){
+    schedule_disable();
+
+    // proc_proc_t * pnew = _0_proc_proc_new(ELF_start);
+    proc_proc_t * pnew;
+
+    // Setup call stack for 0_proc_proc_new()
+    unsigned int old_ebp, old_esp;
+    __asm__ __volatile__("movl %%ebp, %%eax":"=a"(old_ebp));
+    __asm__ __volatile__("movl %%esp, %%eax":"=a"(old_esp));
+    unsigned int * newstack = (unsigned int *)(boot_stack_top_C-4);
+    *(newstack--) = old_esp;
+    *(newstack--) = old_ebp;
+    *(newstack) = ELF_start;
+
+// {unsigned int old_ebp, old_esp, cr3;__asm__ __volatile__("movl %%ebp, %%eax":"=a"(old_ebp));__asm__ __volatile__("movl %%esp, %%eax":"=a"(old_esp));cr3 = vas_getcr3();printf("EBP %08x ESP %08x CR3 %08x\r\n", old_ebp, old_esp, cr3);}
+
+    __asm__ __volatile__("movl %%eax, %%esp; movl %%esp, %%ebp"::"a"(newstack));
+    __asm__ __volatile__("call %%eax"::"a"(_0_proc_proc_new));
+    __asm__ __volatile__("add $4, %esp ;pop %ebp; pop %esp");
+    __asm__ __volatile__("nop":"=a"(pnew));
+
+// {unsigned int old_ebp, old_esp, cr3;__asm__ __volatile__("movl %%ebp, %%eax":"=a"(old_ebp));__asm__ __volatile__("movl %%esp, %%eax":"=a"(old_esp));cr3 = vas_getcr3();printf("EBP %08x ESP %08x CR3 %08x\r\n", old_ebp, old_esp, cr3);}
+
     message_init_info(&pnew->message_info);
     // printf("messages initialized\r\n");
 
-    // pnew->threads->state = PROC_THREAD_STATE_WAITING;
+    // proc_debug();
 
     schedule_enable();
     return pnew;

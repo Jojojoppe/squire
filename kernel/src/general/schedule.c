@@ -11,13 +11,14 @@ void schedule(){
     proc_thread_t * thread = proc_thread_get_current();
     proc_thread_t * next = thread->next;
 
-    // printf("\r\nSWITCH: %08x -> %08x\r\n", thread, thread->next);
+    // printf("SWITCH: ");
 
     while(1){
         if(next){
 
             // Check for thread state
             if(next->state == PROC_TRHEAD_STATE_RUNNING){
+                // printf("T[%08x %d]->[%08x %d]\r\n", thread, thread->id, next, next->id);
                 proc_thread_switch(next, thread);
                 return;
             }
@@ -28,6 +29,7 @@ void schedule(){
         }
 
         // Nope, check next process
+        // printf("P[%08x %d]->[%08x %d] ", proc, proc->id, proc->next, proc->next->id);
         proc_proc_switch(proc->next, proc);
         proc = proc->next;
         next = proc->threads;
@@ -36,8 +38,13 @@ void schedule(){
 
 void schedule_disable(){
     schedule_disabled++;
+    // printf("> schedule_disabled=%d\r\n", schedule_disabled);
+    __asm__ __volatile__("cli");
 }
 
 void schedule_enable(){
     schedule_disabled--;
+    // printf("< schedule_disabled=%d\r\n", schedule_disabled);
+    if(!schedule_disabled)
+        __asm__ __volatile__("sti");
 }
