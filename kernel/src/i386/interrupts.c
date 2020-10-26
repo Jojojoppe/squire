@@ -213,3 +213,11 @@ void remap_PIC(){
 void isr_empty_N(){
     io_outb(0x20, 0x20);
 }
+
+void arch_disable_interrupts(){
+    __asm__ __volatile__("cli");
+}
+
+void arch_enable_interrupts(){
+    __asm__ __volatile__("sti");
+}

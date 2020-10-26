@@ -197,7 +197,7 @@ unsigned int syscall(unsigned int opcode, void * param_block, size_t param_len){
 
     }
 
-    schedule();
+    // schedule();
 
     return returncode;
 }

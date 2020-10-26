@@ -65,12 +65,13 @@ int proc_init(void (*return_addr)()){
     proc_thread_arch_data_t * t_arch_data = (proc_thread_arch_data_t*)proc_thread_current->arch_data;
     t_arch_data->kstack = proc_create_return_stack_frame(KERNEL_STACK_TOP-4, return_addr, 1, 2, 3, 4, 5, 6);
     t_arch_data->tss_esp0 = 0;
-    printf("kstack = %08x\r\n", t_arch_data->kstack);
+    // printf("kstack = %08x\r\n", t_arch_data->kstack);
 
     // Initialize message structure of process
     message_init_info(&proc_proc_current->message_info);
 
     // Switch to created process
+    schedule_init(proc_proc_current, proc_thread_current);
     proc_switch(proc_thread_current, 0, proc_proc_current, 0);
 
     return 0;
@@ -87,7 +88,7 @@ void proc_thread_start(){
 void * proc_create_return_stack_frame(unsigned int * stack, void * retaddr, unsigned int eax, unsigned int ebx, unsigned int ecx, unsigned int edx, unsigned int esi, unsigned int edi){
     unsigned int stack_top = (unsigned int)stack;
 
-    printf("New stack frame [%08x]: %08x %08x %08x %08x %08x %08x\r\n", stack, eax, ebx, ecx, edx, esi, edi);
+    // printf("New stack frame [%08x]: %08x %08x %08x %08x %08x %08x\r\n", stack, eax, ebx, ecx, edx, esi, edi);
 
     *(stack-1) = retaddr;
     *(stack-2) = proc_thread_start;               // Return address
@@ -256,9 +257,9 @@ proc_thread_t * proc_thread_new_user(void * code, void * stack, size_t stack_len
     for(int i=0; i<KERNEL_STACK_SIZE/4096; i++){
         vas_map(physicals + i*4096, kstack_base+i*4096, VAS_FLAGS_READ|VAS_FLAGS_WRITE);
     }
-    printf("New kernel stack at %08x (stack nr %d)\r\n", kstack_base, process->kernel_stacks);
-    printf("kstack pde: %08x\r\n", vas_get_pde(kstack_base));
-    printf("kstack pte: %08x\r\n", vas_get_pte(kstack_base));
+    // printf("New kernel stack at %08x (stack nr %d)\r\n", kstack_base, process->kernel_stacks);
+    // printf("kstack pde: %08x\r\n", vas_get_pde(kstack_base));
+    // printf("kstack pte: %08x\r\n", vas_get_pte(kstack_base));
     // kstack_base = vas_brk(KERNEL_STACK_SIZE);
     thread->stack = stack;
     thread->stack_length = stack_length;
@@ -280,7 +281,9 @@ proc_thread_t * proc_thread_new_user(void * code, void * stack, size_t stack_len
 
     archdata->kstack = proc_create_return_stack_frame(kstack_base+KERNEL_STACK_SIZE-4, proc_user_exec, 0, stack+stack_length-4, code, 0, 0, 0);
 
-    proc_debug();
+    schedule_add(proc_proc_current, thread, SCHEDULE_QUEUE_TYPE_NORMAL);
+
+    // proc_debug();
 
     schedule_enable();
     return thread;
@@ -319,14 +322,14 @@ proc_proc_t * _0_proc_proc_new(void * ELF_start){
     *((unsigned int*)(768*4+255*4)) = (unsigned int)newpd_phys | 0x07;
 
     // Get current kstack pde
-    printf("current kstack pde: %08x\r\n", vas_get_pde(0xffbff000));
-    printf("current kstack pte: %08x\r\n", vas_get_pte(0xffbff000));
+    // printf("current kstack pde: %08x\r\n", vas_get_pde(0xffbff000));
+    // printf("current kstack pte: %08x\r\n", vas_get_pte(0xffbff000));
     // hexDump("Current PT of stacks", 0xffffe000, 4096);
 
     unsigned int amount_stack_pagetables = (pcur->kernel_stacks/4096+1);
     for(int i=0; i<amount_stack_pagetables; i++){
         *((unsigned int*)(768*4+255*4-4-4*i)) = 0;
-        printf("Clear one stack page for kstack\r\n");
+        // printf("Clear one stack page for kstack\r\n");
     }
 
     proc_proc_arch_data_t * arch_data = (proc_proc_arch_data_t*) pnew->arch_data;
@@ -342,10 +345,10 @@ proc_proc_t * _0_proc_proc_new(void * ELF_start){
     __asm__ __volatile__("movl %%eax, %%cr3"::"a"(newpd_phys));
 
     // Load ELF
-    printf("Loading ELF\r\n");
+    // printf("Loading ELF\r\n");
     void (*entry)();
     elf_load_simple(ELF_start, &entry);
-    printf("ELF loaded\r\n");
+    // printf("ELF loaded\r\n");
 
     // Create new thread
     // printf("Create new user stack\r\n");

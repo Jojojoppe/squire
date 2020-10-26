@@ -10,11 +10,57 @@
 #include <general/stdint.h>
 #include <general/arch/proc.h>
 
+enum SCHEDULE_QUEUE_TYPE{
+    SCHEDULE_QUEUE_TYPE_NORMAL = 0,
+    SCHEDULE_QUEUE_TYPE_PRIORITY,
+    _SCHEDULE_QUEUE_TYPE_SIZE_
+};
+typedef unsigned int schedule_queue_type_t;
+
+enum SCHEDULE_STATE{
+    SCHEDULE_STATE_RUNNING = 0,
+    SCHEDULE_STATE_IDLE
+};
+typedef unsigned int schedule_state_t;
+
+typedef struct schedule_schedulable_s{
+    struct schedule_schedulable_s * next;
+    proc_proc_t * process;
+    proc_thread_t * thread;
+    schedule_state_t state;
+} schedule_schedulable_t;
+
 /**
  * @brief 
  * 
  */
 void schedule();
+
+/**
+ * @brief 
+ * 
+ * @param process 
+ * @param thread 
+ */
+void schedule_init(proc_proc_t * process, proc_thread_t * thread);
+
+/**
+ * @brief 
+ * 
+ * @param process 
+ * @param thread 
+ * @param queue 
+ * @return schedule_schedulable_t* 
+ */
+schedule_schedulable_t * schedule_add(proc_proc_t * process, proc_thread_t * thread, schedule_queue_type_t queue);
+
+/**
+ * @brief 
+ * 
+ * @param schedulable 
+ * @param state 
+ */
+void schedule_set_state(schedule_schedulable_t * schedulable, schedule_state_t state);
 
 void schedule_disable();
 void schedule_enable();
