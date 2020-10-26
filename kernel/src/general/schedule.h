@@ -62,6 +62,15 @@ schedule_schedulable_t * schedule_add(proc_proc_t * process, proc_thread_t * thr
  */
 void schedule_set_state(schedule_schedulable_t * schedulable, schedule_state_t state);
 
+/**
+ * @brief 
+ * 
+ * @param pid 
+ * @param tid 
+ * @return schedule_schedulable_t* 
+ */
+schedule_schedulable_t * schedule_get(unsigned int pid, unsigned int tid);
+
 void schedule_disable();
 void schedule_enable();
 

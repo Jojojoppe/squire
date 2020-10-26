@@ -45,6 +45,7 @@ schedule_schedulable_t * schedule_add(proc_proc_t * process, proc_thread_t * thr
 }
 
 void schedule_set_state(schedule_schedulable_t * schedulable, schedule_state_t state){
+    printf("** schedule_set_state(%08x, %d)\r\n", schedulable, state);
     if(!schedulable){
         schedulable = schedule_current;
     }
@@ -92,8 +93,23 @@ void schedule(){
         return;
 
     schedule_current = next;
-    printf("** schedule() P(%08x->%08x) T(%08x->%08x)\r\n", current->process, next->process, current->thread, next->thread);
+    // printf("** schedule() P(%08x->%08x) T(%08x->%08x)\r\n", current->process, next->process, current->thread, next->thread);
     proc_switch(next->thread, current->thread, next->process, current->process);
+}
+
+schedule_schedulable_t * schedule_get(unsigned int pid, unsigned int tid){
+    for(int i=0; i<_SCHEDULE_QUEUE_TYPE_SIZE_; i++){
+        schedule_schedulable_t * s = schedule_queues[i];
+        while(s){
+            // Check for pid and tid
+            if(s->process->id==pid && s->thread->id==tid){
+                return s;
+            }
+
+            s = s->next;
+        }
+    }
+    return 0;
 }
 
 void schedule_disable(){

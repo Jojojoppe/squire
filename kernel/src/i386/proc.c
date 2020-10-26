@@ -117,6 +117,7 @@ void proc_switch(proc_thread_t * tto, proc_thread_t * tfrom, proc_proc_t * pto, 
     proc_proc_current = pto;
     proc_thread_current = tto;
     unsigned int newcr3 = ((proc_proc_arch_data_t*)&pto->arch_data)->cr3;
+    unsigned int oldcr3 = vas_getcr3();
     if(tfrom){
         // Save current state in from
         __asm__ __volatile__("fsave (%%eax)"::"a"(((proc_thread_arch_data_t*)(tfrom->arch_data))->fpudata));
@@ -131,7 +132,8 @@ void proc_switch(proc_thread_t * tto, proc_thread_t * tfrom, proc_proc_t * pto, 
     TSS[1] = ((proc_thread_arch_data_t*)tto->arch_data)->tss_esp0;
     __asm__ __volatile__("frstor (%%eax)"::"a"(((proc_thread_arch_data_t*)(tto->arch_data))->fpudata));
     __asm__ __volatile__("nop"::"S"(((proc_thread_arch_data_t*)tto->arch_data)->kstack));
-    __asm__ __volatile__("movl %%eax, %%cr3;"::"a"(newcr3));
+    if(oldcr3!=newcr3)
+        __asm__ __volatile__("movl %%eax, %%cr3;"::"a"(newcr3));
     __asm__ __volatile__("mov %esi, %esp");
     __asm__ __volatile__(".intel_syntax noprefix");
     __asm__ __volatile__("popfd");

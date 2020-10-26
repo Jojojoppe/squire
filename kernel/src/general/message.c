@@ -45,8 +45,14 @@ unsigned int message_simple_send(unsigned int to, size_t length, void * data){
 
     // Wake up thread of receiving side if needed
     if(rec->message_info.simple_recv_thread){
-        proc_thread_t * thread = proc_thread_get(rec->message_info.simple_recv_thread, to);
-        thread->state = PROC_TRHEAD_STATE_RUNNING;
+        schedule_schedulable_t * s = schedule_get(to, rec->message_info.simple_recv_thread);
+        if(s){
+            schedule_set_state(s, SCHEDULE_STATE_RUNNING);
+            printf("-- woken up %08x, %08x\r\n", s->process, s->thread);
+        }else{
+            printf("ERROR: pid/tid does not exist. Cannot wake up receiving thread\r\n");
+        }
+
         rec->message_info.simple_recv_thread = 0;
     }
 
@@ -89,8 +95,9 @@ unsigned int message_simple_receive_blocking(void * buffer, size_t * length, uns
     if(info->simple_recv_thread)
         return MESSAGE_SIMPLE_ERROR_ALREADY_BLOCKED_RECEIVE;
     while(!info->simple_number){
-        proc_thread_get_current()->state = PROC_THREAD_STATE_WAITING;
         info->simple_recv_thread = proc_thread_get_current()->id;
+        schedule_set_state(0, SCHEDULE_STATE_IDLE);
+        printf("-- wait for message\r\n");
         schedule();
     }
 
