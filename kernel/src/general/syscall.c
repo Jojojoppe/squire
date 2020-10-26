@@ -43,40 +43,36 @@ unsigned int syscall_thread(squire_params_thread_t * params){
 }
 
 unsigned int syscall_join(squire_params_join_t * params){
-    // Find thread with TID
+
+    proc_proc_t * process = proc_proc_get_current();
+    unsigned int pid = process->id;
     params->retval = 0;
-    proc_thread_t * t = proc_proc_get_current()->threads;
-    unsigned char found = 0;
-    while(t){
-        if(t->id == params->id){
-            found = 1;
-        }
-        t = t->next;
-        if(!t){
-            t = proc_proc_get_current()->threads;
-            if(!found){
-                // Get thread from killed list
-                t = proc_proc_get_current()->killed_threads;
-                while(t->id!=params->id){
-                    t = t->next;
-                    if(!t){
-                        // ERROR!!! THREAD NOT IN KILLED LIST
-                        return 1;
-                    }
-                }
-                params->retval = t->retval;
-                break;
-            }
-            found = 0;
+    while(1){
+        schedule_schedulable_t * s = schedule_get(pid, params->id);
+        if(s){
+            // Still scheduled
+            // TODO set thread idle
             schedule();
-        }
+        }else{
+            // Not scheduled anymore!
+            // Try to find in killed thread list
+            proc_thread_t * kt = process->killed_threads;
+            while(kt){
+                if(kt->id == params->id){
+                    params->retval = kt->retval;
+                    return 0;
+                }
+                kt = kt->next;
+            }
+            // If reached here, thread is not scheduled and not in killed list: error
+            break;
+        }        
     }
-    return 0;
+    return 1;
 }
 
 unsigned int syscall_exit(squire_params_exit_t * params){
-    proc_thread_kill(proc_thread_get_current(), proc_proc_get_current(), params->retval);
-    // proc_debug();
+    schedule_kill(0, params->retval);
     return 0;
 }
 
@@ -120,6 +116,7 @@ unsigned int syscall_simple_recv(squire_params_simple_recv_t * params){
 
 
 unsigned int syscall_log(squire_params_log_t * params){
+    printf("[%3d,%3d] ", proc_proc_get_current()->id, proc_thread_get_current()->id);
     for(int i=0; i<params->length; i++)
         printf("%c", params->data[i]);
     return 0;

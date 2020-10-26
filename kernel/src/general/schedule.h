@@ -58,6 +58,14 @@ schedule_schedulable_t * schedule_add(proc_proc_t * process, proc_thread_t * thr
  * @brief 
  * 
  * @param schedulable 
+ * @param retval
+ */
+void schedule_kill(schedule_schedulable_t * schedulable, unsigned int retval);
+
+/**
+ * @brief 
+ * 
+ * @param schedulable 
  * @param state 
  */
 void schedule_set_state(schedule_schedulable_t * schedulable, schedule_state_t state);

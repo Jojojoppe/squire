@@ -116,7 +116,7 @@ void squire_init2(){
     printf("- init.bin is started\r\n");
 
     // schedule_set_state(0, SCHEDULE_STATE_IDLE);
-    for(;;);
+    // for(;;);
 }
 
 /**

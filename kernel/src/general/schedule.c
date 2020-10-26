@@ -44,6 +44,33 @@ schedule_schedulable_t * schedule_add(proc_proc_t * process, proc_thread_t * thr
     return schedule_new;
 }
 
+void schedule_kill(schedule_schedulable_t * schedulable, unsigned int retval){
+    printf("** schedule_kill(%08x, %08x)\r\n", schedulable, retval);
+    if(!schedulable){
+        schedulable = schedule_current;
+    }
+
+    for(int i=0; i<_SCHEDULE_QUEUE_TYPE_SIZE_; i++){
+        schedule_schedulable_t * prev = schedule_queues[i];
+        if(prev==schedulable){
+            schedule_queues[i] = prev->next;
+            proc_thread_kill(schedulable->thread, schedulable->process, retval);
+            kfree(schedulable);
+            return;
+        }
+        while(prev){
+            if(prev->next==schedulable){
+                prev->next = prev->next->next;
+            proc_thread_kill(schedulable->thread, schedulable->process, retval);
+                kfree(schedulable);
+                return;
+            }
+            prev = prev->next;
+        }
+    }
+
+}
+
 void schedule_set_state(schedule_schedulable_t * schedulable, schedule_state_t state){
     printf("** schedule_set_state(%08x, %d)\r\n", schedulable, state);
     if(!schedulable){

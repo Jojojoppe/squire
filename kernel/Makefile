@@ -5,7 +5,9 @@ all:
 
 .PHONY: all clean todolist builddir infiles
 
-SQUIRE_VERSION  := "v0.2-0"
+SQUIRE_COMMIT  	:= $(shell git rev-parse --short HEAD)
+SQUIRE_VMAJOR	:= v0.2-
+SQUIRE_VERSION	:= $(SQUIRE_VMAJOR)$(SQUIRE_COMMIT)
 
 DIRS			:= src/$(ARCH) src/general
 OUTPUTDIR		:= build

@@ -12,8 +12,6 @@ extern unsigned int * TSS;
 #define KERNEL_STACK_TOP 0xffc00000
 #define KERNEL_STACK_SIZE 4096
 
-unsigned int kernel_stacks_total = 0;
-
 void * proc_create_return_stack_frame(unsigned int * stack, void * retaddr, unsigned int eax, unsigned int ebx, unsigned int ecx, unsigned int edx, unsigned int esi, unsigned int edi);
 void proc_thread_start();
 
@@ -29,12 +27,10 @@ int proc_init(void (*return_addr)()){
 
     // Create main process structure
     proc_proc_current = (proc_proc_t*)kmalloc(sizeof(proc_proc_t));
-    proc_proc_current->next = proc_proc_current;
-    proc_proc_current->prev = proc_proc_current;
     proc_proc_current->id = 1;
     proc_proc_current->kernel_stacks = 1;
     proc_proc_current->tid_counter = 2;
-    kernel_stacks_total++;
+
     // Create memory region
     vmm_create(&proc_proc_current->memory);
     // Set architecture specific data
@@ -70,6 +66,12 @@ int proc_init(void (*return_addr)()){
     // Initialize message structure of process
     message_init_info(&proc_proc_current->message_info);
 
+    proc_proc_current->parent = 0;
+    proc_proc_current->childs = 0;
+    proc_proc_current->child_next = 0;
+    proc_proc_current->threads_number = 1;
+
+
     // Switch to created process
     schedule_init(proc_proc_current, proc_thread_current);
     proc_switch(proc_thread_current, 0, proc_proc_current, 0);
@@ -79,7 +81,7 @@ int proc_init(void (*return_addr)()){
 
 void proc_thread_start(){
     __asm__ __volatile__("mov 4(%ebp), %eax; sti; call %eax");
-    proc_thread_kill(proc_thread_get_current(), proc_proc_get_current(), 0);
+    schedule_kill(0, 0);
     schedule();
     for(;;){
     }
@@ -224,6 +226,7 @@ proc_thread_t * proc_thread_new(void * code, void * stack, size_t stack_length, 
     thread->state = PROC_TRHEAD_STATE_RUNNING;
     thread->stack = stack;
     thread->stack_length = stack_length;
+    process->threads_number++;
     // Fill other data
     thread->id = process->tid_counter++;
     proc_thread_arch_data_t * archdata = (proc_thread_arch_data_t*) thread->arch_data;
@@ -268,7 +271,7 @@ proc_thread_t * proc_thread_new_user(void * code, void * stack, size_t stack_len
     thread->kernel_stack = kstack_base;
     thread->kernel_stack_length = KERNEL_STACK_SIZE;
     process->kernel_stacks++;
-    kernel_stacks_total++;
+    process->threads_number++;
 
     // Fill other data
     thread->id = process->tid_counter++;
@@ -303,14 +306,23 @@ proc_proc_t * _0_proc_proc_new(void * ELF_start){
     // Create new process descriptor
     proc_proc_t * pnew = (proc_proc_t*)kmalloc(sizeof(proc_proc_t));
     proc_proc_t * pcur = proc_proc_get_current();
-    // Link new process in list after current
-    pnew->next = pcur->next;
-    pnew->prev = pcur;
-    pcur->next->prev = pnew;
-    pcur->next = pnew;
     // Set data
     pnew->id = proc_PID_counter++;
     pnew->tid_counter = 1;
+
+    pnew->parent = pcur;
+    // Add child to parent list
+    pnew->child_next = 0;
+    proc_proc_t * pcur_childs = pcur->childs;
+    if(!pcur_childs){
+        pcur->childs = pnew;
+    }else{
+        while(pcur_childs->child_next){
+            pcur_childs = pcur_childs->child_next;
+        }
+        pcur_childs->child_next = pnew;
+    }
+
     // Create vmm memory region list
     vmm_create(&pnew->memory);
 
@@ -380,10 +392,8 @@ proc_proc_t * _0_proc_proc_new(void * ELF_start){
 proc_proc_t * proc_proc_new(void * ELF_start){
     schedule_disable();
 
-    // proc_proc_t * pnew = _0_proc_proc_new(ELF_start);
     proc_proc_t * pnew;
 
-    // Setup call stack for 0_proc_proc_new()
     unsigned int old_ebp, old_esp;
     __asm__ __volatile__("movl %%ebp, %%eax":"=a"(old_ebp));
     __asm__ __volatile__("movl %%esp, %%eax":"=a"(old_esp));
@@ -393,301 +403,399 @@ proc_proc_t * proc_proc_new(void * ELF_start){
     *(newstack) = ELF_start;
 
 // {unsigned int old_ebp, old_esp, cr3;__asm__ __volatile__("movl %%ebp, %%eax":"=a"(old_ebp));__asm__ __volatile__("movl %%esp, %%eax":"=a"(old_esp));cr3 = vas_getcr3();printf("EBP %08x ESP %08x CR3 %08x\r\n", old_ebp, old_esp, cr3);}
-
     __asm__ __volatile__("movl %%eax, %%esp; movl %%esp, %%ebp"::"a"(newstack));
     __asm__ __volatile__("call %%eax"::"a"(_0_proc_proc_new));
     __asm__ __volatile__("add $4, %esp ;pop %ebp; pop %esp");
     __asm__ __volatile__("nop":"=a"(pnew));
-
 // {unsigned int old_ebp, old_esp, cr3;__asm__ __volatile__("movl %%ebp, %%eax":"=a"(old_ebp));__asm__ __volatile__("movl %%esp, %%eax":"=a"(old_esp));cr3 = vas_getcr3();printf("EBP %08x ESP %08x CR3 %08x\r\n", old_ebp, old_esp, cr3);}
 
     message_init_info(&pnew->message_info);
-    // printf("messages initialized\r\n");
 
     schedule_enable();
     return pnew;
 }
 
-int proc_thread_kill(proc_thread_t * thread, proc_proc_t * process, int retval){
+int _0_proc_thread_kill(proc_thread_t * thread, proc_proc_t * process, int retval){
+// {unsigned int old_ebp, old_esp, cr3;__asm__ __volatile__("movl %%ebp, %%eax":"=a"(old_ebp));__asm__ __volatile__("movl %%esp, %%eax":"=a"(old_esp));cr3 = vas_getcr3();printf("EBP %08x ESP %08x CR3 %08x\r\n", old_ebp, old_esp, cr3);}
 
-    // Check if thread is in process
-    proc_thread_t * t = process->threads;
-    while(t){
-        if(thread==t){
-            schedule_disable();
-
-            // Unlink thread from thread list
-            if(process->threads==thread){
-                // Set next as first if needed
-                process->threads = thread->next;
-            }else{
-                // Set previous
-                thread->prev->next = thread->next;
-            }
-            if(thread->next){
-                thread->next->prev = thread->prev;
-            }
-
-            // Relink to killed threads list
-            // Find last in killed threads
-            proc_thread_t * kt = process->killed_threads;
-            thread->next = 0;
-            if(kt==0){
-                process->killed_threads = thread;
-                thread->prev = 0;
-            }else{
-                while(kt->next){
-                    kt = kt->next;
-                }
-                kt->next = thread;
-                thread->prev = kt;
-            }
-            
-            thread->retval = retval;
-
-            // TODO if all threads are killed: set process retval as last thread retval and
-            // kill process itself
-
-            schedule_enable();
-            return 0;
-        }
-        t = t->next;
-    }
-    // Thread not in process: ERROR
-    return 1;
-}
-
-void proc_debug(){
-    proc_proc_t * p = proc_proc_get_current();
-    proc_proc_t * current = p;
-    printf("Processes:\r\n");
-    do{
-        printf("+ P[%d] - %08x cr3(%08x)\r\n", p->id, p, ((proc_proc_arch_data_t*)&p->arch_data)->cr3);
-        printf("  next: %08x\r\n", p->next);
-        printf("  prev: %08x\r\n", p->prev);
-        proc_thread_t * t = p->threads;
-        while(t){
-            printf("  - T[%d](%08x) /w %08x (%08x) %08x (%08x)\r\n", t->id, t, t->stack, t->stack_length, t->kernel_stack, t->kernel_stack_length);
-            t = t->next;
-        }
-        t = p->killed_threads;
-        while(t){
-            printf("  - KT[%d] -> %08x\r\n", t->id, t->retval);
-            t = t->next;
-        }
-        p = p->next;
-    }while(p!=current);
-}
-
-proc_proc_t * proc_get(unsigned int pid){
-    proc_proc_t * proc = 0;
-
-    proc_proc_t * p = proc_proc_get_current();
-    proc_proc_t * current = p;
-    do{
-        if(p->id==pid){
-            proc = p;
-            break;
-        }
-        p = p->next;
-    }while(p!=current);
-
-    return proc;
-}
-
-
-proc_thread_t * proc_thread_get(unsigned int tid, unsigned int pid){
-    proc_proc_t * p = proc_proc_get_current();
-    proc_proc_t * current = p;
-    do{
-        proc_thread_t * t = p->threads;
-        while(t){
-            if(t->id == tid && p->id == pid){
-                return t;
-            }
-            t = t->next;
-        }
-        p = p->next;
-    }while(p!=current);
-    return 0;
-}
-
-proc_proc_t * proc_proc_fork(){
-    schedule_disable();
-
-    // Create new process descriptor
-    proc_proc_t * pnew = (proc_proc_t*)kmalloc(sizeof(proc_proc_t));
+    // switch to new VAS
     proc_proc_t * pcur = proc_proc_get_current();
+    unsigned int own_vas = ((proc_proc_arch_data_t*)(pcur->arch_data))->cr3;
+    unsigned int pvas = ((proc_proc_arch_data_t*)(process->arch_data))->cr3;
+    proc_proc_current = process;
+    __asm__ __volatile__("movl %%eax, %%cr3"::"a"(pvas));
 
-    // Copy data
-    memcpy(pnew, pcur, sizeof(proc_proc_t));
+    // Free kernel stack of thread
+    for(int i=0; i<thread->kernel_stack_length/4096; i++){
+        vas_unmap_free(thread->kernel_stack+i*4096);
+    }
 
-    // Link new process in list after current
-    pnew->next = pcur->next;
-    pnew->prev = pcur;
-    pcur->next->prev = pnew;
-    pcur->next = pnew;
-    // Set data
-    pnew->id = proc_PID_counter++;
-    // Create vmm memory region list
-    vmm_create(&pnew->memory);
+    // switch back to old VAS
+    proc_proc_current = pcur;
+    __asm__ __volatile__("movl %%eax, %%cr3"::"a"(own_vas));
 
-    // Create new PD table and copy kernel space into it (use page 0 as tmp)
-    void * newpd_phys;
-    pmm_alloc(4096, &newpd_phys);
-    vas_map(newpd_phys, 0, VAS_FLAGS_WRITE|VAS_FLAGS_READ);
-    // Copy kernel PD into new one
-    memcpy(768*4, 0xfffff000+768*4, 255*4);
-    *((unsigned int*)(768*4+255*4)) = (unsigned int)newpd_phys | 0x07;
-    // Clear first part to be sure
-    memset(0, 0, 256*4*3);
-    vas_unmap(0);
-    proc_proc_arch_data_t * arch_data = (proc_proc_arch_data_t*) pnew->arch_data;
-    arch_data->cr3 = newpd_phys;
+    // Set return value
+    thread->retval = retval;
 
-    // Copy memory to new process
-    /*
-    vmm_region_t * region = pcur->memory;
-    while(region){
-        printf("region [%08x]:\n", region);
-        printf(" - base:    %08x\n", region->base);
-        printf(" - length:  %08x\n", region->length);
-        printf(" - flags:   %08x\n", region->flags);
-        printf(" - next:    %08x\r\n", region->next);
+    // Delete thread from process's thread list
+    if(!thread->prev){
+        process->threads = thread->next;
+        if(thread->next){
+            thread->next->prev = 0;
+        }
+    }else{
+        thread->prev->next = thread->next;
+        if(thread->next){
+            thread->next->prev = thread->prev;
+        }
+    }
+    // Add deleted thread to process's killed thread list
+    proc_thread_t * kt = process->killed_threads;
+    thread->next = 0;
+    if(!kt){
+        process->killed_threads = thread;
+    }else{
+        while(kt->next){
+            kt = kt->next;
+        }
+        kt->next = thread;
+    }
 
-        // switch to new VAS
-        unsigned int own_vas = ((proc_proc_arch_data_t*)(pcur->arch_data))->cr3;
-        proc_proc_current = pnew;
-        __asm__ __volatile__("movl %%eax, %%cr3"::"a"(newpd_phys));
+    process->threads_number--;
 
-        // Allocate region in new VAS
-        vmm_alloc(region->base, region->length, region->flags, &pnew->memory);
+    proc_debug();
 
-        // switch back to old VAS
+    // Check if process must be deleted
+    if(!process->threads_number){
+
+        if(process->id == 1){
+            printf("CANNOT KILL PROCESS 1\r\n");
+            __asm__ __volatile__("int $0");
+        }
+
+        printf("Remove process itself, return value of process is %08x\r\n", retval);
+
+        // Free all thread structures
+        proc_thread_t * kt = process->killed_threads;
+        while(kt){
+            proc_thread_t * next = kt->next;
+            kfree(kt);
+            kt = next;
+        }
+        process->killed_threads = 0;
+
+        // Destroy complete VAS
+        proc_proc_current = process;
+        __asm__ __volatile__("movl %%eax, %%cr3"::"a"(pvas));
+        vmm_destroy(&process->memory);
         proc_proc_current = pcur;
         __asm__ __volatile__("movl %%eax, %%cr3"::"a"(own_vas));
 
-        for(int i=0; i<region->length/4096; i++){
-            // Get physical page of page to copy
-            unsigned phys = vas_get_pte(region->base+4096*i)&0xfffff000;
-
-            // switch to new VAS
-            unsigned int own_vas = ((proc_proc_arch_data_t*)(pcur->arch_data))->cr3;
-            proc_proc_current = pnew;
-            __asm__ __volatile__("movl %%eax, %%cr3"::"a"(newpd_phys));
-
-            // Map physical to temporary page here
-            vas_map(phys, 0, VAS_FLAGS_READ);
-
-            // Copy data to new page
-            memcpy(region->base+i*4096, 0, 4096);
-
-            // Unmap old physical
-            vas_unmap(0);
-
-            // switch back to old VAS
-            proc_proc_current = pcur;
-            __asm__ __volatile__("movl %%eax, %%cr3"::"a"(own_vas));
+        // Free page directory
+        vas_map(pvas, 0, VAS_FLAGS_READ);
+        unsigned int amount_stack_pagetables = (process->kernel_stacks/4096+1);
+        for(int i=0; i<amount_stack_pagetables; i++){
+            unsigned int pdphys = *((unsigned int*)(768*4+255*4-4-4*i));
+            pdphys &= 0xfffff000;
+            vas_map(pdphys, 4096, VAS_FLAGS_READ);
+            vas_unmap_free(4096);
         }
 
-        // To next region
-        if(region->next && region->next!=region){
-            region = region->next;
-            continue;
-        }
-        // No more regions
-        break;
-    }   */
+        vas_unmap_free(0);
 
-    // TODO CANT DO IT THIS WAY... NEW PAGES MUST BE MADE FOR THE PAGE TABLES AS WELL 
-    // (FOR THE STACK) : OVERWRITING THE PTE'S WILL CHANGE THE STACKS ON ALL PROCESSES
-    // CALCULATE HOW MUCH PAGE TABLES ARE NEEDED FOR THIS AND THEN COPY THE PT FOR THE 
-    // STACKS AS WELL
+        // TODO remove thread structure from parent list and free it
+        // TODO find a way to notify the parent with the return value
 
-    // Copy threads to new process
-    printf("Copy threads to new process\r\n");
-    proc_thread_t * curt = pcur->threads;
-    proc_thread_t * prth = 0;
-    while(curt){
-
-        proc_thread_t * newt = kmalloc(sizeof(proc_thread_t));
-        memcpy(newt, curt, sizeof(proc_thread_t));
-        newt->id = proc_PID_counter++;
-
-        printf("TID %d -> %d\r\n", curt->id, newt->id);
-
-        if(prth==0){
-            pnew->threads = newt;
-            newt->prev = 0;
-        }else{
-            newt->prev = prth;
-            prth->next = newt;
-        }
-        prth = newt;
-
-        // Copy kernel stack and remap in new VAS
-        printf("Copy kernel stack: %08x /w %08x\r\n", newt->kernel_stack, newt->kernel_stack_length);
-        void * newt_kstack_phys;
-        pmm_alloc(newt->kernel_stack_length, &newt_kstack_phys);
-        for(int i=0; i<newt->kernel_stack_length/4096; i++){                
-            // Get physical page of page to copy
-            unsigned phys = vas_get_pte(newt->kernel_stack+i*4096)&0xfffff000;
-            printf("Parents physical: %08x -> %08x\r\n", phys, newt_kstack_phys+i*4096);
-
-            // switch to new VAS
-            unsigned int own_vas = ((proc_proc_arch_data_t*)(pcur->arch_data))->cr3;
-            proc_proc_current = pnew;
-            __asm__ __volatile__("movl %%eax, %%cr3"::"a"(newpd_phys));
-            printf("Child's VAS\r\n");
-
-            // Map physical to temporary page here
-            vas_map(phys, 0, VAS_FLAGS_READ);
-            printf("Mapped parents physical to page 0\r\n");
-
-            // Copy data to new page
-            unsigned old_phys = vas_get_pte(newt->kernel_stack+i*4096);
-            printf("Unmapping parent's physical page from child's VAS [%08x] (was %08x)\r\n", newt->kernel_stack+i*4096, old_phys);
-            vas_unmap(newt->kernel_stack+i*4096);
-            printf("Unmapped parent's physical page from child's VAS\r\n");
-            printf("Mapping new child's physical [%08x] to child's VAS [%08x]\r\n", newt_kstack_phys+i*4096, newt->kernel_stack+i*4096);
-            vas_map(newt_kstack_phys+i*4096, newt->kernel_stack+i*4096, VAS_FLAGS_READ|VAS_FLAGS_WRITE);
-            printf("Mapped new child's physical [%08x] to child's VAS [%08x]\r\n", newt_kstack_phys+i*4096, newt->kernel_stack+i*4096);
-            memcpy(newt->kernel_stack+i*4096, 0, 4096);
-
-            // Unmap old physical
-            vas_unmap(0);
-
-            // switch back to old VAS
-            proc_proc_current = pcur;
-            __asm__ __volatile__("movl %%eax, %%cr3"::"a"(own_vas));
-            printf("Parent's VAS\r\n");
-        }
-
-
-        curt = curt->next;
-    }
-
-    // Copy killed threads to new process
-    curt = pcur->killed_threads;
-    prth = 0;
-while(curt){
-        proc_thread_t * newt = kmalloc(sizeof(proc_thread_t));
-        memcpy(newt, curt, sizeof(proc_thread_t));
-        newt->id = proc_PID_counter++;
-
-        if(prth==0){
-            pnew->threads = newt;
-            newt->prev = 0;
-        }else{
-            newt->prev = prth;
-            prth->next = newt;
-        }
-        prth = newt;
-        curt = curt->next;
     }
 
     proc_debug();
 
     schedule_enable();
-    return pnew;
+    schedule();
+    for(;;);
+    return 0;
+}
+
+int proc_thread_kill(proc_thread_t * thread, proc_proc_t * process, int retval){
+    schedule_disable();
+
+    unsigned int ret = 0;
+
+    unsigned int old_ebp, old_esp;
+    __asm__ __volatile__("movl %%ebp, %%eax":"=a"(old_ebp));
+    __asm__ __volatile__("movl %%esp, %%eax":"=a"(old_esp));
+    unsigned int * newstack = (unsigned int *)(boot_stack_top_C-4);
+    *(newstack--) = old_esp;
+    *(newstack--) = old_ebp;
+    *(newstack--) = retval;
+    *(newstack--) = process;
+    *(newstack) = thread;
+
+// {unsigned int old_ebp, old_esp, cr3;__asm__ __volatile__("movl %%ebp, %%eax":"=a"(old_ebp));__asm__ __volatile__("movl %%esp, %%eax":"=a"(old_esp));cr3 = vas_getcr3();printf("EBP %08x ESP %08x CR3 %08x\r\n", old_ebp, old_esp, cr3);}
+    __asm__ __volatile__("movl %%eax, %%esp; movl %%esp, %%ebp"::"a"(newstack));
+    __asm__ __volatile__("call %%eax"::"a"(_0_proc_thread_kill));
+    __asm__ __volatile__("add $12, %esp ;pop %ebp; pop %esp");
+    __asm__ __volatile__("nop":"=a"(ret));
+// {unsigned int old_ebp, old_esp, cr3;__asm__ __volatile__("movl %%ebp, %%eax":"=a"(old_ebp));__asm__ __volatile__("movl %%esp, %%eax":"=a"(old_esp));cr3 = vas_getcr3();printf("EBP %08x ESP %08x CR3 %08x\r\n", old_ebp, old_esp, cr3);}
+
+    // Should definitly not come here since kernel stack should be freed!!!
+
+    schedule_enable();
+    return ret;
+}
+
+void _proc_debug_print(proc_proc_t * p, unsigned int indent){
+    if(!p){
+        return;
+    }
+
+    for(int i=0; i<indent; i++) printf("\t");
+    printf("-P[%3d]\r\n", p->id);
+    for(int i=0; i<indent; i++) printf("\t");
+    printf(" cr3:       %08x\r\n", ((proc_proc_arch_data_t*)(p->arch_data))->cr3);
+    for(int i=0; i<indent; i++) printf("\t");
+    printf(" threads:   %d\r\n", p->threads_number);
+    proc_thread_t * t = p->threads;
+    while(t){
+        for(int i=0; i<indent; i++) printf("\t");
+        printf(" *T[%3d]    %08x %08x %08x %08x\r\n", t->id, t->kernel_stack, t->kernel_stack_length, t->stack, t->stack_length);
+        t = t->next;
+    }
+    t = p->killed_threads;
+    while(t){
+        for(int i=0; i<indent; i++) printf("\t");
+        printf(" *KT[%3d]   -> %08x\r\n", t->id, t->retval);
+        t = t->next;
+    }
+    for(int i=0; i<indent; i++) printf("\t");
+    printf(" childs:\r\n");
+    proc_proc_t * c = p->childs;
+    while(c){
+        _proc_debug_print(c, indent+1);
+        c = c->child_next;
+    }
+}
+
+void proc_debug(){
+    printf("## Processes:\r\n");
+    proc_proc_t * p = proc_get(1);
+    _proc_debug_print(p, 0);
+}
+
+proc_proc_t * _proc_get(proc_proc_t * p, unsigned int pid){
+    if(p->id == pid){
+        return p;
+    }
+    // Loop over childs
+    proc_proc_t * c = p->childs;
+    while(c){
+        proc_proc_t * r = _proc_get(c, pid);
+        if(r)
+            return r;
+        c = c->child_next;
+    }
+    return 0;
+}
+
+proc_proc_t * proc_get(unsigned int pid){
+    proc_proc_t * p = proc_proc_get_current();
+    // Get to pid 1
+    while(p->parent)    
+        p = p->parent;
+
+    proc_proc_t * ret = _proc_get(p, pid);
+    return ret;
+}
+
+proc_thread_t * proc_thread_get(unsigned int tid, unsigned int pid){
+    proc_proc_t * p = proc_get(pid);
+    // Loop over threads
+    proc_thread_t * t = p->threads;
+    while(t){
+        if(t->id == tid)
+            return t;
+        t = t->next;
+    }
+    return 0;
+}
+
+proc_proc_t * proc_proc_fork(){
+//     schedule_disable();
+
+//     // Create new process descriptor
+//     proc_proc_t * pnew = (proc_proc_t*)kmalloc(sizeof(proc_proc_t));
+//     proc_proc_t * pcur = proc_proc_get_current();
+
+//     // Copy data
+//     memcpy(pnew, pcur, sizeof(proc_proc_t));
+
+//     // Link new process in list after current
+//     pnew->next = pcur->next;
+//     pnew->prev = pcur;
+//     pcur->next->prev = pnew;
+//     pcur->next = pnew;
+//     // Set data
+//     pnew->id = proc_PID_counter++;
+//     // Create vmm memory region list
+//     vmm_create(&pnew->memory);
+
+//     // Create new PD table and copy kernel space into it (use page 0 as tmp)
+//     void * newpd_phys;
+//     pmm_alloc(4096, &newpd_phys);
+//     vas_map(newpd_phys, 0, VAS_FLAGS_WRITE|VAS_FLAGS_READ);
+//     // Copy kernel PD into new one
+//     memcpy(768*4, 0xfffff000+768*4, 255*4);
+//     *((unsigned int*)(768*4+255*4)) = (unsigned int)newpd_phys | 0x07;
+//     // Clear first part to be sure
+//     memset(0, 0, 256*4*3);
+//     vas_unmap(0);
+//     proc_proc_arch_data_t * arch_data = (proc_proc_arch_data_t*) pnew->arch_data;
+//     arch_data->cr3 = newpd_phys;
+
+//     // Copy memory to new process
+//     /*
+//     vmm_region_t * region = pcur->memory;
+//     while(region){
+//         printf("region [%08x]:\n", region);
+//         printf(" - base:    %08x\n", region->base);
+//         printf(" - length:  %08x\n", region->length);
+//         printf(" - flags:   %08x\n", region->flags);
+//         printf(" - next:    %08x\r\n", region->next);
+
+//         // switch to new VAS
+//         unsigned int own_vas = ((proc_proc_arch_data_t*)(pcur->arch_data))->cr3;
+//         proc_proc_current = pnew;
+//         __asm__ __volatile__("movl %%eax, %%cr3"::"a"(newpd_phys));
+
+//         // Allocate region in new VAS
+//         vmm_alloc(region->base, region->length, region->flags, &pnew->memory);
+
+//         // switch back to old VAS
+//         proc_proc_current = pcur;
+//         __asm__ __volatile__("movl %%eax, %%cr3"::"a"(own_vas));
+
+//         for(int i=0; i<region->length/4096; i++){
+//             // Get physical page of page to copy
+//             unsigned phys = vas_get_pte(region->base+4096*i)&0xfffff000;
+
+//             // switch to new VAS
+//             unsigned int own_vas = ((proc_proc_arch_data_t*)(pcur->arch_data))->cr3;
+//             proc_proc_current = pnew;
+//             __asm__ __volatile__("movl %%eax, %%cr3"::"a"(newpd_phys));
+
+//             // Map physical to temporary page here
+//             vas_map(phys, 0, VAS_FLAGS_READ);
+
+//             // Copy data to new page
+//             memcpy(region->base+i*4096, 0, 4096);
+
+//             // Unmap old physical
+//             vas_unmap(0);
+
+//             // switch back to old VAS
+//             proc_proc_current = pcur;
+//             __asm__ __volatile__("movl %%eax, %%cr3"::"a"(own_vas));
+//         }
+
+//         // To next region
+//         if(region->next && region->next!=region){
+//             region = region->next;
+//             continue;
+//         }
+//         // No more regions
+//         break;
+//     }   */
+
+//     // TODO CANT DO IT THIS WAY... NEW PAGES MUST BE MADE FOR THE PAGE TABLES AS WELL 
+//     // (FOR THE STACK) : OVERWRITING THE PTE'S WILL CHANGE THE STACKS ON ALL PROCESSES
+//     // CALCULATE HOW MUCH PAGE TABLES ARE NEEDED FOR THIS AND THEN COPY THE PT FOR THE 
+//     // STACKS AS WELL
+
+//     // Copy threads to new process
+//     printf("Copy threads to new process\r\n");
+//     proc_thread_t * curt = pcur->threads;
+//     proc_thread_t * prth = 0;
+//     while(curt){
+
+//         proc_thread_t * newt = kmalloc(sizeof(proc_thread_t));
+//         memcpy(newt, curt, sizeof(proc_thread_t));
+//         newt->id = proc_PID_counter++;
+
+//         printf("TID %d -> %d\r\n", curt->id, newt->id);
+
+//         if(prth==0){
+//             pnew->threads = newt;
+//             newt->prev = 0;
+//         }else{
+//             newt->prev = prth;
+//             prth->next = newt;
+//         }
+//         prth = newt;
+
+//         // Copy kernel stack and remap in new VAS
+//         printf("Copy kernel stack: %08x /w %08x\r\n", newt->kernel_stack, newt->kernel_stack_length);
+//         void * newt_kstack_phys;
+//         pmm_alloc(newt->kernel_stack_length, &newt_kstack_phys);
+//         for(int i=0; i<newt->kernel_stack_length/4096; i++){                
+//             // Get physical page of page to copy
+//             unsigned phys = vas_get_pte(newt->kernel_stack+i*4096)&0xfffff000;
+//             printf("Parents physical: %08x -> %08x\r\n", phys, newt_kstack_phys+i*4096);
+
+//             // switch to new VAS
+//             unsigned int own_vas = ((proc_proc_arch_data_t*)(pcur->arch_data))->cr3;
+//             proc_proc_current = pnew;
+//             __asm__ __volatile__("movl %%eax, %%cr3"::"a"(newpd_phys));
+//             printf("Child's VAS\r\n");
+
+//             // Map physical to temporary page here
+//             vas_map(phys, 0, VAS_FLAGS_READ);
+//             printf("Mapped parents physical to page 0\r\n");
+
+//             // Copy data to new page
+//             unsigned old_phys = vas_get_pte(newt->kernel_stack+i*4096);
+//             printf("Unmapping parent's physical page from child's VAS [%08x] (was %08x)\r\n", newt->kernel_stack+i*4096, old_phys);
+//             vas_unmap(newt->kernel_stack+i*4096);
+//             printf("Unmapped parent's physical page from child's VAS\r\n");
+//             printf("Mapping new child's physical [%08x] to child's VAS [%08x]\r\n", newt_kstack_phys+i*4096, newt->kernel_stack+i*4096);
+//             vas_map(newt_kstack_phys+i*4096, newt->kernel_stack+i*4096, VAS_FLAGS_READ|VAS_FLAGS_WRITE);
+//             printf("Mapped new child's physical [%08x] to child's VAS [%08x]\r\n", newt_kstack_phys+i*4096, newt->kernel_stack+i*4096);
+//             memcpy(newt->kernel_stack+i*4096, 0, 4096);
+
+//             // Unmap old physical
+//             vas_unmap(0);
+
+//             // switch back to old VAS
+//             proc_proc_current = pcur;
+//             __asm__ __volatile__("movl %%eax, %%cr3"::"a"(own_vas));
+//             printf("Parent's VAS\r\n");
+//         }
+
+
+//         curt = curt->next;
+//     }
+
+//     // Copy killed threads to new process
+//     curt = pcur->killed_threads;
+//     prth = 0;
+// while(curt){
+//         proc_thread_t * newt = kmalloc(sizeof(proc_thread_t));
+//         memcpy(newt, curt, sizeof(proc_thread_t));
+//         newt->id = proc_PID_counter++;
+
+//         if(prth==0){
+//             pnew->threads = newt;
+//             newt->prev = 0;
+//         }else{
+//             newt->prev = prth;
+//             prth->next = newt;
+//         }
+//         prth = newt;
+//         curt = curt->next;
+//     }
+
+//     proc_debug();
+
+//     schedule_enable();
+//     return pnew;
+    
 }

@@ -6,8 +6,6 @@
 int main(int argc, char ** argv){
 	printf("Main thread of init.bin\r\n");
 
-	// for(;;);
-
 	void * tar_start = (void*)(*((unsigned int*)argv[1]));
 	printf("initramfs content:\r\n");
 	tar_print_list(tar_start);
@@ -26,19 +24,9 @@ int main(int argc, char ** argv){
 	unsigned int testbin_pid = squire_syscall_process(testbin, length, 2, testbin_argv);
 	printf("Testbin PID = %d\r\n", testbin_pid);
 
-	for(int i=0; i<100000000; i++);
-	char * test0 = "This is a test message which will be sent to testbin.bin";
-	length = strlen(test0);
-	printf("Sending first message\r\n");
-	unsigned int status = squire_syscall_simple_send(testbin_pid, length, test0);
-
-	// for(int i=0; i<500000000; i++);
-	char * test1 = "This is another test message which will be sent to testbin.bin";
-	length = strlen(test1);
-	printf("Sending second message\r\n");
-	status = squire_syscall_simple_send(testbin_pid, length, test1);
-
 	for(;;){
+		for(int i=0; i<100000000; i++);
+		printf(".\r\n");
 	}
 
 	return 0;

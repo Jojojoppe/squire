@@ -32,16 +32,19 @@ typedef struct proc_thread_s{
 } proc_thread_t;
 
 typedef struct proc_proc_s{
-    struct proc_proc_s * next;
-    struct proc_proc_s * prev;
     unsigned int id;
     vmm_region_t * memory;
 
+    unsigned int threads_number;
     proc_thread_t * threads;
     proc_thread_t * killed_threads;
 
     unsigned int kernel_stacks;
     unsigned int tid_counter;
+
+    struct proc_proc_s * parent;
+    struct proc_proc_s * childs;
+    struct proc_proc_s * child_next;
 
     message_info_t message_info;
     unsigned char arch_data[PROC_PROCDATA_SIZE];

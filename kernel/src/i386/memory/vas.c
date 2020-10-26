@@ -61,6 +61,7 @@ int vas_unmap(void * address){
 }
 
 int vas_unmap_free(void * address){
+    printf("vas_unmap_free(%08x)\r\n", address);
     // Get PD and PT
     unsigned int PT = (unsigned int)address>>12;
     unsigned int PD = PT>>10;
