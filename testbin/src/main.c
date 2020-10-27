@@ -9,7 +9,7 @@ int main(int argc, char ** argv){
 	for(int i=0; i<argc; i++)
 		printf("argv[%d] = %s\r\n", i, argv[i]);
 
-	for(int i=0; i<100000000; i++);
+	for(int i=0; i<400000000; i++);
 
 	return 0xffeeddcc;
 }

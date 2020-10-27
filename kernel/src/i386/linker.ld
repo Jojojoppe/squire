@@ -9,9 +9,12 @@ SECTIONS
 	. = virt;
 	ld_kernel_start = .;
 
+	.mboot : AT(ADDR(.mboot)-offset){
+		*(.mboot)
+	}
+
 	.text : AT(ADDR(.text)-offset){
 		g_code = .;
-		*(.mboot)
 		*(.text)
 		*(.rodata)
 		. = ALIGN(0x1000);
