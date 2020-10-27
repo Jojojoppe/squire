@@ -45,30 +45,30 @@ schedule_schedulable_t * schedule_add(proc_proc_t * process, proc_thread_t * thr
 }
 
 void schedule_kill(schedule_schedulable_t * schedulable, unsigned int retval){
+    // schedule_disable();
     printf("** schedule_kill(%08x, %08x)\r\n", schedulable, retval);
     if(!schedulable){
         schedulable = schedule_current;
+        schedule_current = 0;
     }
 
     for(int i=0; i<_SCHEDULE_QUEUE_TYPE_SIZE_; i++){
         schedule_schedulable_t * prev = schedule_queues[i];
         if(prev==schedulable){
-            schedule_queues[i] = prev->next;
-            proc_thread_kill(schedulable->thread, schedulable->process, retval);
             kfree(schedulable);
+            proc_thread_kill(schedulable->thread, schedulable->process, retval);
             return;
         }
         while(prev){
             if(prev->next==schedulable){
                 prev->next = prev->next->next;
-            proc_thread_kill(schedulable->thread, schedulable->process, retval);
                 kfree(schedulable);
+                proc_thread_kill(schedulable->thread, schedulable->process, retval);
                 return;
             }
             prev = prev->next;
         }
     }
-
 }
 
 void schedule_set_state(schedule_schedulable_t * schedulable, schedule_state_t state){
@@ -87,6 +87,11 @@ void schedule(){
     schedule_schedulable_t * current = schedule_current;
     schedule_schedulable_t * try = current;
     schedule_schedulable_t * next = 0;
+
+    if(!schedule_current){
+        // printf("schedule_current does not exist\r\n");
+        try = schedule_queues[SCHEDULE_QUEUE_TYPE_NORMAL];
+    }
 
     while(!next){
         // Check if next in priority queue
@@ -120,8 +125,13 @@ void schedule(){
         return;
 
     schedule_current = next;
-    // printf("** schedule() P(%08x->%08x) T(%08x->%08x)\r\n", current->process, next->process, current->thread, next->thread);
-    proc_switch(next->thread, current->thread, next->process, current->process);
+    if(!current){
+        // printf("** schedule() P(%08x->%08x) T(%08x->%08x)\r\n", 0, next->process, 0, next->thread);
+        proc_switch(next->thread, 0, next->process, 0);
+    }else{
+        // printf("** schedule() P(%08x->%08x) T(%08x->%08x)\r\n", current->process, next->process, current->thread, next->thread);
+        proc_switch(next->thread, current->thread, next->process, current->process);
+    }
 }
 
 schedule_schedulable_t * schedule_get(unsigned int pid, unsigned int tid){
@@ -142,10 +152,12 @@ schedule_schedulable_t * schedule_get(unsigned int pid, unsigned int tid){
 void schedule_disable(){
     schedule_disabled++;
     arch_disable_interrupts();
+    // printf("** schedule_disable() %d\r\n", schedule_disabled);
 }
 
 void schedule_enable(){
     schedule_disabled--;
     if(!schedule_disabled)
         arch_enable_interrupts();
+    // printf("** schedule_enable() %d\r\n", schedule_disabled);
 }

@@ -7,7 +7,7 @@ void squire_thread_end(){
 	for(;;);
 }
 
-uint32_t squire_syscall_thread(void (*entry)(void), void * stack_base, size_t stack_length, uint32_t flags, void * param){
+unsigned int squire_syscall_thread(void (*entry)(void), void * stack_base, size_t stack_length, unsigned int flags, void * param){
 	squire_params_thread_t parms;
 	parms.entry = entry;
 	parms.stack_base = stack_base;

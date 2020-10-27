@@ -80,7 +80,7 @@ int proc_init(void (*return_addr)()){
 }
 
 void proc_thread_start(){
-    __asm__ __volatile__("mov 4(%ebp), %eax; sti; call %eax");
+    __asm__ __volatile__("mov 4(%ebp), %eax; sti; call *%eax"); //":"=a"(eax));
     schedule_kill(0, 0);
     schedule();
     for(;;){
@@ -123,24 +123,20 @@ void proc_switch(proc_thread_t * tto, proc_thread_t * tfrom, proc_proc_t * pto, 
     if(tfrom){
         // Save current state in from
         __asm__ __volatile__("fsave (%%eax)"::"a"(((proc_thread_arch_data_t*)(tfrom->arch_data))->fpudata));
-        __asm__ __volatile__(".intel_syntax noprefix");
-        __asm__ __volatile__("pushad");
-        __asm__ __volatile__("pushfd");
-        __asm__ __volatile__(".att_syntax noprefix");
-        __asm__ __volatile__("mov %esp, %esi");
-        __asm__ __volatile__("nop":"=S"(((proc_thread_arch_data_t*)tfrom->arch_data)->kstack));
+        __asm__ __volatile__("pusha");
+        __asm__ __volatile__("pushf");
+        __asm__ __volatile__("movl %esp, %edx");
+        __asm__ __volatile__("nop":"=d"(((proc_thread_arch_data_t*)tfrom->arch_data)->kstack));
         ((proc_thread_arch_data_t*)tfrom->arch_data)->tss_esp0 = TSS[1];
     }
+// {unsigned int old_ebp, old_esp, cr3;__asm__ __volatile__("movl %%ebp, %%eax":"=a"(old_ebp));__asm__ __volatile__("movl %%esp, %%eax":"=a"(old_esp));cr3 = vas_getcr3();printf("EBP %08x ESP %08x CR3 %08x\r\n", old_ebp, old_esp, cr3);}
     TSS[1] = ((proc_thread_arch_data_t*)tto->arch_data)->tss_esp0;
+    __asm__ __volatile__("movl %%eax, %%edi"::"a"(newcr3));
     __asm__ __volatile__("frstor (%%eax)"::"a"(((proc_thread_arch_data_t*)(tto->arch_data))->fpudata));
-    __asm__ __volatile__("nop"::"S"(((proc_thread_arch_data_t*)tto->arch_data)->kstack));
-    if(oldcr3!=newcr3)
-        __asm__ __volatile__("movl %%eax, %%cr3;"::"a"(newcr3));
-    __asm__ __volatile__("mov %esi, %esp");
-    __asm__ __volatile__(".intel_syntax noprefix");
-    __asm__ __volatile__("popfd");
-    __asm__ __volatile__("popad");
-    __asm__ __volatile__(".att_syntax noprefix");
+    __asm__ __volatile__("nop"::"a"(((proc_thread_arch_data_t*)tto->arch_data)->kstack));
+    __asm__ __volatile__("movl %eax, %esp; movl %edi, %cr3");
+    __asm__ __volatile__("popf");
+    __asm__ __volatile__("popa");
     __asm__ __volatile__("leave; ret");
 
     return;
@@ -159,11 +155,11 @@ void proc_user_exec(){
     unsigned int address, user_stack, argc;
     unsigned int * argv;
     __asm__ __volatile__("nop":"=c"(address));
-    __asm__ __volatile__("nop":"=b"(user_stack));
+    __asm__ __volatile__("nop":"=d"(user_stack));
     // __asm__ __volatile__("nop":"=c"(argc));
     // __asm__ __volatile__("nop":"=b"(argv));
 
-    // printf("user exec @ %08x stack: %08x\r\n", address, user_stack);
+    printf("user exec @ %08x stack: %08x\r\n", address, user_stack);
 
     // Load current esp as kernel stack in tss
     unsigned int esp;
@@ -284,7 +280,7 @@ proc_thread_t * proc_thread_new_user(void * code, void * stack, size_t stack_len
     // printf("    last %08x\r\n", last);
     // printf("    last->next %08x\r\n", last->next);
 
-    archdata->kstack = proc_create_return_stack_frame(kstack_base+KERNEL_STACK_SIZE-4, proc_user_exec, 0, stack+stack_length-4, code, 0, 0, 0);
+    archdata->kstack = proc_create_return_stack_frame(kstack_base+KERNEL_STACK_SIZE-4, proc_user_exec, 0, 0, code, stack+stack_length-4, 0, 0);
 
     schedule_add(proc_proc_current, thread, SCHEDULE_QUEUE_TYPE_NORMAL);
 
@@ -303,6 +299,9 @@ void proc_set_memory(vmm_region_t * region){
 }
 
 proc_proc_t * _0_proc_proc_new(void * ELF_start){
+
+    printf("_0_proc_proc_new()\r\n");
+
     // Create new process descriptor
     proc_proc_t * pnew = (proc_proc_t*)kmalloc(sizeof(proc_proc_t));
     proc_proc_t * pcur = proc_proc_get_current();
@@ -329,6 +328,7 @@ proc_proc_t * _0_proc_proc_new(void * ELF_start){
     // Create new PD table and copy kernel space into it (use page 0 as tmp)
     void * newpd_phys;
     pmm_alloc(4096, &newpd_phys);
+    printf("New PD %08x\r\n", newpd_phys);
     vas_map(newpd_phys, 0, VAS_FLAGS_WRITE|VAS_FLAGS_READ);
     memset(0, 0, 4096);
     // Copy kernel PD into new one
@@ -404,7 +404,8 @@ proc_proc_t * proc_proc_new(void * ELF_start){
 
 // {unsigned int old_ebp, old_esp, cr3;__asm__ __volatile__("movl %%ebp, %%eax":"=a"(old_ebp));__asm__ __volatile__("movl %%esp, %%eax":"=a"(old_esp));cr3 = vas_getcr3();printf("EBP %08x ESP %08x CR3 %08x\r\n", old_ebp, old_esp, cr3);}
     __asm__ __volatile__("movl %%eax, %%esp; movl %%esp, %%ebp"::"a"(newstack));
-    __asm__ __volatile__("call %%eax"::"a"(_0_proc_proc_new));
+    __asm__ __volatile__("call *%%eax"::"a"(_0_proc_proc_new));
+    // __asm__ __volatile__("call _0_proc_proc_new");
     __asm__ __volatile__("add $4, %esp ;pop %ebp; pop %esp");
     __asm__ __volatile__("nop":"=a"(pnew));
 // {unsigned int old_ebp, old_esp, cr3;__asm__ __volatile__("movl %%ebp, %%eax":"=a"(old_ebp));__asm__ __volatile__("movl %%esp, %%eax":"=a"(old_esp));cr3 = vas_getcr3();printf("EBP %08x ESP %08x CR3 %08x\r\n", old_ebp, old_esp, cr3);}
@@ -533,7 +534,8 @@ int proc_thread_kill(proc_thread_t * thread, proc_proc_t * process, int retval){
 
 // {unsigned int old_ebp, old_esp, cr3;__asm__ __volatile__("movl %%ebp, %%eax":"=a"(old_ebp));__asm__ __volatile__("movl %%esp, %%eax":"=a"(old_esp));cr3 = vas_getcr3();printf("EBP %08x ESP %08x CR3 %08x\r\n", old_ebp, old_esp, cr3);}
     __asm__ __volatile__("movl %%eax, %%esp; movl %%esp, %%ebp"::"a"(newstack));
-    __asm__ __volatile__("call %%eax"::"a"(_0_proc_thread_kill));
+    __asm__ __volatile__("call *%%eax"::"a"(_0_proc_thread_kill));
+    // __asm__ __volatile__("call _0_proc_thread_kill");
     __asm__ __volatile__("add $12, %esp ;pop %ebp; pop %esp");
     __asm__ __volatile__("nop":"=a"(ret));
 // {unsigned int old_ebp, old_esp, cr3;__asm__ __volatile__("movl %%ebp, %%eax":"=a"(old_ebp));__asm__ __volatile__("movl %%esp, %%eax":"=a"(old_esp));cr3 = vas_getcr3();printf("EBP %08x ESP %08x CR3 %08x\r\n", old_ebp, old_esp, cr3);}
@@ -550,7 +552,7 @@ void _proc_debug_print(proc_proc_t * p, unsigned int indent){
     }
 
     for(int i=0; i<indent; i++) printf("\t");
-    printf("-P[%3d]\r\n", p->id);
+    printf("-P[%3d]     %08x\r\n", p->id, p);
     for(int i=0; i<indent; i++) printf("\t");
     printf(" cr3:       %08x\r\n", ((proc_proc_arch_data_t*)(p->arch_data))->cr3);
     for(int i=0; i<indent; i++) printf("\t");
@@ -558,13 +560,13 @@ void _proc_debug_print(proc_proc_t * p, unsigned int indent){
     proc_thread_t * t = p->threads;
     while(t){
         for(int i=0; i<indent; i++) printf("\t");
-        printf(" *T[%3d]    %08x %08x %08x %08x\r\n", t->id, t->kernel_stack, t->kernel_stack_length, t->stack, t->stack_length);
+        printf(" *T[%3d]    %08x %08x %08x %08x %08x\r\n", t->id, t, t->kernel_stack, t->kernel_stack_length, t->stack, t->stack_length);
         t = t->next;
     }
     t = p->killed_threads;
     while(t){
         for(int i=0; i<indent; i++) printf("\t");
-        printf(" *KT[%3d]   -> %08x\r\n", t->id, t->retval);
+        printf(" *KT[%3d]   -> %08x %08x\r\n", t->id, t, t->retval);
         t = t->next;
     }
     for(int i=0; i<indent; i++) printf("\t");

@@ -4,6 +4,7 @@ include ../makefiles/env.mk
 all:
 
 .PHONY: all clean todolist builddir
+.SILENT:
 
 DIRS			:= src/$(ARCH)
 OUTPUTDIR		:= build
@@ -17,9 +18,7 @@ DFILES			:= $(CFILES:%.c=$(OUTPUTDIR)/%.c.d)
 ALLFILES		:= $(ASMFILES) $(INCFILES) $(CFILES) $(HFILES)
 
 # Toolchain
-CC				:= $(PREFIX)/bin/$(ARCH)-squire-gcc
-AR				:= $(PREFIX)/bin/$(ARCH)-squire-ar
-LD				:= $(PREFIX)/bin/$(ARCH)-squire-ld
+CC				:= $(PREFIX)/bin/$(ARCH)-tcc -nostdinc -nostdlib -I $(PREFIX)/lib/tcc/include
 OC				:= $(PREFIX)/bin/$(ARCH)-squire-objcopy
 OD				:= $(PREFIX)/bin/$(ARCH)-squire-objdump
 CC_WARNING		:= -Wall -Wextra
@@ -29,12 +28,12 @@ builddir:
 
 $(TARGET): builddir $(COBJ)
 	echo + Link $(TARGET)
-	$(AR) -rcs $(TARGET) $(COBJ)
+	$(CC) -r -o $(TARGET) $(COBJ)
 	find . -name '*.c' -o -name '*.h' -o -name '*.asm' -o -name '*.inc' | xargs wc -l > $(OUTPUTDIR)/LOC
 
 $(COBJ): $(OUTPUTDIR)/%.c.o: %.c
 	echo '>' $<
-	$(CC) -g -fPIC -MMD $(CC_WARNING) -o $@ -c $<
+	$(CC) -g -fPIC -MD -I src $(CC_WARNING) -o $@ -c $<
 
 todolist:
 	echo + TODO list

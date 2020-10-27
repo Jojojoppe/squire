@@ -18,6 +18,7 @@ clean:
 	cd kernel && ${MAKE} ${MFLAGS} clean
 	cd init && ${MAKE} ${MFLAGS} clean
 	cd testbin && ${MAKE} ${MFLAGS} clean
+	cd libsquire && ${MAKE} ${MFLAGS} clean
 	-rm initramfs.tar
 	-rm -rf initramfs
 

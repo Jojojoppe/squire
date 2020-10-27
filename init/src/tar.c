@@ -6,26 +6,26 @@ void tar_print_list(void * start){
 		printf("tar: %s\r\n", hdr->filename);
 
 		// get size
-		uint32_t count = 1;
-		uint32_t size = 0;
+		unsigned int count = 1;
+		unsigned int size = 0;
 		for(int j=11; j>0; j--, count*=8)
 			size += ((hdr->size[j-1]-'0')*count);
 
 		// Next header
-		uint32_t nxt = (uint32_t)hdr + ((size/512)+1)*512;
+		unsigned int nxt = (unsigned int)hdr + ((size/512)+1)*512;
 		if(size%512) nxt += 512;
 		hdr = (tar_header_t*)nxt;
 	}
 }
 
-void * tar_get(void * start, char * fname, uint32_t * fsize){
+void * tar_get(void * start, char * fname, unsigned int * fsize){
 	tar_header_t * hdr = (tar_header_t *) start;
 	while(hdr->filename[0]){
 
 		// Check filename
 		char * s = fname;
 		char * d = hdr->filename;
-		uint32_t same = 1;
+		unsigned int same = 1;
 		while(1){
 			if(*s!=*d){
 				same = 0;
@@ -39,8 +39,8 @@ void * tar_get(void * start, char * fname, uint32_t * fsize){
 		}
 
 		// get size
-		uint32_t count = 1;
-		uint32_t size = 0;
+		unsigned int count = 1;
+		unsigned int size = 0;
 		for(int j=11; j>0; j--, count*=8)
 			size += ((hdr->size[j-1]-'0')*count);
 
@@ -52,7 +52,7 @@ void * tar_get(void * start, char * fname, uint32_t * fsize){
 		}
 
 		// Next header
-		uint32_t nxt = (uint32_t)hdr + ((size/512)+1)*512;
+		unsigned int nxt = (unsigned int)hdr + ((size/512)+1)*512;
 		if(size%512) nxt += 512;
 		hdr = (tar_header_t*)nxt;
 	}

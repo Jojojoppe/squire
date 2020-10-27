@@ -1,7 +1,5 @@
 #pragma once
 
-#include <stdint.h>
-
 typedef struct{
 	char		filename[100];
 	char		mode[8];
@@ -15,4 +13,4 @@ typedef struct{
 } tar_header_t;
 
 void tar_print_list(void * start);
-void * tar_get(void * start, char * fname, uint32_t * size);
+void * tar_get(void * start, char * fname, unsigned int * size);

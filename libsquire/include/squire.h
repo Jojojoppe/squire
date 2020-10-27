@@ -1,7 +1,7 @@
 #ifndef __H_SQUIRE
 #define __H_SQUIRE 1
 
-#include <stdlib.h>
+#include <stddef.h>
 
 // -------------------
 // System call numbers

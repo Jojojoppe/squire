@@ -29,7 +29,8 @@ DFILES			:= $(CFILES:%.c=$(OUTPUTDIR)/%.c.d)
 ALLFILES		:= $(ASMFILES) $(INCFILES) $(CFILES) $(HFILES)
 
 # Toolchain
-CC				:= $(PREFIX)/bin/$(ARCH)-squire-gcc
+# CC				:= $(PREFIX)/bin/$(ARCH)-squire-gcc
+CC				:= $(PREFIX)/bin/$(ARCH)-tcc
 AS				:= nasm
 LD				:= $(PREFIX)/bin/$(ARCH)-squire-gcc
 OC				:= $(PREFIX)/bin/$(ARCH)-squire-objcopy
@@ -59,7 +60,8 @@ $(INHFILES): $(OUTPUTDIR)/%.h: %.h.in
 
 $(COBJ): $(OUTPUTDIR)/%.c.o: %.c
 	echo '>' $<
-	$(CC) $(CC_FLAGS) $(DEFS) -ffreestanding -g -MMD $(CC_WARNING) -o $@ -c $<
+	# $(CC) $(CC_FLAGS) $(DEFS) -ffreestanding -g -MMD $(CC_WARNING) -o $@ -c $<
+	$(CC) $(CC_FLAGS) $(DEFS) -ffreestanding -g -MD $(CC_WARNING) -o $@ -c $<
 
 $(ASMOBJ): $(OUTPUTDIR)/%.asm.o: %.asm
 	echo '>' $<

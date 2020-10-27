@@ -22,7 +22,7 @@ unsigned int squire_syscall_process(void * elf_start, size_t elf_length, int arg
 	for(int i=0; i<argc; i++){
 		param_length += _strlen(argv[i]) + 1;
 	}
-	unsigned int * paramdata = (unsigned int*) alloca(param_length+sizeof(unsigned int)*argc);
+	unsigned int * paramdata = (unsigned int*) malloc(param_length+sizeof(unsigned int)*argc);
 	unsigned int p = 0;
 	for(int i=0; i<argc; i++){
 		unsigned int len = _strlen(argv[i])+1;
@@ -39,5 +39,6 @@ unsigned int squire_syscall_process(void * elf_start, size_t elf_length, int arg
 	parms.param_data = paramdata;
 	parms.param_data_size = param_length+argc*sizeof(unsigned int);
 	asm __volatile__("int $0x80"::"a"(SQUIRE_SYSCALL_PROCESS),"c"(sizeof(parms)),"d"(&parms));
+	free(paramdata);
 	return parms.pid;
 }
