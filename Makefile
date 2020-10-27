@@ -9,6 +9,7 @@ all: newlib drive libsquire kernel init initramfs copy
 include makefiles/drive.mk
 include makefiles/toolchain.mk
 include makefiles/qemu.mk
+include makefiles/compiler.mk
 
 # Clean all
 clean:

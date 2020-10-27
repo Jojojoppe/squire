@@ -22,9 +22,9 @@ DFILES			:= $(CFILES:%.c=$(OUTPUTDIR)/%.c.d)
 ALLFILES		:= $(ASMFILES) $(INCFILES) $(CFILES) $(HFILES)
 
 # Toolchain
-CC				:= $(PREFIX)/bin/$(ARCH)-squire-gcc
+CC				:= $(PREFIX)/bin/$(ARCH)-tcc -vv
 AS				:= nasm
-LD				:= $(PREFIX)/bin/$(ARCH)-squire-ld
+LD				:= $(CC)
 OC				:= $(PREFIX)/bin/$(ARCH)-squire-objcopy
 OD				:= $(PREFIX)/bin/$(ARCH)-squire-objdump
 CC_WARNING		:= -Wall -Wextra
@@ -43,7 +43,7 @@ $(TARGET): builddir $(ASMOBJ) $(COBJ)
 
 $(COBJ): $(OUTPUTDIR)/%.c.o: %.c
 	echo '>' $<
-	$(CC) -g -MMD $(CC_WARNING) -o $@ -c $<
+	$(CC) -g $(CC_WARNING) -o $@ -c $<
 
 $(ASMOBJ): $(OUTPUTDIR)/%.asm.o: %.asm
 	echo '>' $<
