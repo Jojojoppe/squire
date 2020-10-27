@@ -29,18 +29,24 @@ unsigned int elf_load_simple(void * address, void (**entry)()){
     for(int i=0; i<eheader2->e_phnum; i++){
         // If loadable segment
         if(pheader[i].p_type==1){
-            size_t length = pheader[i].p_memsz + (0x1000-(pheader[i].p_memsz%0x1000));
+            size_t length = pheader[i].p_memsz;
+            unsigned int base = pheader[i].p_vaddr & ~((unsigned int)PAGE_SIZE-1);
+            length += pheader[i].p_vaddr - base;
+            if(length%PAGE_SIZE){
+                length += (PAGE_SIZE-(length%PAGE_SIZE));
+            }
+
             // Find flags for allocation
             unsigned int flags = 0;
             if(pheader[i].p_flags&1) flags |= VMM_FLAGS_EXEC;
             if(pheader[i].p_flags&2) flags |= VMM_FLAGS_WRITE;
             if(pheader[i].p_flags&4) flags |= VMM_FLAGS_READ;
-            if(vmm_alloc(pheader[i].p_vaddr, length, flags, &memory)){
-                printf("Could not allocate memory [%08x] %08x\r\n", pheader[i].p_vaddr, length);
+            if(vmm_alloc(base, length, flags, &memory)){
+                printf("Could not allocate memory [%08x] %08x\r\n", base, length);
                 vmm_debug(memory);
                 return ELF_ERROR_MEMORY;
             }
-            memset(pheader[i].p_vaddr,0, length);
+            memset(base,0, length);
             memcpy(pheader[i].p_vaddr,address+pheader[i].p_offset,pheader[i].p_filesz);
         }
     }
