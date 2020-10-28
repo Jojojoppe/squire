@@ -1,3 +1,5 @@
+.SILENT:
+
 # MAKE EVIRONMENT VARIABLES
 # --------------------------
 #  PREFIX:		the system root for the toolchain
@@ -11,7 +13,6 @@ ifndef ARCH
 $(error ARCH not defined! Run make with ARCH environment variable)
 endif
 ifeq ($(ARCH), i386)
-else ifeq($(ARCH), x86_64)
 else
 $(error "ARCH [${ARCH}] not accepted!")
 endif

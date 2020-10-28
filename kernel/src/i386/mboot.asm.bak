@@ -54,7 +54,7 @@ endstruc
 
 ; -------------
 ; SECTION MBOOT
-section .mboot
+section .text
 align 0x04
 ; -------------
 									dd MBOOT_magic

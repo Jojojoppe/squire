@@ -8,7 +8,7 @@ all:
 
 DIRS			:= src
 OUTPUTDIR		:= build
-TARGET			:= testbin.bin
+TARGET			:= init.bin
 
 CFILES			:= $(shell find $(DIRS) -type f -name "*.c")
 HFILES			:= $(shell find $(DIRS) -type f -name "*.h")
@@ -18,8 +18,10 @@ DFILES			:= $(CFILES:%.c=$(OUTPUTDIR)/%.c.d)
 ALLFILES		:= $(CFILES) $(HFILES)
 
 # Toolchain
+# CC				:= $(PREFIX)/bin/$(ARCH)-squire-gcc
 CC				:= $(PREFIX)/bin/$(ARCH)-tcc
-LD				:= $(CC)
+LD				:= $(PREFIX)/bin/$(ARCH)-tcc
+# LD				:= $(PREFIX)/bin/$(ARCH)-squire-ld
 OC				:= $(PREFIX)/bin/$(ARCH)-squire-objcopy
 OD				:= $(PREFIX)/bin/$(ARCH)-squire-objdump
 CC_WARNING		:= -Wall -Wextra

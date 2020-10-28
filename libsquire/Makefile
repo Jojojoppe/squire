@@ -19,21 +19,19 @@ ALLFILES		:= $(ASMFILES) $(INCFILES) $(CFILES) $(HFILES)
 
 # Toolchain
 CC				:= $(PREFIX)/bin/$(ARCH)-tcc -nostdinc -nostdlib -I $(PREFIX)/lib/tcc/include
-OC				:= $(PREFIX)/bin/$(ARCH)-squire-objcopy
-OD				:= $(PREFIX)/bin/$(ARCH)-squire-objdump
 CC_WARNING		:= -Wall -Wextra
 
 builddir:
 	-mkdir -p $(OUTPUTDIR)/src/$(ARCH)
 
 $(TARGET): builddir $(COBJ)
-	echo + Link $(TARGET)
+	echo "LD  $(TARGET)"
 	$(CC) -r -o $(TARGET) $(COBJ)
-	find . -name '*.c' -o -name '*.h' -o -name '*.asm' -o -name '*.inc' | xargs wc -l > $(OUTPUTDIR)/LOC
+	find . -name '*.c' -o -name '*.h' | xargs wc -l > $(OUTPUTDIR)/LOC
 
 $(COBJ): $(OUTPUTDIR)/%.c.o: %.c
-	echo '>' $<
-	$(CC) -g -fPIC -MD -I src $(CC_WARNING) -o $@ -c $<
+	echo 'CC ' $<
+	$(CC) -g -MD -I src $(CC_WARNING) -o $@ -c $<
 
 todolist:
 	echo + TODO list

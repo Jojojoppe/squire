@@ -58,8 +58,14 @@ section .text
 align 0x04
 ; ------------
 
+; Place MBOOT header here
+; -----------------------
+%include "mbootheader.inc"
+
 ; Entry point
 ; -----------
+global _start
+_start:
 global g_start
 g_start:
 		cli
