@@ -1,29 +1,24 @@
-/* _PDCLIB_allocpages( int const )
-
-   This file is part of the Public Domain C Library (PDCLib).
-   Permission is granted to use, modify, and / or redistribute at will.
-*/
-
-/* This is a stub implementation of _PDCLIB_allocpages
-*/
-
 #include <stdint.h>
 #include <stddef.h>
 #include "_PDCLIB_glue.h"
 #include <errno.h>
 
-void * _PDCLIB_allocpages( size_t n )
-{
-    errno = ENOTSUP;
-    return NULL;
+#include <squire.h>
+
+char * heap_end = 0;
+void * _PDCLIB_allocpages( size_t n ){
+    extern char _end;
+
+    unsigned int incr = n*_PDCLIB_MALLOC_PAGESIZE;
+
+    char * prev_heap_end;
+    if(heap_end==0){
+        heap_end = (char*)((((unsigned int)&_end)/4096+1)*4096);
+    }
+    prev_heap_end = heap_end;
+    heap_end += (incr/4096+1)*4096;
+
+    extern void * squire_syscall_mmap(void *, size_t, unsigned int);
+    squire_syscall_mmap(prev_heap_end, (incr/4096+1)*4096, 0);
+    return (void *) prev_heap_end;
 }
-
-#ifdef TEST
-#include "_PDCLIB_test.h"
-
-int main( void )
-{
-    return TEST_RESULTS;
-}
-
-#endif

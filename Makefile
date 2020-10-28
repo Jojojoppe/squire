@@ -27,8 +27,8 @@ copy: mount
 	echo + Copy files to drive
 	sudo cp grub.cfg mnt/boot/grub/grub.cfg
 	sudo cp kernel/kernel.bin mnt/boot/kernel.bin
-	# sudo cp init/init.bin mnt/boot/init.bin
-	# sudo cp initramfs.tar mnt/boot/initramfs.tar
+	sudo cp init/init.bin mnt/boot/init.bin
+	sudo cp initramfs.tar mnt/boot/initramfs.tar
 	${MAKE} umount
 
 # Compile the kernel
@@ -56,7 +56,7 @@ init:
 	cd init && ${MAKE} ${MFLAGS} init.bin
 
 # Create initramfs
-initramfs: testbin
+initramfs:
 	echo + Create initramfs
 	-rm -rf initramfs
 	mkdir initramfs

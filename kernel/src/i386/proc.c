@@ -159,7 +159,7 @@ void proc_user_exec(){
     // __asm__ __volatile__("nop":"=c"(argc));
     // __asm__ __volatile__("nop":"=b"(argv));
 
-    printf("user exec @ %08x stack: %08x\r\n", address, user_stack);
+    // printf("user exec @ %08x stack: %08x\r\n", address, user_stack);
 
     // Load current esp as kernel stack in tss
     unsigned int esp;
