@@ -1,3 +1,2 @@
 file kernel/kernel.bin
-symbol-file kernel/build/DEBUG.sym
 target remote localhost:1234
