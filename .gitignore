@@ -22,3 +22,6 @@ init/init.bin
 
 testbin/build
 testbin/testbin.bin
+
+libc/build
+libc/libc.a

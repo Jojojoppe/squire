@@ -1,53 +1,72 @@
 include ../makefiles/env.mk
 
+.PHONY: all libc headers crtfiles builddir clean
+
 # No all target
 all:
 
-.PHONY: all clean todolist builddir
-.SILENT:
+OUTPUTDIR			:= build
 
-DIRS			:= src
-OUTPUTDIR		:= build
-TARGET			:= init.bin
+FUNCTIONFILES		:= $(shell find pdclib/functions -type f -name "*.c")
+FUNCTIONOBJ			:= $(FUNCTIONFILES:%.c=$(OUTPUTDIR)/%.c.o)
+FUNCTIOND			:= $(FUNCTIONFILES:%.c=$(OUTPUTDIR)/%.c.d)
 
-CFILES			:= $(shell find $(DIRS) -type f -name "*.c")
-HFILES			:= $(shell find $(DIRS) -type f -name "*.h")
-COBJ			:= $(CFILES:%.c=$(OUTPUTDIR)/%.c.o)
-DFILES			:= $(CFILES:%.c=$(OUTPUTDIR)/%.c.d)
+INTERNALFILES		:= $(shell find pdclib/internals -type f -name "*.c")
+INTERNALOBJ			:= $(INTERNALFILES:%.c=$(OUTPUTDIR)/%.c.o)
+INTERNALD			:= $(INTERNALFILES:%.c=$(OUTPUTDIR)/%.c.d)
 
-ALLFILES		:= $(CFILES) $(HFILES)
+COBJ				:= $(INTERNALOBJ) $(FUNCTIONOBJ)
+DFILES				:= $(INTERNALD) $(FUNCTIOND)
 
-# Toolchain
-# CC				:= $(PREFIX)/bin/$(ARCH)-squire-gcc
-CC				:= $(PREFIX)/bin/$(ARCH)-tcc
-LD				:= $(PREFIX)/bin/$(ARCH)-tcc
-# LD				:= $(PREFIX)/bin/$(ARCH)-squire-ld
-OC				:= $(PREFIX)/bin/$(ARCH)-squire-objcopy
-OD				:= $(PREFIX)/bin/$(ARCH)-squire-objdump
+CC				:= $(PREFIX)/bin/$(ARCH)-tcc -nostdinc -nostdlib -I pdclib/internals -I pdclib/include -I $(ARCH)/pdclib/include -I $(ARCH)/pdclib/internals -D_PDCLIB_EXTENSIONS
 CC_WARNING		:= -Wall -Wextra
 
 builddir:
-	-mkdir -p $(OUTPUTDIR)/src
+	-mkdir -p $(OUTPUTDIR)/pdclib/functions/_PDCLIB
+	-mkdir -p $(OUTPUTDIR)/pdclib/functions/_dlmalloc
+	-mkdir -p $(OUTPUTDIR)/pdclib/functions/ctype
+	-mkdir -p $(OUTPUTDIR)/pdclib/functions/errno
+	-mkdir -p $(OUTPUTDIR)/pdclib/functions/inttypes
+	-mkdir -p $(OUTPUTDIR)/pdclib/functions/locale
+	-mkdir -p $(OUTPUTDIR)/pdclib/functions/signal
+	-mkdir -p $(OUTPUTDIR)/pdclib/functions/stdio
+	-mkdir -p $(OUTPUTDIR)/pdclib/functions/stdlib
+	-mkdir -p $(OUTPUTDIR)/pdclib/functions/string
+	-mkdir -p $(OUTPUTDIR)/pdclib/functions/time
+	-mkdir -p $(OUTPUTDIR)/pdclib/functions/uchar
+	-mkdir -p $(OUTPUTDIR)/pdclib/functions/wchar
+	-mkdir -p $(OUTPUTDIR)/pdclib/functions/wctype
+	-mkdir -p $(OUTPUTDIR)/pdclib/internals
+	-mkdir -p $(OUTPUTDIR)/$(ARCH)
 
-$(TARGET): builddir $(COBJ)
-	echo + Link $(TARGET)
-	$(CC) -g -o $(TARGET) $(COBJ)
-	$(OD) -d -M intel-mnemonic $(TARGET) > $(OUTPUTDIR)/DISASS
-	$(OC) --only-keep-debug $(TARGET) $(OUTPUTDIR)/DEBUG.sym
-	$(OC) --strip-debug $(TARGET)
-	find . -name '*.c' -o -name '*.h' -o -name '*.asm' -o -name '*.inc' | xargs wc -l > $(OUTPUTDIR)/LOC
+$(OUTPUTDIR)/$(ARCH)/libc_arch.o:
+	cd $(ARCH) && ${MAKE} ${MFLAGS} libc_arch
+
+libc: headers builddir $(OUTPUTDIR)/$(ARCH)/libc_arch.o $(COBJ) crtfiles
+	echo 'LD ' libc
+	$(CC) -r -static -o libc.a $(COBJ) $(OUTPUTDIR)/$(ARCH)/libc_arch.o
+	cp libc.a $(PREFIX)/usr/lib/libc.a
+
+crtfiles:
+	cd $(ARCH) && ${MAKE} ${MFLAGS} crtfiles
+	echo + Install crt files
+	cp $(OUTPUTDIR)/$(ARCH)/crt* $(PREFIX)/usr/lib
 
 $(COBJ): $(OUTPUTDIR)/%.c.o: %.c
-	echo '>' $<
+	echo 'CC ' $<
 	$(CC) -g -MD $(CC_WARNING) -o $@ -c $<
 
-todolist:
-	echo + TODO list
-	-@for file in $(ALLFILES:Makefile=); do fgrep -n -H -e TODO $$file ; done; true
-	#| sed -e 's/:[^:]*//2g' | sed -e 's/^..//' | awk '{print ">"$$1 }' ; fgrep -n -H -e TODO $$file | sed -e 's#.*TODO\(\)#\    #'; done; true
+headers:
+	echo + Install headers
+	cp -RT pdclib/include $(PREFIX)/include
+	cp -RT pdclib/internals $(PREFIX)/include
+	cp -RT $(ARCH)/pdclib/include $(PREFIX)/include
+	cp -RT $(ARCH)/pdclib/internals $(PREFIX)/include
 
 clean:
-	rm -f $(COBJ) $(DFILES) $(TARGET) $(OUTPUTDIR)/DEBUG.sym $(OUTPUTDIR)/DISASS $(OUTPUTDIR)/LOC
+	echo + Clean libc
+	-rm -r build
+	-rm libc.a
+	cd $(ARCH) && ${MAKE} ${MFLAGS} clean
 
-# Header dependencies
 -include $(DFILES)

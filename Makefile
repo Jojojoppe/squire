@@ -1,10 +1,10 @@
 include makefiles/env.mk
 
-.PHONY: all clean copy initramfs kernel init libsquire
+.PHONY: all clean copy initramfs kernel init libsquire libc
 .SILENT:
 
 # Complete make
-all: toolchain drive libsquire kernel init initramfs copy
+all: toolchain drive libsquire kernel libc init initramfs copy
 
 # Makefile scripts
 include makefiles/drive.mk
@@ -18,6 +18,7 @@ clean:
 	cd kernel && ${MAKE} ${MFLAGS} clean
 	cd init && ${MAKE} ${MFLAGS} clean
 	cd libsquire && ${MAKE} ${MFLAGS} clean
+	cd libc && ${MAKE} ${MFLAGS} clean
 	-rm initramfs.tar
 	-rm -rf initramfs
 
@@ -44,6 +45,10 @@ libsquire: libsquire_headers
 libsquire_headers:
 	-mkdir -p $(PREFIX)/usr/include
 	cp -RT libsquire/include $(PREFIX)/usr/include
+
+libc:
+	echo + Make libc
+	cd libc && ${MAKE} ${MFLAGS} libc
 
 # Compile init
 init:
