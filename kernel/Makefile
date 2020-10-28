@@ -14,14 +14,8 @@ DIRS			:= src/$(ARCH) src/general
 OUTPUTDIR		:= build
 TARGET			:= kernel.bin
 
-
-ASMFILES	 	:= $(shell find $(DIRS) -type f -name "*.asm")
-INCFILES	 	:= $(shell find $(DIRS) -type f -name "*.inc")
-ASMOBJ			:= $(ASMFILES:%.asm=$(OUTPUTDIR)/%.asm.o)
-ASMDFILES		:= $(ASMFILES:%.asm=$(OUTPUTDIR)/%.asm.d)
-
-ASM2FILES		:= $(shell find $(DIRS) -type f -name "*.S")
-ASM2OBJ			:= $(ASM2FILES:%.S=$(OUTPUTDIR)/%.S.o)
+ASMFILES		:= $(shell find $(DIRS) -type f -name "*.S")
+ASMOBJ			:= $(ASMFILES:%.S=$(OUTPUTDIR)/%.S.o)
 
 HINFILES		:= $(shell find $(DIRS) -type f -name "*.h.in")
 INHFILES		:= $(HINFILES:%.h.in=$(OUTPUTDIR)/%.h)
@@ -34,10 +28,6 @@ ALLFILES		:= $(ASMFILES) $(INCFILES) $(CFILES) $(HFILES)
 
 # Toolchain
 CC				:= $(PREFIX)/bin/$(ARCH)-tcc
-AS				:= nasm
-LD				:= $(PREFIX)/bin/$(ARCH)-squire-gcc
-OC				:= $(PREFIX)/bin/$(ARCH)-squire-objcopy
-OD				:= $(PREFIX)/bin/$(ARCH)-squire-objdump
 CC_WARNING		:= -Wall -Wextra
 CC_FLAGS		:= -Isrc -Ibuild/src -nostdlib -nostdinc -O0 -g
 CC_ARCH_FLAGS	:=
@@ -49,9 +39,9 @@ builddir:
 	-mkdir -p $(OUTPUTDIR)/src/{general,$(ARCH)}
 	-mkdir -p  $(OUTPUTDIR)/src/$(ARCH)/memory
 
-$(TARGET): builddir $(INHFILES) $(ASMOBJ) $(ASM2OBJ) $(COBJ)
+$(TARGET): builddir $(INHFILES) $(ASMOBJ) $(COBJ)
 	echo "LD  $(TARGET)"
-	$(CC) $(CC_FLAGS) $(CC_ARCH_FLAGS) -static -o $(TARGET) $(DEFS) $(ASMOBJ) $(ASM2OBJ) $(COBJ) $(PREFIX)/lib/tcc/$(ARCH)-libtcc1.a
+	$(CC) $(CC_FLAGS) $(CC_ARCH_FLAGS) -static -o $(TARGET) $(DEFS) $(ASMOBJ) $(COBJ) $(PREFIX)/lib/tcc/$(ARCH)-libtcc1.a
 	find . -name '*.c' -o -name '*.h' -o -name '*.asm' -o -name '*.inc' | xargs wc -l > $(OUTPUTDIR)/LOC
 
 $(INHFILES): $(OUTPUTDIR)/%.h: %.h.in
@@ -63,11 +53,7 @@ $(COBJ): $(OUTPUTDIR)/%.c.o: %.c
 	echo 'CC ' $<
 	$(CC) $(CC_FLAGS) $(DEFS) -MD $(CC_WARNING) -o $@ -c $<
 
-$(ASMOBJ): $(OUTPUTDIR)/%.asm.o: %.asm
-	echo 'AS ' $<
-	$(AS) $(AS_FLAGS) -MD $(OUTPUTDIR)/$<.d -g -o $@ $<
-
-$(ASM2OBJ): $(OUTPUTDIR)/%.S.o: %.S
+$(ASMOBJ): $(OUTPUTDIR)/%.S.o: %.S
 	echo 'AS ' $<
 	$(CC) $(CC_FLAGS) $(DEFS) -MD $(CC_WARNING) -o $@ -c $<
 

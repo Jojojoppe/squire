@@ -89,7 +89,7 @@ serial_outhex:
 serial_outhex.lp:
         push    %eax
         push    %ecx
-        mov     serial_outhex.chars, %edx
+        mov     $serial_outhex.chars, %edx
         and     $0xf, %eax
         add     %eax, %edx
         mov     (%edx), %al

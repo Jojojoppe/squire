@@ -43,7 +43,7 @@ struct state{
     unsigned int edx;
     unsigned int ecx;
     unsigned int eax;
-} __attribute__((packed));
+};
 
 void panic(struct state * s){
     debug_print_s("\r\nEAX: "); debug_print_x(s->eax);
