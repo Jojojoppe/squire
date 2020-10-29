@@ -275,6 +275,9 @@ static bool printchar( char chr, struct _PDCLIB_status_t * status )
     return true;
 }
 
+
+void print_double_float(double val, unsigned int precision);
+
 int _PDCLIB_print( const char * spec, struct _PDCLIB_status_t * status )
 {
     const char * orig_spec = spec;
@@ -455,6 +458,8 @@ int _PDCLIB_print( const char * spec, struct _PDCLIB_status_t * status )
             status->flags |= E_unsigned;
             break;
         case 'f':
+			print_double_float(va_arg(status->arg, double), status->width);
+			break;
         case 'F':
         case 'e':
         case 'E':
@@ -585,6 +590,70 @@ int _PDCLIB_print( const char * spec, struct _PDCLIB_status_t * status )
     return spec - orig_spec;
 }
 
+#define MAX_PRECISION    50
+
+#define IsNaN(n) (n != n)
+
+// %f: double/single precision support (double or promoted float, 64-bits)
+void print_double_float(double val, unsigned int precision)
+{
+    unsigned int cur_prec = 1;
+	if(precision==0)
+		precision = MAX_PRECISION;
+
+    // if the user-defined precision is out-of-bounds, normalize it
+    if(precision > MAX_PRECISION)
+        precision = MAX_PRECISION;
+
+    // if it's negative, show it!
+    if(val < 0)
+    {
+		printf("-");
+       
+        // change to a positive value
+        val = -val;
+    }
+
+    // check to see if it is Not-a-Number
+    if(IsNaN(val))
+    {
+		printf("NaN");
+        return;
+    }
+   
+    // print the integer part of the floating point
+	printf("%d", (int)val);
+   
+    // if precision == 0, only print the integer part
+    if(!precision)
+        return;
+   
+    // now on to the decimal potion
+	printf(".");
+   
+    // remove the integer part
+    val -= (double)((int)val);
+   
+    /* on every iteration, make sure there are still decimal places left that are non-zero,
+       and make sure we're still within the user-defined precision range. */
+    while(val > (double)((int)val) && cur_prec++ < precision+1)
+    {
+        // move the next decimal into the integer portion and print it
+        val *= 10;
+		printf("%d", (int)val);
+       
+        /* if the value is == the floored value (integer portion),
+           then there are no more decimal places that are non-zero. */
+        if(val == (double)((int)val))
+            return;
+       
+        // subtract the integer portion
+        val -= (double)((int)val);
+    }
+}
+
+
+
 #endif
 
 #ifdef TEST
@@ -625,6 +694,7 @@ static int testprintf( char * buffer, const char * format, ... )
     va_end( status.arg );
     return status.i;
 }
+
 #endif
 
 #define TEST_CONVERSION_ONLY
