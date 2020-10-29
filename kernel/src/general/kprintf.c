@@ -3,6 +3,7 @@
 #define NULL 0
 
 extern int putchar(int c);
+static void print_double_float(double val, unsigned int precision);
 
 static void simple_outputchar(char **str, char c)
 {
@@ -115,6 +116,7 @@ static int simple_vsprintf(char **out, char *format, va_list ap)
 		signed char hhi;
 		unsigned char hhu;
 		void *p;
+		double d;
 	} u;
 
 	for (; *format != 0; ++format) {
@@ -168,6 +170,11 @@ static int simple_vsprintf(char **out, char *format, va_list ap)
 					scr[0] = u.c;
 					scr[1] = '\0';
 					pc += prints(out, scr, width, flags);
+					break;
+
+				case('f'):
+					u.d = va_arg(ap, double);
+					print_double_float(u.d, width);
 					break;
 
 				case('s'):
@@ -379,4 +386,66 @@ void hexDump (const char * desc, const void * addr, const int len) {
     // And print the final ASCII buffer.
 
     printf ("  %s\n", buff);
+}
+
+#define MAX_PRECISION    50
+
+#define IsNaN(n) (n != n)
+
+// %f: double/single precision support (double or promoted float, 64-bits)
+static void print_double_float(double val, unsigned int precision)
+{
+    unsigned int cur_prec = 1;
+	if(precision==0)
+		precision = MAX_PRECISION;
+
+    // if the user-defined precision is out-of-bounds, normalize it
+    if(precision > MAX_PRECISION)
+        precision = MAX_PRECISION;
+
+    // if it's negative, show it!
+    if(val < 0)
+    {
+		printf("-");
+       
+        // change to a positive value
+        val = -val;
+    }
+
+    // check to see if it is Not-a-Number
+    if(IsNaN(val))
+    {
+		printf("NaN");
+        return;
+    }
+   
+    // print the integer part of the floating point
+	printf("%d", (int)val);
+   
+    // if precision == 0, only print the integer part
+    if(!precision)
+        return;
+   
+    // now on to the decimal potion
+	printf(".");
+   
+    // remove the integer part
+    val -= (double)((int)val);
+   
+    /* on every iteration, make sure there are still decimal places left that are non-zero,
+       and make sure we're still within the user-defined precision range. */
+    while(val > (double)((int)val) && cur_prec++ < precision+1)
+    {
+        // move the next decimal into the integer portion and print it
+        val *= 10;
+		printf("%d", (int)val);
+       
+        /* if the value is == the floored value (integer portion),
+           then there are no more decimal places that are non-zero. */
+        if(val == (double)((int)val))
+            return;
+       
+        // subtract the integer portion
+        val -= (double)((int)val);
+    }
 }
