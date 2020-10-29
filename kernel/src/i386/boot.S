@@ -35,6 +35,15 @@ boot_PD:
 fpu_test:
 .short 0x55aa
 
+fpu_var0:
+.quad 0x4029000000000000
+fpu_var1:
+.quad 0x4000000000000000
+fpu_var2:
+.quad 0x0
+fpu_var3:
+.quad 0x0
+
 # BSS
 # ---
 .section .bss
@@ -112,14 +121,35 @@ start_high:
         movl    $boot_stack_top, (%eax)
         sub     $64, %esp
 
+		# Initialize FPU
         mov     %cr0, %eax
         and     $0xfffffff3, %eax
         mov     %eax, %cr0
-        fninit
-        fnstsw  (fpu_test)
+        finit
+        fstsw  (fpu_test)
         mov     (fpu_test), %ax
         cmp     $0, %ax
         jne     hang
+		fstcw	(fpu_test)
+		mov		(fpu_test), %ax
+		cmp		$0x37f, %ax
+		jne		hang
+
+        mov     %cr0, %eax
+		or		$(1<<1), %eax
+        mov     %eax, %cr0
+
+		# TEST FPU
+		fldl	(fpu_var0)
+		fldl	(fpu_var1)
+		fmul
+		fstl	(fpu_var2)
+		movl	(fpu_var2+4), %eax
+		cmp		$0x40390000, %eax
+		jne		hang
+		movl	(fpu_var2), %eax
+		cmp		$0x00000000, %eax
+		jne		hang
 
         mov     $0xc0000000, %eax
         push    %eax

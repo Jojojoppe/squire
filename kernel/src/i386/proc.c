@@ -122,7 +122,7 @@ void proc_switch(proc_thread_t * tto, proc_thread_t * tfrom, proc_proc_t * pto, 
     unsigned int oldcr3 = vas_getcr3();
     if(tfrom){
         // Save current state in from
-        __asm__ __volatile__("fsave (%%eax)"::"a"(((proc_thread_arch_data_t*)(tfrom->arch_data))->fpudata));
+        __asm__ __volatile__("fsave (%%eax); fwait"::"a"(((proc_thread_arch_data_t*)(tfrom->arch_data))->fpudata));
         __asm__ __volatile__("pusha");
         __asm__ __volatile__("pushf");
         __asm__ __volatile__("movl %esp, %edx");
@@ -132,7 +132,7 @@ void proc_switch(proc_thread_t * tto, proc_thread_t * tfrom, proc_proc_t * pto, 
 // {unsigned int old_ebp, old_esp, cr3;__asm__ __volatile__("movl %%ebp, %%eax":"=a"(old_ebp));__asm__ __volatile__("movl %%esp, %%eax":"=a"(old_esp));cr3 = vas_getcr3();printf("EBP %08x ESP %08x CR3 %08x\r\n", old_ebp, old_esp, cr3);}
     TSS[1] = ((proc_thread_arch_data_t*)tto->arch_data)->tss_esp0;
     __asm__ __volatile__("movl %%eax, %%edi"::"a"(newcr3));
-    __asm__ __volatile__("frstor (%%eax)"::"a"(((proc_thread_arch_data_t*)(tto->arch_data))->fpudata));
+    __asm__ __volatile__("frstor (%%eax); fwait"::"a"(((proc_thread_arch_data_t*)(tto->arch_data))->fpudata));
     __asm__ __volatile__("nop"::"a"(((proc_thread_arch_data_t*)tto->arch_data)->kstack));
     __asm__ __volatile__("movl %eax, %esp; movl %edi, %cr3");
     __asm__ __volatile__("popf");
@@ -273,6 +273,11 @@ proc_thread_t * proc_thread_new_user(void * code, void * stack, size_t stack_len
     thread->id = process->tid_counter++;
     proc_thread_arch_data_t * archdata = (proc_thread_arch_data_t*) thread->arch_data;
     archdata->tss_esp0 = 4; //kstack_base+KERNEL_STACK_SIZE-4;
+
+	// Set FPU things
+	unsigned short * fpudata = archdata->fpudata;
+	fpudata[0] = 0x037f;
+	fpudata[2] = 0x0000;
 
     // printf("proc_thread_new_user(%08x, %08x, %08x) [%08x]\r\n", code, stack, stack_length, thread);
     // printf("    user stack %08x\r\n", stack+stack_length-4);

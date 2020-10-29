@@ -7,7 +7,7 @@ CFILES			:= $(shell find pdclib -type f -name "*.c")
 COBJ			:= $(CFILES:%.c=$(OUTPUTDIR)/%.c.o)
 DFILES			:= $(CFILES:%.c=$(OUTPUTDIR)/%.c.d)
 
-CC				:= $(PREFIX)/bin/$(ARCH)-tcc -nostdinc -nostdlib -I ../pdclib/internals -I ../pdclib/include -I pdclib/include -I pdclib/internals -I $(PREFIX)/usr/include -D_PDCLIB_EXTENSIONS
+CC				:= $(PREFIX)/bin/$(ARCH)-tcc -nostdinc -nostdlib -I ../pdclib/internals -I ../pdclib/include -I pdclib/include -I pdclib/internals -I $(PREFIX)/usr/include -I $(PREFIX)/include -D_PDCLIB_EXTENSIONS
 
 libc_arch: $(OUTPUTDIR)/libc_arch.o
 

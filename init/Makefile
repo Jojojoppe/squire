@@ -18,7 +18,7 @@ DFILES			:= $(CFILES:%.c=$(OUTPUTDIR)/%.c.d)
 ALLFILES		:= $(CFILES) $(HFILES)
 
 # Toolchain
-CC				:= $(PREFIX)/bin/$(ARCH)-tcc
+CC				:= $(PREFIX)/bin/$(ARCH)-tcc -msoft-float
 LD				:= $(PREFIX)/bin/$(ARCH)-tcc
 CC_WARNING		:= -Wall -Wextra
 
@@ -27,7 +27,7 @@ builddir:
 
 $(TARGET): builddir $(COBJ)
 	echo + Link $(TARGET)
-	$(CC) -g -o $(TARGET) $(COBJ)
+	$(CC) -g -o $(TARGET) $(COBJ) -lm
 	find . -name '*.c' -o -name '*.h' -o -name '*.asm' -o -name '*.inc' | xargs wc -l > $(OUTPUTDIR)/LOC
 
 $(COBJ): $(OUTPUTDIR)/%.c.o: %.c

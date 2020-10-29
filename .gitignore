@@ -25,3 +25,6 @@ testbin/testbin.bin
 
 libc/build
 libc/libc.a
+
+libm/build
+libm/libm.a
