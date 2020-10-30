@@ -137,6 +137,11 @@ unsigned int syscall_mutex_unlock(squire_params_mutex_t * params){
 	return 0;
 }
 
+unsigned int syscall_mutex_status(squire_params_mutex_status_t * params){
+	params->status = mutex_get((mutex_t*)params->mutex);
+	return 0;
+}
+
 
 unsigned int syscall_log(squire_params_log_t * params){
     printf("[%3d,%3d] ", proc_proc_get_current()->id, proc_thread_get_current()->id);
@@ -188,6 +193,10 @@ unsigned int syscall(unsigned int opcode, void * param_block, size_t param_len){
             returncode = syscall_process(params);
         } break;
 
+		case SQUIRE_SYSCALL_YIELD:{
+			schedule();
+			returncode = 0;				  
+		} break;
 
 
         case SQUIRE_SYSCALL_SIMPLE_SEND:{
@@ -232,6 +241,13 @@ unsigned int syscall(unsigned int opcode, void * param_block, size_t param_len){
                 return SYSCALL_ERROR_GENERAL;
             squire_params_mutex_t * params = (squire_params_mutex_t*)param_block;
             returncode = syscall_mutex_unlock(params);
+        } break;
+
+        case SQUIRE_SYSCALL_MUTEX_STATUS:{
+            if(param_len<sizeof(squire_params_mutex_status_t))
+                return SYSCALL_ERROR_GENERAL;
+            squire_params_mutex_status_t * params = (squire_params_mutex_status_t*)param_block;
+            returncode = syscall_mutex_status(params);
         } break;
 
 

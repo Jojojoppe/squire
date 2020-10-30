@@ -5,12 +5,18 @@
 #define SQUIRE_SYSCALL_MUTEX_LOCK		0x00000031
 #define SQUIRE_SYSCALL_MUTEX_UNLOCK		0x00000032
 #define SQUIRE_SYSCALL_MUTEX_DEINIT		0x00000033
+#define SQUIRE_SYSCALL_MUTEX_STATUS		0x00000034
 
 typedef void * squire_mutex_t;
 
 typedef struct{
 	squire_mutex_t mutex;
 } squire_params_mutex_t;
+
+typedef struct{
+	squire_mutex_t mutex;
+	unsigned int status;
+} squire_params_mutex_status_t;
 
 #if defined(__cplusplus)
 extern "C" {
@@ -20,6 +26,7 @@ extern squire_mutex_t squire_syscall_mutex_init();
 extern void squire_syscall_mutex_deinit(squire_mutex_t mutex);
 extern void squire_syscall_mutex_lock(squire_mutex_t mutex);
 extern void squire_syscall_mutex_unlock(squire_mutex_t mutex);
+extern unsigned int squire_syscall_mutex_status(squire_mutex_t mutex);
 
 #if defined(__cplusplus)
 } /* extern "C" */

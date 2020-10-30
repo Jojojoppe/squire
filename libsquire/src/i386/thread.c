@@ -19,3 +19,7 @@ unsigned int squire_syscall_thread(void (*entry)(void), void * stack_base, size_
 	*(s) = (unsigned int) param;
 	return parms.entry;
 }
+
+void squire_syscall_yield(){
+	asm __volatile__("int $0x80"::"a"(SQUIRE_SYSCALL_YIELD),"c"(0),"d"(0));
+}

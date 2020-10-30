@@ -96,3 +96,11 @@ void mutex_unlock(mutex_t * mutex){
 	}
 	spinlock_unlock(&mutex->access_lock);
 }
+
+unsigned int mutex_get(mutex_t * mutex){
+	unsigned int res = 0;
+	spinlock_lock(&mutex->access_lock);
+	res = mutex->lock;
+	spinlock_unlock(&mutex->access_lock);
+	return res;
+}

@@ -2,6 +2,9 @@
 
 int mtx_trylock(mtx_t *mtx)
 {
-	squire_syscall_log("mtx_trlk\r\n", 10);
-	return thrd_success;
+	unsigned int status = squire_syscall_mutex_status(*mtx);
+	if(status)
+		return thrd_busy;
+	else
+		return thrd_success;
 }

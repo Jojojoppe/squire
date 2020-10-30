@@ -23,3 +23,10 @@ void squire_syscall_mutex_unlock(squire_mutex_t mutex){
 	parms.mutex = mutex;
 	asm __volatile__("int $0x80"::"a"(SQUIRE_SYSCALL_MUTEX_UNLOCK),"c"(sizeof(parms)),"d"(&parms));
 }
+
+unsigned int squire_syscall_mutex_status(squire_mutex_t mutex){
+	squire_params_mutex_status_t parms;
+	parms.mutex = mutex;
+	asm __volatile__("int $0x80"::"a"(SQUIRE_SYSCALL_MUTEX_STATUS),"c"(sizeof(parms)),"d"(&parms));
+	return parms.status;
+}
