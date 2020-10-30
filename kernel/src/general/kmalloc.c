@@ -3,6 +3,7 @@
 
 static heap_block_t * heap_start;
 unsigned int heap_size;
+unsigned int heap_lock = 0;
 
 void kmalloc_clean();
 
@@ -21,6 +22,9 @@ int kmalloc_init(){
 }
 
 void * kmalloc(size_t length){
+	while(heap_lock);
+	heap_lock = 1;
+
     // printf("kmalloc(%08x)\r\n", length);
     heap_block_t * block = heap_start;
     while(block){
@@ -43,6 +47,7 @@ void * kmalloc(size_t length){
                     }
                     chunk->flags |= HEAP_CHUNK_USED;
                     kmalloc_clean();
+					heap_lock = 0;
                     return (void*)(chunk+1);
                 }
                 // Chunk not usable, goto next
@@ -73,14 +78,18 @@ void * kmalloc(size_t length){
 
         block = newblock;
     }
+	heap_lock = 0;
     return 0;
 }
 
 void kfree(void * address){
+	while(heap_lock);
+	heap_lock = 1;
     // Get chunk header
     heap_chunk_t * chunk = (heap_chunk_t*)(address - sizeof(heap_chunk_t));
     chunk->flags &= ~HEAP_CHUNK_USED;
     kmalloc_clean();
+	heap_lock = 0;
 }
 
 void kmalloc_clean(){

@@ -11,11 +11,6 @@
 #include <general/vmm.h>
 #include <general/message.h>
 
-typedef enum proc_thread_state_e{
-    PROC_TRHEAD_STATE_RUNNING = 0,
-    PROC_THREAD_STATE_WAITING
-} proc_thread_state_t;
-
 typedef struct proc_thread_s{
     struct proc_thread_s * next;
     struct proc_thread_s * prev;
@@ -27,7 +22,6 @@ typedef struct proc_thread_s{
     size_t kernel_stack_length;
 
     int retval;
-    proc_thread_state_t state;
     unsigned char arch_data[PROC_THREADDATA_SIZE];
 } proc_thread_t;
 
@@ -61,7 +55,7 @@ static proc_proc_t * proc_proc_current;
  */
 static proc_thread_t * proc_thread_current;
 /**
- * @brief The process ID counter. Must be set to 3 at startup.
+ * @brief The process ID counter. Must be set to 2 at startup.
  * 
  * The value is is used for the next process
  * 
@@ -72,7 +66,7 @@ static unsigned int proc_PID_counter;
  * @brief Initialize processes
  * 
  * Sets the current execution as first process/thread and sets it as currently
- * running
+ * running. Must call schedule_init() and proc_switch()
  * 
  * @param return_addr Address to jump to when done with initialization
  * @return zero if successful
@@ -102,17 +96,6 @@ proc_thread_t * proc_thread_get_current();
  * @return current process
  */
 proc_proc_t * proc_proc_get_current();
-
-/**
- * @brief Create new thread
- * 
- * @param code Code to execute
- * @param stack Stack base
- * @param stack_length Length of stack
- * @param process Process to add thread to
- * @return Created thread structure, NULL if not successfull
- */
-proc_thread_t * proc_thread_new(void * code, void * stack, size_t stack_length, proc_proc_t * process);
 
 /**
  * @brief Create new user thread
@@ -179,12 +162,5 @@ proc_proc_t * proc_get(unsigned int PID);
  * @return proc_thread_t* 
  */
 proc_thread_t * proc_thread_get(unsigned int tid, unsigned int pid);
-
-/**
- * @brief Fork the current process
- * 
- * @return The new process structure of the child
- */
-proc_proc_t * proc_proc_fork();
 
 #endif

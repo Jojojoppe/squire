@@ -20,7 +20,7 @@ void schedule_init(proc_proc_t * process, proc_thread_t * thread){
 }
 
 schedule_schedulable_t * schedule_add(proc_proc_t * process, proc_thread_t * thread, schedule_queue_type_t queue){
-    printf("** schedule_add(%08x, %08x, %d)\r\n", process, thread, queue);
+    //printf("** schedule_add(%08x, %08x, %d)\r\n", process, thread, queue);
     schedule_schedulable_t * schedule_new = (schedule_schedulable_t*)kmalloc(sizeof(schedule_schedulable_t));
     schedule_new->next = 0;
     schedule_new->process = process;
@@ -46,7 +46,7 @@ schedule_schedulable_t * schedule_add(proc_proc_t * process, proc_thread_t * thr
 
 void schedule_kill(schedule_schedulable_t * schedulable, unsigned int retval){
     // schedule_disable();
-    printf("** schedule_kill(%08x, %08x)\r\n", schedulable, retval);
+    //printf("** schedule_kill(%08x, %08x)\r\n", schedulable, retval);
     if(!schedulable){
         schedulable = schedule_current;
         schedule_current = 0;
@@ -72,7 +72,7 @@ void schedule_kill(schedule_schedulable_t * schedulable, unsigned int retval){
 }
 
 void schedule_set_state(schedule_schedulable_t * schedulable, schedule_state_t state){
-    printf("** schedule_set_state(%08x, %d)\r\n", schedulable, state);
+    //printf("** schedule_set_state(%08x, %d)\r\n", schedulable, state);
     if(!schedulable){
         schedulable = schedule_current;
     }
@@ -121,7 +121,7 @@ void schedule(){
     }
 
     // Do nothing if there's no new next one
-    if(current==next)   
+    if(current==next)
         return;
 
     schedule_current = next;
@@ -151,13 +151,13 @@ schedule_schedulable_t * schedule_get(unsigned int pid, unsigned int tid){
 
 void schedule_disable(){
     schedule_disabled++;
-    arch_disable_interrupts();
+    //arch_disable_interrupts();
     // printf("** schedule_disable() %d\r\n", schedule_disabled);
 }
 
 void schedule_enable(){
     schedule_disabled--;
-    if(!schedule_disabled)
-        arch_enable_interrupts();
+    //if(!schedule_disabled)
+    //    arch_enable_interrupts();
     // printf("** schedule_enable() %d\r\n", schedule_disabled);
 }
