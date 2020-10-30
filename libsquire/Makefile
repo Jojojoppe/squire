@@ -22,23 +22,24 @@ ALLFILES		:= $(ASMFILES) $(CFILES) $(HFILES)
 
 # Toolchain
 CC				:= $(PREFIX)/bin/$(ARCH)-tcc -nostdinc -nostdlib -I $(PREFIX)/lib/tcc/include -I include
+AR				:= $(PREFIX)/bin/$(ARCH)-tcc -ar
 CC_WARNING		:= -Wall -Wextra
 
 builddir:
 	-mkdir -p $(OUTPUTDIR)/src/$(ARCH)
 
 $(TARGET): builddir $(COBJ) $(ASMOBJ)
-	echo "LD  $(TARGET)"
-	$(CC) -r -o $(TARGET) $(COBJ) $(ASMOBJ)
+	echo "AR  $(TARGET)"
+	$(AR) rcsv libsquire.a $(COBJ) $(ASMOBJ)
 	find . -name '*.c' -o -name '*.h' | xargs wc -l > $(OUTPUTDIR)/LOC
 
 $(COBJ): $(OUTPUTDIR)/%.c.o: %.c
 	echo 'CC ' $<
-	$(CC) -g -MD -I src $(CC_WARNING) -o $@ -c $<
+	$(CC) -MD -I src $(CC_WARNING) -o $@ -c $<
 
 $(ASMOBJ): $(OUTPUTDIR)/%.S.o: %.S
 	echo 'AS ' $<
-	$(CC) -g -MD -I src $(CC_WARNIMG) -o $@ -c $<
+	$(CC) -MD -I src $(CC_WARNIMG) -o $@ -c $<
 
 todolist:
 	echo + TODO list

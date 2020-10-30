@@ -14,6 +14,7 @@ COBJ				:= $(CFILES:%.c=$(OUTPUTDIR)/%.c.o)
 DFILES				:= $(CFILES:%.c=$(OUTPUTDIR)/%.c.d)
 
 CC				:= $(PREFIX)/bin/$(ARCH)-tcc -nostdinc -nostdlib -D_PDCLIB_EXTENSIONS
+AR				:= $(PREFIX)/bin/$(ARCH)-tcc -ar
 CC_WARNING		:= -Wall -Wextra
 
 builddir:
@@ -37,8 +38,8 @@ builddir:
 libc: headers builddir libc.o crtfiles
 
 libc.o: $(COBJ)
-	echo 'LD ' libc
-	$(CC) -r -static -o libc.a $(COBJ)
+	echo 'AR ' libc
+	$(AR) rcsv libc.a $(COBJ)
 	cp libc.a $(PREFIX)/usr/lib/libc.a
 
 crtfiles:

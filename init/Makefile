@@ -27,12 +27,12 @@ builddir:
 
 $(TARGET): builddir $(COBJ)
 	echo + Link $(TARGET)
-	$(CC) -g -o $(TARGET) $(COBJ) -lm
+	$(CC) -o $(TARGET) $(COBJ) -lm
 	find . -name '*.c' -o -name '*.h' -o -name '*.asm' -o -name '*.inc' | xargs wc -l > $(OUTPUTDIR)/LOC
 
 $(COBJ): $(OUTPUTDIR)/%.c.o: %.c
 	echo '>' $<
-	$(CC) -g -MD $(CC_WARNING) -o $@ -c $<
+	$(CC) -MD $(CC_WARNING) -o $@ -c $<
 
 todolist:
 	echo + TODO list

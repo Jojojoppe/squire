@@ -12,14 +12,15 @@ COBJ				:= $(CFILES:%.c=$(OUTPUTDIR)/%.c.o)
 DFILES				:= $(CFILES:%.c=$(OUTPUTDIR)/%.c.d)
 
 CC				:= $(PREFIX)/bin/$(ARCH)-tcc -nostdinc -nostdlib -I $(PREFIX)/usr/include -I $(PREFIX)/lib/tcc/include -I $(PREFIX)/include -D_IEEE_LIBM
+AR				:= $(PREFIX)/bin/$(ARCH)-tcc -ar
 CC_WARNING		:= -Wall -Wextra
 
 builddir:
 	-mkdir -p $(OUTPUTDIR)
 
 libm: headers builddir $(COBJ)
-	echo 'LD ' libm
-	$(CC) -r -static -o libm.a $(COBJ)
+	echo 'AR ' libm
+	$(AR) rcsv libm.a $(COBJ)
 	cp libm.a $(PREFIX)/usr/lib
 
 $(COBJ): $(OUTPUTDIR)/%.c.o: %.c

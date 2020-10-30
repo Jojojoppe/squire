@@ -17,6 +17,7 @@ ALLFILES		:= $(CFILES) $(HFILES)
 # Toolchain
 CC				:= $(PREFIX)/bin/$(ARCH)-tcc
 CC_WARNING		:= -Wall -Wextra
+CC_LIBS			:= 
 
 # No all target
 all: $(TARGET)
@@ -26,11 +27,11 @@ builddir:
 
 $(TARGET): builddir $(COBJ)
 	echo + Link $(TARGET)
-	$(CC) -g -o $(TARGET) $(COBJ) -lm
+	$(CC) -o $(TARGET) $(COBJ)
 
 $(COBJ): $(OUTPUTDIR)/%.c.o: %.c
 	echo '>' $<
-	$(CC) -g -MD $(CC_WARNING) -o $@ -c $<
+	$(CC) -MD $(CC_WARNING) -o $@ -c $<
 
 clean:
 	rm -f $(COBJ) $(DFIELS) $(TARGET)

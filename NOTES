@@ -6,3 +6,6 @@ wait(int pid):
 	completely from the parents list. If no killed childs (or not the right one) has been
 	found the parent goes IDLE and is woken up by ANY child which is killed or has exited.
 	The parent checks again for the right child, etc...
+
+TODO:
+	- Better make system!! 
