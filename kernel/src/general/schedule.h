@@ -23,12 +23,13 @@ enum SCHEDULE_STATE{
 };
 typedef unsigned int schedule_state_t;
 
-typedef struct schedule_schedulable_s{
+struct schedule_schedulable_s{
     struct schedule_schedulable_s * next;
     proc_proc_t * process;
     proc_thread_t * thread;
     schedule_state_t state;
-} schedule_schedulable_t;
+};
+typedef struct schedule_schedulable_s schedule_schedulable_t;
 
 /**
  * @brief 
@@ -83,3 +84,4 @@ void schedule_disable();
 void schedule_enable();
 
 #endif
+

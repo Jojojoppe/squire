@@ -30,6 +30,7 @@ int proc_init(void (*return_addr)()){
     proc_proc_current->id = 1;
     proc_proc_current->kernel_stacks = 1;
     proc_proc_current->tid_counter = 2;
+	proc_proc_current->mutexes = 0;
 
     // Create memory region
     vmm_create(&proc_proc_current->memory);
@@ -428,6 +429,13 @@ int _0_proc_thread_kill(proc_thread_t * thread, proc_proc_t * process, int retva
         }
 
         printf("Remove process itself, return value of process is %08x\r\n", retval);
+
+		// free all mutexes
+		mutex_t * mtx = process->mutexes;
+		while(mtx){
+			mutex_destroy(mtx);
+			mtx = mtx->next;
+		}
 
         // Free all thread structures
         proc_thread_t * kt = process->killed_threads;

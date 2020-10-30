@@ -7,6 +7,7 @@
 #include <general/vmm.h>
 #include <general/arch/vas.h>
 #include <general/message.h>
+#include <general/mutex.h>
 
 unsigned int syscall_mmap(squire_params_mmap_t * params){
     // Check OK memory region
@@ -115,6 +116,28 @@ unsigned int syscall_simple_recv(squire_params_simple_recv_t * params){
 }
 
 
+unsigned int syscall_mutex_init(squire_params_mutex_t * params){
+	params->mutex = (void*) mutex_create();
+	return 0;
+}
+
+unsigned int syscall_mutex_deinit(squire_params_mutex_t * params){
+	mutex_destroy((mutex_t*)params->mutex);
+	params->mutex = 0;
+	return 0;
+}
+
+unsigned int syscall_mutex_lock(squire_params_mutex_t * params){
+	mutex_lock((mutex_t*)params->mutex);
+	return 0;
+}
+
+unsigned int syscall_mutex_unlock(squire_params_mutex_t * params){
+	mutex_unlock((mutex_t*)params->mutex);
+	return 0;
+}
+
+
 unsigned int syscall_log(squire_params_log_t * params){
     printf("[%3d,%3d] ", proc_proc_get_current()->id, proc_thread_get_current()->id);
     for(int i=0; i<params->length; i++)
@@ -182,6 +205,37 @@ unsigned int syscall(unsigned int opcode, void * param_block, size_t param_len){
         } break;
 
 
+
+        case SQUIRE_SYSCALL_MUTEX_INIT:{
+            if(param_len<sizeof(squire_params_mutex_t))
+                return SYSCALL_ERROR_GENERAL;
+            squire_params_mutex_t * params = (squire_params_mutex_t*)param_block;
+            returncode = syscall_mutex_init(params);
+        } break;
+
+        case SQUIRE_SYSCALL_MUTEX_DEINIT:{
+            if(param_len<sizeof(squire_params_mutex_t))
+                return SYSCALL_ERROR_GENERAL;
+            squire_params_mutex_t * params = (squire_params_mutex_t*)param_block;
+            returncode = syscall_mutex_deinit(params);
+        } break;
+
+        case SQUIRE_SYSCALL_MUTEX_LOCK:{
+            if(param_len<sizeof(squire_params_mutex_t))
+                return SYSCALL_ERROR_GENERAL;
+            squire_params_mutex_t * params = (squire_params_mutex_t*)param_block;
+            returncode = syscall_mutex_lock(params);
+        } break;
+
+        case SQUIRE_SYSCALL_MUTEX_UNLOCK:{
+            if(param_len<sizeof(squire_params_mutex_t))
+                return SYSCALL_ERROR_GENERAL;
+            squire_params_mutex_t * params = (squire_params_mutex_t*)param_block;
+            returncode = syscall_mutex_unlock(params);
+        } break;
+
+
+
         case SQUIRE_SYSCALL_LOG:{
             if(param_len<sizeof(squire_params_log_t))
                 return SYSCALL_ERROR_GENERAL;
@@ -198,3 +252,4 @@ unsigned int syscall(unsigned int opcode, void * param_block, size_t param_len){
 
     return returncode;
 }
+

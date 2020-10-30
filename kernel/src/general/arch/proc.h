@@ -10,6 +10,7 @@
 #include <general/stdint.h>
 #include <general/vmm.h>
 #include <general/message.h>
+#include <general/mutex.h>
 
 typedef struct proc_thread_s{
     struct proc_thread_s * next;
@@ -39,6 +40,8 @@ typedef struct proc_proc_s{
     struct proc_proc_s * parent;
     struct proc_proc_s * childs;
     struct proc_proc_s * child_next;
+
+	mutex_t * mutexes;
 
     message_info_t message_info;
     unsigned char arch_data[PROC_PROCDATA_SIZE];

@@ -135,6 +135,9 @@ void schedule(){
 }
 
 schedule_schedulable_t * schedule_get(unsigned int pid, unsigned int tid){
+	if(pid==0 && tid==0){
+		return schedule_current;
+	}
     for(int i=0; i<_SCHEDULE_QUEUE_TYPE_SIZE_; i++){
         schedule_schedulable_t * s = schedule_queues[i];
         while(s){
