@@ -1,0 +1,8 @@
+wait(int pid):
+	When a process is killed (by exit or other way) the process structure is still linked to 
+	the parent process. When wait() is execute by the parent it checks for any killed childs
+	in the list and returns the return value of a (depending on wait flags such as all childs
+	or a specific child) child. When a killed child has been found it removes the structure
+	completely from the parents list. If no killed childs (or not the right one) has been
+	found the parent goes IDLE and is woken up by ANY child which is killed or has exited.
+	The parent checks again for the right child, etc...
