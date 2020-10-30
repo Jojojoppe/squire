@@ -1,19 +1,7 @@
-#ifndef REGTEST
 #include <threads.h>
 
 int mtx_trylock(mtx_t *mtx)
 {
-	(*mtx)++;
+	squire_syscall_log("mtx_trlk\r\n", 10);
 	return thrd_success;
 }
-#endif
-
-#ifdef TEST
-#include "_PDCLIB_test.h"
-
-int main( void )
-{
-    return TEST_RESULTS;
-}
-
-#endif

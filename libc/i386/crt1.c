@@ -1,3 +1,6 @@
+#include <_PDCLIB_io.h>
+#include <stdio.h>
+
 extern int main(int argc, char ** argv);
 
 void _start(){
@@ -20,9 +23,19 @@ void _start(){
         argv[i] = d;
     }
 
+	// Initialize libc stdio file locks (stdin, stdout, stderr)
+	stdin->lock = squire_syscall_mutex_init();
+	stdout->lock = squire_syscall_mutex_init();
+	stderr->lock = squire_syscall_mutex_init();
+
     int retval = main(argc, argv);
+
     free(buffer2);
     free(argv);
+	squire_syscall_mutex_init(stdin->lock);
+	squire_syscall_mutex_init(stdout->lock);
+	squire_syscall_mutex_init(stderr->lock);
+
     squire_syscall_exit(retval);
 
     for(;;);

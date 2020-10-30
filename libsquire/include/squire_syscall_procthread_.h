@@ -41,7 +41,10 @@ typedef struct squire_params_exit_s squire_params_exit_t;
 extern "C" {
 #endif
 
-extern void * squire_syscall_mmap(void * address, size_t length, unsigned int flags);
+extern unsigned int squire_syscall_thread(void (*entry)(void), void * stack_base, size_t stack_length, unsigned int flags, void * param);
+extern unsigned int squire_syscall_process(void * elf_start, size_t elf_length, int argc, char ** argv);
+extern int squire_syscall_join(unsigned int id);
+extern void squire_syscall_exit(int retval);
 
 #if defined(__cplusplus)
 } /* extern "C" */

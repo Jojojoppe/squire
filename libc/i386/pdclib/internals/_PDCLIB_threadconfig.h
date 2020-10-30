@@ -2,6 +2,7 @@
 #define _PDCLIB_THREADCONFIG_H
 #include "_PDCLIB_aux.h"
 #include "_PDCLIB_config.h"
+#include <squire.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -14,7 +15,7 @@ void _PDCLIB_call_once(_PDCLIB_once_flag *flag, void (*func)(void));
 
 #define _PDCLIB_THRD_HAVE_MISC
 #define _PDCLIB_CND_T char
-#define _PDCLIB_MTX_T char
+#define _PDCLIB_MTX_T squire_mutex_t
 #define _PDCLIB_TSS_T struct _PDCLIB_tss
 
 struct _PDCLIB_tss {

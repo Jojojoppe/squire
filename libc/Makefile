@@ -18,7 +18,7 @@ INTERNALD			:= $(INTERNALFILES:%.c=$(OUTPUTDIR)/%.c.d)
 COBJ				:= $(INTERNALOBJ) $(FUNCTIONOBJ)
 DFILES				:= $(INTERNALD) $(FUNCTIOND)
 
-CC				:= $(PREFIX)/bin/$(ARCH)-tcc -nostdinc -nostdlib -I pdclib/internals -I pdclib/include -I $(ARCH)/pdclib/include -I $(ARCH)/pdclib/internals -D_PDCLIB_EXTENSIONS
+CC				:= $(PREFIX)/bin/$(ARCH)-tcc -nostdinc -nostdlib -I pdclib/internals -I pdclib/include -I $(ARCH)/pdclib/include -I $(ARCH)/pdclib/internals -I $(PREFIX)/usr/include -D_PDCLIB_EXTENSIONS
 CC_WARNING		:= -Wall -Wextra
 
 builddir:

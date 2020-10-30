@@ -36,6 +36,9 @@ void mutex_destroy(mutex_t * mutex){
 		w = w->next;
 		kfree(tmp);
 	}
+
+	// TODO delete from process structure
+
 	kfree(mutex);
 }
 
