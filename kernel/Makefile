@@ -29,7 +29,7 @@ ALLFILES		:= $(ASMFILES) $(INCFILES) $(CFILES) $(HFILES)
 # Toolchain
 CC				:= $(PREFIX)/bin/$(ARCH)-tcc
 CC_WARNING		:= -Wall -Wextra
-CC_FLAGS		:= -Isrc -Ibuild/src -nostdlib -nostdinc -O0 -g
+CC_FLAGS		:= -Isrc -Ibuild/src -Isrc/general -nostdlib -nostdinc -O0 -g
 CC_ARCH_FLAGS	:=
 DEFS			:= -DSQUIRE_ARCH=\"$(ARCH)\" -DSQUIRE_VERSION=\"$(SQUIRE_VERSION)\"
 

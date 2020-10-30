@@ -21,7 +21,7 @@ ASMOBJ			:= $(ASMFILES:%.S=$(OUTPUTDIR)/%.S.o)
 ALLFILES		:= $(ASMFILES) $(CFILES) $(HFILES)
 
 # Toolchain
-CC				:= $(PREFIX)/bin/$(ARCH)-tcc -nostdinc -nostdlib -I $(PREFIX)/lib/tcc/include
+CC				:= $(PREFIX)/bin/$(ARCH)-tcc -nostdinc -nostdlib -I $(PREFIX)/lib/tcc/include -I include
 CC_WARNING		:= -Wall -Wextra
 
 builddir:

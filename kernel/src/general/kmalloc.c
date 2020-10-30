@@ -1,9 +1,10 @@
 #include <general/kmalloc.h>
 #include <general/arch/vas.h>
+#include <general/arch/spinlock.h>
 
 static heap_block_t * heap_start;
 unsigned int heap_size;
-unsigned int heap_lock = 0;
+spinlock_t heap_lock;
 
 void kmalloc_clean();
 
@@ -18,12 +19,13 @@ int kmalloc_init(){
     heap_chunk_t * chunk = (heap_chunk_t*)(heap_start+1);
     chunk->length = heap_start->biggest;
     chunk->flags = HEAP_CHUNK_LAST;
+	
+	spinlock_init(&heap_lock);
     return 0;
 }
 
 void * kmalloc(size_t length){
-	while(heap_lock);
-	heap_lock = 1;
+	spinlock_lock(&heap_lock);
 
     // printf("kmalloc(%08x)\r\n", length);
     heap_block_t * block = heap_start;
@@ -47,7 +49,7 @@ void * kmalloc(size_t length){
                     }
                     chunk->flags |= HEAP_CHUNK_USED;
                     kmalloc_clean();
-					heap_lock = 0;
+					spinlock_unlock(&heap_lock);
                     return (void*)(chunk+1);
                 }
                 // Chunk not usable, goto next
@@ -78,18 +80,17 @@ void * kmalloc(size_t length){
 
         block = newblock;
     }
-	heap_lock = 0;
+	spinlock_unlock(&heap_lock);
     return 0;
 }
 
 void kfree(void * address){
-	while(heap_lock);
-	heap_lock = 1;
+	spinlock_lock(&heap_lock);
     // Get chunk header
     heap_chunk_t * chunk = (heap_chunk_t*)(address - sizeof(heap_chunk_t));
     chunk->flags &= ~HEAP_CHUNK_USED;
     kmalloc_clean();
-	heap_lock = 0;
+	spinlock_unlock(&heap_lock);
 }
 
 void kmalloc_clean(){

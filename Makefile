@@ -35,6 +35,8 @@ copy: mount
 # Compile the kernel
 kernel:
 	echo + Make kernel
+	-mkdir -p kernel/build/src
+	cp libsquire/include/* kernel/build/src/
 	cd kernel && ${MAKE} ${MFLAGS} kernel.bin
 
 # Compile libsquire
