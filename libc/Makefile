@@ -7,8 +7,9 @@ all:
 
 OUTPUTDIR			:= build
 
-DIRS				:= functions
+DIRS				:= functions include internals
 CFILES				:= $(shell find $(DIRS) -type f -name "*.c")
+HFILES				:= $(shell find $(DIRS) -type f -name "*.h")
 COBJ				:= $(CFILES:%.c=$(OUTPUTDIR)/%.c.o)
 DFILES				:= $(CFILES:%.c=$(OUTPUTDIR)/%.c.d)
 
@@ -33,7 +34,9 @@ builddir:
 	-mkdir -p $(OUTPUTDIR)/functions/threads
 	-mkdir -p $(OUTPUTDIR)/$(ARCH)
 
-libc: headers builddir $(COBJ) crtfiles
+libc: headers builddir libc.o crtfiles
+
+libc.o: $(COBJ)
 	echo 'LD ' libc
 	$(CC) -r -static -o libc.a $(COBJ)
 	cp libc.a $(PREFIX)/usr/lib/libc.a
@@ -54,7 +57,7 @@ headers:
 
 clean:
 	echo + Clean libc
-	-rm -r build
+	-rm -r $(COBJ) $(DFILES) $(OUTPUTDIR)/crt*
 	-rm libc.a
 	cd platform/$(ARCH) && ${MAKE} ${MFLAGS} clean
 

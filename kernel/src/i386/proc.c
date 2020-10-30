@@ -289,7 +289,6 @@ proc_proc_t * _0_proc_proc_new(void * ELF_start){
     // Create new PD table and copy kernel space into it (use page 0 as tmp)
     void * newpd_phys;
     pmm_alloc(4096, &newpd_phys);
-    printf("New PD %08x\r\n", newpd_phys);
     vas_map(newpd_phys, 0, VAS_FLAGS_WRITE|VAS_FLAGS_READ);
     memset(0, 0, 4096);
     // Copy kernel PD into new one

@@ -1,10 +1,10 @@
 include makefiles/env.mk
 
-.PHONY: all clean copy initramfs kernel init libsquire libc libm
+.PHONY: all clean copy initramfs kernel init libsquire libc libm userspace
 .SILENT:
 
 # Complete make
-all: toolchain drive libsquire kernel libc libm init initramfs copy
+all: toolchain drive libsquire kernel libc libm init userspace initramfs copy
 
 # Makefile scripts
 include makefiles/drive.mk
@@ -20,6 +20,7 @@ clean:
 	cd libsquire && ${MAKE} ${MFLAGS} clean
 	cd libc && ${MAKE} ${MFLAGS} clean
 	cd libm && ${MAKE} ${MFLAGS} clean
+	cd userspace && ${MAKE} ${MFLAGS} clean
 	-rm initramfs.tar
 	-rm -rf initramfs
 
@@ -70,3 +71,7 @@ initramfs:
 	# Make all entries
 	cat initramfs.conf | xargs cp -t initramfs
 	cd initramfs && tar -cf ../initramfs.tar *
+
+userspace:
+	echo + Create userspace programs
+	cd userspace && ${MAKE} ${MFLAGS} all
