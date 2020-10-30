@@ -15,7 +15,10 @@ HFILES			:= $(shell find $(DIRS) -type f -name "*.h")
 COBJ			:= $(CFILES:%.c=$(OUTPUTDIR)/%.c.o)
 DFILES			:= $(CFILES:%.c=$(OUTPUTDIR)/%.c.d)
 
-ALLFILES		:= $(ASMFILES) $(INCFILES) $(CFILES) $(HFILES)
+ASMFILES		:= $(shell find $(DIRS) -type f -name "*.S")
+ASMOBJ			:= $(ASMFILES:%.S=$(OUTPUTDIR)/%.S.o)
+
+ALLFILES		:= $(ASMFILES) $(CFILES) $(HFILES)
 
 # Toolchain
 CC				:= $(PREFIX)/bin/$(ARCH)-tcc -nostdinc -nostdlib -I $(PREFIX)/lib/tcc/include
@@ -24,22 +27,25 @@ CC_WARNING		:= -Wall -Wextra
 builddir:
 	-mkdir -p $(OUTPUTDIR)/src/$(ARCH)
 
-$(TARGET): builddir $(COBJ)
+$(TARGET): builddir $(COBJ) $(ASMOBJ)
 	echo "LD  $(TARGET)"
-	$(CC) -r -o $(TARGET) $(COBJ)
+	$(CC) -r -o $(TARGET) $(COBJ) $(ASMOBJ)
 	find . -name '*.c' -o -name '*.h' | xargs wc -l > $(OUTPUTDIR)/LOC
 
 $(COBJ): $(OUTPUTDIR)/%.c.o: %.c
 	echo 'CC ' $<
 	$(CC) -g -MD -I src $(CC_WARNING) -o $@ -c $<
 
+$(ASMOBJ): $(OUTPUTDIR)/%.S.o: %.S
+	echo 'AS ' $<
+	$(CC) -g -MD -I src $(CC_WARNIMG) -o $@ -c $<
+
 todolist:
 	echo + TODO list
 	-@for file in $(ALLFILES:Makefile=); do fgrep -n -H -e TODO $$file ; done; true
-	#| sed -e 's/:[^:]*//2g' | sed -e 's/^..//' | awk '{print ">"$$1 }' ; fgrep -n -H -e TODO $$file | sed -e 's#.*TODO\(\)#\    #'; done; true
 
 clean:
-	rm -f $(COBJ) $(DFILES) $(TARGET) $(OUTPUTDIR)/LOC
+	rm -f $(COBJ) $(ASMOBJ) $(DFILES) $(TARGET) $(OUTPUTDIR)/LOC
 
 # Header dependencies
 -include $(DFILES)

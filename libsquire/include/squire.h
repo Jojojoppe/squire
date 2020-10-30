@@ -112,4 +112,21 @@ extern void squire_syscall_log(char * data, size_t length);
 #endif
 // --------------------
 
+
+// OTHER SQUIRE FUNCTIONS
+// ----------------------
+
+typedef unsigned int squire_spinlock_t;
+
+#if defined(__cplusplus)
+extern "C" {
+#endif
+extern void squire_spinlock_init(squire_spinlock_t * lock);
+extern void squire_spinlock_lock(squire_spinlock_t * lock);
+extern void squire_spinlock_unlock(squire_spinlock_t * unlock);
+#if defined(__cplusplus)
+} /* extern "C" */
+#endif
+// ----------------------
+
 #endif
