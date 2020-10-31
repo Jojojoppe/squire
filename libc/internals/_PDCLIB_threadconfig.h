@@ -18,6 +18,9 @@ void _PDCLIB_call_once(_PDCLIB_once_flag *flag, void (*func)(void));
 #define _PDCLIB_MTX_T squire_mutex_t
 #define _PDCLIB_TSS_T struct _PDCLIB_tss
 
+#define _PDCLIB_THRD_T unsigned int
+#define THRD_STACK_LENGTH 4096
+
 struct _PDCLIB_tss {
 	struct _PDCLIB_tss *self;
 	void *value;

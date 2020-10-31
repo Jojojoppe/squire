@@ -46,7 +46,6 @@ unsigned int syscall_thread(squire_params_thread_t * params){
 }
 
 unsigned int syscall_join(squire_params_join_t * params){
-
     proc_proc_t * process = proc_proc_get_current();
     unsigned int pid = process->id;
     params->retval = 0;
@@ -105,6 +104,12 @@ unsigned int syscall_wait(squire_params_wait_t * params){
 
 unsigned int syscall_kill(squire_params_kill_t * params){
     kill(params->pid);
+    return 0;
+}
+
+unsigned int syscall_getid(squire_params_getid_t * params){
+    params->pid = proc_proc_get_current()->id;
+    params->tid = proc_thread_get_current()->id;
     return 0;
 }
 
@@ -222,6 +227,13 @@ unsigned int syscall(unsigned int opcode, void * param_block, size_t param_len){
                 return SYSCALL_ERROR_GENERAL;
             squire_params_kill_t * params = (squire_params_kill_t*)param_block;
             returncode = syscall_kill(params);
+        } break;
+
+        case SQUIRE_SYSCALL_GETID:{
+            if(param_len<sizeof(squire_params_getid_t))
+                return SYSCALL_ERROR_GENERAL;
+            squire_params_getid_t * params = (squire_params_getid_t*)param_block;
+            returncode = syscall_getid(params);
         } break;
 
 

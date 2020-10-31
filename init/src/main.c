@@ -1,6 +1,7 @@
 #include <squire.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <threads.h>
 
 #include "tar.h"
 
@@ -11,7 +12,6 @@ int killthread(void * p){
 	for(int i=0; i<100000000; i++);
 	printf("KILL\r\n");
 	squire_syscall_kill(2);
-
 
 	return 0;
 }
@@ -35,8 +35,8 @@ int main(int argc, char ** argv){
 	unsigned int testbin_pid = squire_syscall_process(testbin, length, 2, testbin_argv);
 	printf("Testbin PID = %d\r\n", testbin_pid);
 
-	void * stack = malloc(4096);
-	squire_syscall_thread(killthread, stack, 4096, 0, testbin_pid);
+	thrd_t t_killthread;
+	thrd_create(&t_killthread, killthread, testbin_pid);
 
 	unsigned int retval;
 	unsigned int reason = squire_syscall_wait(&retval, testbin_pid);
