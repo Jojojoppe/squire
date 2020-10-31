@@ -5,17 +5,6 @@
 
 #include "tar.h"
 
-int killthread(void * p){
-	unsigned int pid = (unsigned int)p;
-	printf("Wait to kill %d\r\n", pid);
-
-	for(int i=0; i<100000000; i++);
-	printf("KILL\r\n");
-	squire_syscall_kill(2);
-
-	return 0;
-}
-
 int main(int argc, char ** argv){
 	printf("Main thread of init.bin\r\n");
 
@@ -35,14 +24,14 @@ int main(int argc, char ** argv){
 	unsigned int testbin_pid = squire_syscall_process(testbin, length, 2, testbin_argv);
 	printf("Testbin PID = %d\r\n", testbin_pid);
 
-	thrd_t t_killthread;
-	thrd_create(&t_killthread, killthread, testbin_pid);
-
 	unsigned int retval;
 	unsigned int reason = squire_syscall_wait(&retval, testbin_pid);
 	printf("Testbin has exited with reason %d and retval %08x\r\n", reason, retval);
 
-	for(;;);
+	for(;;){
+		printf(".\r\n");
+		for(int i=0; i<200000000; i++);
+	}
 
 	return 0;
 } 

@@ -9,6 +9,7 @@
 #define SQUIRE_SYSCALL_WAIT			0x00000015
 #define SQUIRE_SYSCALL_KILL			0x00000016
 #define SQUIRE_SYSCALL_GETID		0x00000017
+#define SQUIRE_SYSCALL_THREAD_EXIT	0x00000018
 
 struct squire_params_thread_s{
 	void 			(*entry)(void);
@@ -48,6 +49,7 @@ typedef struct squire_params_wait_s squire_params_wait_t;
 
 struct squire_params_kill_s{
 	unsigned int	pid;
+	unsigned int	reason;
 };
 typedef struct squire_params_kill_s squire_params_kill_t;
 
@@ -65,9 +67,10 @@ extern unsigned int squire_syscall_thread(void (*entry)(void), void * stack_base
 extern unsigned int squire_syscall_process(void * elf_start, size_t elf_length, int argc, char ** argv);
 extern int squire_syscall_join(unsigned int id);
 extern void squire_syscall_exit(int retval);
+extern void squire_syscall_thread_exit(int retval);
 extern void squire_syscall_yield();
 extern unsigned int squire_syscall_wait(unsigned int * retval, unsigned int pid);
-extern void squire_syscall_kill(unsigned int pid);
+extern void squire_syscall_kill(unsigned int pid, unsigned int reason);
 extern void squire_syscall_getid(unsigned int * pid, unsigned int * tid);
 
 #if defined(__cplusplus)

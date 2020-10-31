@@ -82,6 +82,7 @@ schedule_schedulable_t * schedule_get(unsigned int pid, unsigned int tid);
 
 void schedule_disable();
 void schedule_enable();
+void schedule_enable_completely();
 
 #endif
 

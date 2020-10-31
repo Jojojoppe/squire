@@ -6,6 +6,7 @@
 #include <general/schedule.h>
 #include <general/string.h>
 #include <general/elf.h>
+#include <general/kill.h>
 
 extern unsigned int * TSS;
 
@@ -72,6 +73,8 @@ int proc_init(void (*return_addr)()){
     proc_proc_current->child_next = 0;
     proc_proc_current->threads_number = 1;
 
+    proc_proc_current->signal_handler = 0;
+    proc_proc_current->signals = 0;
 
     // Switch to created process
     schedule_init(proc_proc_current, proc_thread_current);
@@ -345,6 +348,9 @@ proc_proc_t * _0_proc_proc_new(void * ELF_start){
     // Setup process exit information
     pnew->parentwaitingthread = 0;
 
+    pnew->signal_handler = 0;
+    pnew->signals = 0;
+
     return pnew;
 }
 
@@ -428,7 +434,9 @@ int _0_proc_thread_kill(proc_thread_t * thread, proc_proc_t * process, int retva
 
         if(process->id == 1){
             printf("CANNOT KILL PROCESS 1\r\n");
-            __asm__ __volatile__("int $0");
+            for(;;){
+                __asm__ __volatile__("cli; hlt");
+            }
         }
 
 		// free all mutexes
@@ -480,7 +488,7 @@ int _0_proc_thread_kill(proc_thread_t * thread, proc_proc_t * process, int retva
         return 0;
     }
 
-    schedule_enable();
+    schedule_enable_completely();
     schedule();
     for(;;);
     return 0;

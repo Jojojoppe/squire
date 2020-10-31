@@ -8,6 +8,7 @@
 #include <squire_syscall_simple_.h>
 #include <squire_syscall_log_.h>
 #include <squire_syscall_mutex_.h>
+#include <squire_syscall_signal_.h>
 
 typedef unsigned int squire_spinlock_t;
 

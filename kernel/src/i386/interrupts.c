@@ -3,6 +3,7 @@
 #include <general/syscall.h>
 #include <general/stdint.h>
 #include <i386/memory/vas.h>
+#include <general/kill.h>
 
 extern idt_set_interrupt_c(unsigned int num, void (*handler)());
 extern idt_set_interrupt_user_c(unsigned int num, void (*handler)());
@@ -79,12 +80,35 @@ void panic(struct state * s){
     debug_print_s(" DR7: "); debug_print_x(s->dr7);
 }
 
+// List of kill reasons
+// TODO the ETC reasons should have their own isr and should NOT kill the process
+kill_reason_t INTERRUPT_KILL_dz = KILL_REASON_FPE;
+kill_reason_t INTERRUPT_KILL_nmi = KILL_REASON_ETC;
+kill_reason_t INTERRUPT_KILL_br = KILL_REASON_INT;
+kill_reason_t INTERRUPT_KILL_of = KILL_REASON_FPE;
+kill_reason_t INTERRUPT_KILL_be = KILL_REASON_FPE;
+kill_reason_t INTERRUPT_KILL_io = KILL_REASON_ILL;
+kill_reason_t INTERRUPT_KILL_dn = KILL_REASON_ETC;
+kill_reason_t INTERRUPT_KILL_df = KILL_REASON_ILL;
+kill_reason_t INTERRUPT_KILL_cs = KILL_REASON_SEGV;
+kill_reason_t INTERRUPT_KILL_ts = KILL_REASON_ETC;
+kill_reason_t INTERRUPT_KILL_sn = KILL_REASON_SEGV;
+kill_reason_t INTERRUPT_KILL_ss = KILL_REASON_SEGV;
+kill_reason_t INTERRUPT_KILL_gp = KILL_REASON_ILL;
+kill_reason_t INTERRUPT_KILL_87 = KILL_REASON_FPE;
+kill_reason_t INTERRUPT_KILL_ac = KILL_REASON_ILL;
+kill_reason_t INTERRUPT_KILL_mc = KILL_REASON_ETC;
+kill_reason_t INTERRUPT_KILL_si = KILL_REASON_FPE;
+kill_reason_t INTERRUPT_KILL_vi = KILL_REASON_ETC;
+kill_reason_t INTERRUPT_KILL_se = KILL_REASON_ILL;
+
 #define ISR_N(name, shortname) void isr_c_ ## shortname (struct state * s){ \
         debug_print_s("\r\nEXCEPTION: "); \
         debug_print_s(name); \
         debug_print_s("\r\n"); \
         panic(s); \
-        for(;;); \
+        printf("\r\n\r\n"); \
+        kill(0, INTERRUPT_KILL_ ## shortname); \
     }\
     extern void isr_ ## shortname ();
 #define ISR_E(name, shortname) void isr_c_ ## shortname (struct state * s, unsigned int error_code){ \
@@ -92,7 +116,8 @@ void panic(struct state * s){
         debug_print_s(name); \
         debug_print_sx("\r\nerror code: ", error_code); \
         panic(s); \
-        for(;;); \
+        printf("\r\n\r\n"); \
+        kill(0, INTERRUPT_KILL_ ## shortname); \
     }\
     extern void isr_ ## shortname ();
 
@@ -143,7 +168,8 @@ void isr_c_pf(struct state * s, unsigned int error){
     if(!vas_pagefault(s->cr2, error))
         return;
     panic(s);
-    for(;;);
+    printf("\r\n\r\n");
+    kill(0, KILL_REASON_SEGV);
 }
 extern void isr_pf();
 
@@ -160,31 +186,31 @@ int interrupts_init(){
     remap_PIC();
     // Fill PIC interrupts with empty isr
     for(int i=0x20; i<0x30; i++){
-        idt_set_interrupt_c(i, isr_empty_N);
+        idt_set_interrupt_user_c(i, isr_empty_N);
     }
 
     // Setup exception handlers
-    idt_set_interrupt_c(0, isr_dz);
+    idt_set_interrupt_user_c(0, isr_dz);
     idt_set_interrupt_user_c(1, isr_db);
-    idt_set_interrupt_c(2, isr_nmi);
-    idt_set_interrupt_c(3, isr_br);
-    idt_set_interrupt_c(4, isr_of);
-    idt_set_interrupt_c(5, isr_be);
-    idt_set_interrupt_c(6, isr_io);
-    idt_set_interrupt_c(7, isr_dn);
-    idt_set_interrupt_c(8, isr_df);
-    idt_set_interrupt_c(9, isr_cs);
-    idt_set_interrupt_c(10, isr_ts);
-    idt_set_interrupt_c(11, isr_sn);
-    idt_set_interrupt_c(12, isr_ss);
-    idt_set_interrupt_c(13, isr_gp);
-    idt_set_interrupt_c(14, isr_pf);
-    idt_set_interrupt_c(16, isr_87);
-    idt_set_interrupt_c(17, isr_ac);
-    idt_set_interrupt_c(18, isr_mc);
-    idt_set_interrupt_c(19, isr_si);
-    idt_set_interrupt_c(20, isr_vi);
-    idt_set_interrupt_c(30, isr_se);
+    idt_set_interrupt_user_c(2, isr_nmi);
+    idt_set_interrupt_user_c(3, isr_br);
+    idt_set_interrupt_user_c(4, isr_of);
+    idt_set_interrupt_user_c(5, isr_be);
+    idt_set_interrupt_user_c(6, isr_io);
+    idt_set_interrupt_user_c(7, isr_dn);
+    idt_set_interrupt_user_c(8, isr_df);
+    idt_set_interrupt_user_c(9, isr_cs);
+    idt_set_interrupt_user_c(10, isr_ts);
+    idt_set_interrupt_user_c(11, isr_sn);
+    idt_set_interrupt_user_c(12, isr_ss);
+    idt_set_interrupt_user_c(13, isr_gp);
+    idt_set_interrupt_user_c(14, isr_pf);
+    idt_set_interrupt_user_c(16, isr_87);
+    idt_set_interrupt_user_c(17, isr_ac);
+    idt_set_interrupt_user_c(18, isr_mc);
+    idt_set_interrupt_user_c(19, isr_si);
+    idt_set_interrupt_user_c(20, isr_vi);
+    idt_set_interrupt_user_c(30, isr_se);
 
     // Set timer interrupt
     idt_set_interrupt_user_c(0x20, isr_timer);

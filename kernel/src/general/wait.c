@@ -1,7 +1,7 @@
 #include <general/wait.h>
 #include <general/schedule.h>
 
-proc_kill_reason_t wait(unsigned int * retval, unsigned int pid){
+kill_reason_t wait(unsigned int * retval, unsigned int pid){
     proc_proc_t * pcur = proc_proc_get_current();
     proc_thread_t * tcur = proc_thread_get_current();
 

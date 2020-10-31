@@ -74,9 +74,15 @@ unsigned int syscall_join(squire_params_join_t * params){
 }
 
 unsigned int syscall_exit(squire_params_exit_t * params){
+    exit(params->retval);
+    return 0;
+}
+
+unsigned int syscall_thread_exit(squire_params_exit_t * params){
     schedule_kill(0, params->retval);
     return 0;
 }
+
 
 unsigned int syscall_process(squire_params_process_t * params){
     // printf("Creating process\r\n");
@@ -103,7 +109,7 @@ unsigned int syscall_wait(squire_params_wait_t * params){
 }
 
 unsigned int syscall_kill(squire_params_kill_t * params){
-    kill(params->pid);
+    kill(params->pid, params->reason);
     return 0;
 }
 
@@ -160,6 +166,24 @@ unsigned int syscall_mutex_status(squire_params_mutex_status_t * params){
 }
 
 
+unsigned int syscall_signal(squire_params_signal_t * params){
+    proc_proc_get_current()->signal_handler = params->tid;
+    return 0;
+}
+
+unsigned int syscall_signal_get(squire_params_signal_get_t * params){
+    proc_proc_t * pcur = proc_proc_get_current();
+    while(!pcur->signals){
+        schedule_set_state(0, SCHEDULE_STATE_IDLE);
+        schedule();
+    }
+    signal_t * s = pcur->signals;
+    pcur->signals = s->next;
+    params->value = s->value;
+    kfree(s);
+    return 0;
+}
+
 unsigned int syscall_log(squire_params_log_t * params){
     printf("[%3d,%3d] ", proc_proc_get_current()->id, proc_thread_get_current()->id);
     for(int i=0; i<params->length; i++)
@@ -169,7 +193,7 @@ unsigned int syscall_log(squire_params_log_t * params){
 
 unsigned int syscall(unsigned int opcode, void * param_block, size_t param_len){
     unsigned int returncode;
-    //printf("[%3d,%3d] SYSCALL %08x\r\n", proc_proc_get_current()->id, proc_thread_get_current()->id, opcode);
+    // printf("[%3d,%3d] SYSCALL %08x\r\n", proc_proc_get_current()->id, proc_thread_get_current()->id, opcode);
 
     switch(opcode){
 
@@ -201,6 +225,13 @@ unsigned int syscall(unsigned int opcode, void * param_block, size_t param_len){
                 return SYSCALL_ERROR_GENERAL;
             squire_params_exit_t * params = (squire_params_exit_t*)param_block;
             returncode = syscall_exit(params);
+        } break;
+
+        case SQUIRE_SYSCALL_THREAD_EXIT:{
+            if(param_len<sizeof(squire_params_exit_t))
+                return SYSCALL_ERROR_GENERAL;
+            squire_params_exit_t * params = (squire_params_exit_t*)param_block;
+            returncode = syscall_thread_exit(params);
         } break;
 
         case SQUIRE_SYSCALL_PROCESS:{
@@ -291,6 +322,22 @@ unsigned int syscall(unsigned int opcode, void * param_block, size_t param_len){
 
 
 
+        case SQUIRE_SYSCALL_SIGNAL:{
+            if(param_len<sizeof(squire_params_signal_t))
+                return SYSCALL_ERROR_GENERAL;
+            squire_params_signal_t * params = (squire_params_signal_t*)param_block;
+            returncode = syscall_signal(params);
+        } break;
+
+        case SQUIRE_SYSCALL_SIGNAL_GET:{
+            if(param_len<sizeof(squire_params_signal_get_t))
+                return SYSCALL_ERROR_GENERAL;
+            squire_params_signal_get_t * params = (squire_params_signal_get_t*)param_block;
+            returncode = syscall_signal_get(params);
+        } break;
+
+
+
         case SQUIRE_SYSCALL_LOG:{
             if(param_len<sizeof(squire_params_log_t))
                 return SYSCALL_ERROR_GENERAL;
@@ -304,7 +351,6 @@ unsigned int syscall(unsigned int opcode, void * param_block, size_t param_len){
     }
 
     // schedule();
-
     return returncode;
 }
 

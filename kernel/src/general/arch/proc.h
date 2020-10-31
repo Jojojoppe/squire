@@ -11,12 +11,7 @@
 #include <general/vmm.h>
 #include <general/message.h>
 #include <general/mutex.h>
-
-typedef enum PROC_KILL_REASON{
-    PROC_KILL_REASON_EXIT_NORMAL = 0,
-    PROC_KILL_REASON_KILLED,
-    PROC_KILL_REASON_ERROR
-} proc_kill_reason_t;
+#include <general/kill.h>
 
 typedef struct proc_thread_s{
     struct proc_thread_s * next;
@@ -50,8 +45,11 @@ typedef struct proc_proc_s{
 	mutex_t * mutexes;
 
     unsigned int retvalue;
-    proc_kill_reason_t killreason;
+    kill_reason_t killreason;
     unsigned int parentwaitingthread;
+
+    unsigned int signal_handler;
+    signal_t *  signals;
 
     message_info_t message_info;
     unsigned char arch_data[PROC_PROCDATA_SIZE];

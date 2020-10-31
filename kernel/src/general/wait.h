@@ -1,7 +1,7 @@
 #ifndef __H_WAIT
 #define __H_WAIT 1
 
-#include <general/arch/proc.h>
+#include <general/kill.h>
 
 /**
  * @brief Wait for a child process to end
@@ -10,6 +10,6 @@
  * @param pid PID of the child, 0 for all childs
  * @return Way of exit of child
  */
-proc_kill_reason_t wait(unsigned int * retval, unsigned int pid);
+kill_reason_t wait(unsigned int * retval, unsigned int pid);
 
 #endif

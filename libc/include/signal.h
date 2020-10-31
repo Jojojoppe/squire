@@ -31,17 +31,21 @@
 /* These are the values used by Linux. */
 
 /* Abnormal termination / abort() */
-#define SIGABRT 6
+#define SIGABRT 2
 /* Arithmetic exception / division by zero / overflow */
-#define SIGFPE  8
+#define SIGFPE  3
 /* Illegal instruction */
 #define SIGILL  4
 /* Interactive attention signal */
-#define SIGINT  2
+#define SIGINT  7
 /* Invalid memory access */
-#define SIGSEGV 11
+#define SIGSEGV 5
 /* Termination request */
-#define SIGTERM 15
+#define SIGTERM 0
+/* Forced kill */
+#define SIGKILL 1
+/* Unknown kernel interrupt */
+#define SIGETC 6
 
 /* The following should be defined to pointer values that could NEVER point to
    a valid signal handler function. (They are used as special arguments to

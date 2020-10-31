@@ -126,10 +126,10 @@ void schedule(){
 
     schedule_current = next;
     if(!current){
-        //printf("** schedule() P(%08x->%08x) T(%08x->%08x)\r\n", 0, next->process, 0, next->thread);
+        // printf("** schedule() P(%08x->%08x) T(%08x->%08x)\r\n", 0, next->process, 0, next->thread);
         proc_switch(next->thread, 0, next->process, 0);
     }else{
-        //printf("** schedule() P(%08x->%08x) T(%08x->%08x)\r\n", current->process, next->process, current->thread, next->thread);
+        // printf("** schedule() P(%08x->%08x) T(%08x->%08x)\r\n", current->process, next->process, current->thread, next->thread);
         proc_switch(next->thread, current->thread, next->process, current->process);
     }
 }
@@ -163,4 +163,8 @@ void schedule_enable(){
     //if(!schedule_disabled)
     //    arch_enable_interrupts();
     // printf("** schedule_enable() %d\r\n", schedule_disabled);
+}
+
+void schedule_enable_completely(){
+    schedule_disabled = 0;
 }
