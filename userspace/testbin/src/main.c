@@ -6,20 +6,15 @@
 
 void sighanlder(int signal){
 	printf("SIGNAL: %d\r\n", signal);
-
-	if(signal==20){
-		exit(5);
-	}
-
+	printf("Some correct cleanup\r\n");
+	exit(0);
 }
 
 int main(int argc, char ** argv){
 	printf("This is testbin.bin\r\n");
 
-	for(int i=0; i<200000000; i++);
-	raise(SIGTERM);
+	signal(SIGTERM, sighanlder);
 
-	for(int i=0; i<200000000; i++);
-
+	for(;;);
 	return 0;
 } 

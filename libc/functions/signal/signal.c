@@ -8,7 +8,6 @@ static unsigned int _PDCLIB_signal_initialized;
 static void (*_PDCLIB_sighandlers[9])(int);
 
 void _PDCLIB_sighandler(int sig){
-    printf("signal %d\r\n", sig);
     int signumber = sig;
     if(sig>7){
         // Raised signal not a valid signal, take general sighandler
@@ -18,41 +17,43 @@ void _PDCLIB_sighandler(int sig){
     if(_PDCLIB_sighandlers[sig] && sig!=SIGKILL){
         // Call sighandler
         _PDCLIB_sighandlers[sig](signumber);
-    }else{
-        // Default signal handlers
-        char * message;
-        switch(sig){
-            case SIGTERM:
-                message = "Termination request (SIGTERM)\r\n";
-                break;
-            case SIGKILL:
-                message = "Process killed (SIGKILL)\r\n";
-                break;
-            case SIGABRT:
-                message = "Abnormal termination (SIGABRT)\r\n";
-                break;
-            case SIGFPE:
-                message = "Arithmetic exception (SIGFPE)\r\n";
-                break;
-            case SIGILL:
-                message = "Illegal instruction (SIGILL)\r\n";
-                break;
-            case SIGSEGV:
-                message = "Segmentation error (SIGSEGV)\r\n";
-                break;
-            case SIGETC:
-                message = "Unknown kernel interrupt (SITETC)\r\n";
-                break;
-            case SIGINT:
-                message = "Unhandled software interrupt (SIGINT)\r\n";
-                break;
-            case _SIGUNDEF:
-            default:
-                return;
-        }
-        fputs(message, stderr);
-        exit(1);
+
+        return;
     }
+    // Default signal handlers
+    char * message;
+    switch(sig){
+        case SIGTERM:
+            message = "Termination request (SIGTERM)\r\n";
+            break;
+        case SIGKILL:
+            message = "Process killed (SIGKILL)\r\n";
+            break;
+        case SIGABRT:
+            message = "Abnormal termination (SIGABRT)\r\n";
+            break;
+        case SIGFPE:
+            message = "Arithmetic exception (SIGFPE)\r\n";
+            break;
+        case SIGILL:
+            message = "Illegal instruction (SIGILL)\r\n";
+            break;
+        case SIGSEGV:
+            message = "Segmentation error (SIGSEGV)\r\n";
+            break;
+        case SIGETC:
+            message = "Unknown kernel interrupt (SITETC)\r\n";
+            break;
+        case SIGINT:
+            message = "Unhandled software interrupt (SIGINT)\r\n";
+            break;
+
+        case _SIGUNDEF:
+        default:
+            return;
+    }
+    fputs(message, stderr);
+    exit(sig);
 }
 
 void _PDCLIB_signal_initialize(){

@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <threads.h>
+#include <signal.h>
 
 #include "tar.h"
 
@@ -23,6 +24,9 @@ int main(int argc, char ** argv){
 	testbin_argv[1] = argv1;
 	unsigned int testbin_pid = squire_syscall_process(testbin, length, 2, testbin_argv);
 	printf("Testbin PID = %d\r\n", testbin_pid);
+
+	for(int i=0; i<400000000; i++);
+	squire_syscall_kill(testbin_pid, SIGTERM);
 
 	unsigned int retval;
 	unsigned int reason = squire_syscall_wait(&retval, testbin_pid);
