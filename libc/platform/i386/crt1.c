@@ -1,5 +1,6 @@
 #include <_PDCLIB_io.h>
 #include <stdio.h>
+#include <signal.h>
 
 extern int main(int argc, char ** argv);
 
@@ -26,6 +27,9 @@ void _start(){
 	stdin->lock = squire_syscall_mutex_init();
 	stdout->lock = squire_syscall_mutex_init();
 	stderr->lock = squire_syscall_mutex_init();
+
+    // Initialize signal handlers
+    signal(0, SIG_DFL);
 
     int retval = main(argc, argv);
 

@@ -46,6 +46,8 @@
 #define SIGKILL 1
 /* Unknown kernel interrupt */
 #define SIGETC 6
+/* Undefined signal */
+#define _SIGUNDEF 8
 
 /* The following should be defined to pointer values that could NEVER point to
    a valid signal handler function. (They are used as special arguments to
