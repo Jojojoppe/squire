@@ -8,6 +8,8 @@
 #include <general/arch/vas.h>
 #include <general/message.h>
 #include <general/mutex.h>
+#include <general/wait.h>
+#include <general/kill.h>
 
 unsigned int syscall_mmap(squire_params_mmap_t * params){
     // Check OK memory region
@@ -93,6 +95,16 @@ unsigned int syscall_process(squire_params_process_t * params){
     params->pid = pnew->id;
     // printf("Process created!\r\n");
 
+    return 0;
+}
+
+unsigned int syscall_wait(squire_params_wait_t * params){
+    params->reason = wait(&params->retval, params->pid);
+    return 0;
+}
+
+unsigned int syscall_kill(squire_params_kill_t * params){
+    kill(params->pid);
     return 0;
 }
 
@@ -197,6 +209,21 @@ unsigned int syscall(unsigned int opcode, void * param_block, size_t param_len){
 			schedule();
 			returncode = 0;				  
 		} break;
+
+        case SQUIRE_SYSCALL_WAIT:{
+            if(param_len<sizeof(squire_params_wait_t))
+                return SYSCALL_ERROR_GENERAL;
+            squire_params_wait_t * params = (squire_params_wait_t*)param_block;
+            returncode = syscall_wait(params);
+        } break;
+
+        case SQUIRE_SYSCALL_KILL:{
+            if(param_len<sizeof(squire_params_kill_t))
+                return SYSCALL_ERROR_GENERAL;
+            squire_params_kill_t * params = (squire_params_kill_t*)param_block;
+            returncode = syscall_kill(params);
+        } break;
+
 
 
         case SQUIRE_SYSCALL_SIMPLE_SEND:{

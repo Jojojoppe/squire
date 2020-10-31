@@ -32,10 +32,11 @@ userspace:
 
 # INSTALL
 install:
-	rm mnt/boot/{kernel.bin,init.bin,initramfs.tar}
+	-rm mnt/boot/{kernel.bin,init.bin,initramfs.tar}
 	cd kernel && ${MAKE} ${MFLAGS} install
 	cd init && ${MAKE} ${MFLAGS} install
 	cp initramfs.tar mnt/boot/initramfs.tar
+	cp grub.cfg mnt/boot/grub/grub.cfg
 
 # CLEAN
 clean:

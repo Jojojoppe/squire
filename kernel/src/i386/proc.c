@@ -342,12 +342,8 @@ proc_proc_t * _0_proc_proc_new(void * ELF_start){
     proc_proc_current = pcur;
     __asm__ __volatile__("movl %%eax, %%cr3"::"a"(own_vas));
 
-    // TODO switch to new VAS, load elf, setup user stack, add thread discriptor
-    // and go back to own VAS
-    // Setup messaging info
-
-
-    // pnew->threads->state = PROC_THREAD_STATE_WAITING;
+    // Setup process exit information
+    pnew->parentwaitingthread = 0;
 
     return pnew;
 }
@@ -377,6 +373,9 @@ proc_proc_t * proc_proc_new(void * ELF_start){
 }
 
 int _0_proc_thread_kill(proc_thread_t * thread, proc_proc_t * process, int retval){
+    
+    // printf("proc_thread_kill(%08x, %08x, %08x)\r\n", thread, process, retval);
+    
     // switch to new VAS
     proc_proc_t * pcur = proc_proc_get_current();
     unsigned int own_vas = ((proc_proc_arch_data_t*)(pcur->arch_data))->cr3;
@@ -423,14 +422,14 @@ int _0_proc_thread_kill(proc_thread_t * thread, proc_proc_t * process, int retva
     process->threads_number--;
 
     // Check if process must be deleted
+    // TODO move to seperate function
     if(!process->threads_number){
+        // printf("kill process %08x\r\n", process);
 
         if(process->id == 1){
             printf("CANNOT KILL PROCESS 1\r\n");
             __asm__ __volatile__("int $0");
         }
-
-        printf("Remove process itself, return value of process is %08x\r\n", retval);
 
 		// free all mutexes
 		mutex_t * mtx = process->mutexes;
@@ -467,12 +466,19 @@ int _0_proc_thread_kill(proc_thread_t * thread, proc_proc_t * process, int retva
 
         vas_unmap_free(0);
 
-        // TODO remove thread structure from parent list and free it
-        // TODO find a way to notify the parent with the return value
+        // Set return value
+        process->retvalue = retval;
+
+        if(process->parentwaitingthread){
+            schedule_set_state(schedule_get(process->parent->id, process->parentwaitingthread), SCHEDULE_STATE_RUNNING);
+        }
 
     }
 
-    proc_debug();
+    // Check if current process/thread is different than the killed one, then return
+    if(thread!=proc_thread_get_current()){
+        return 0;
+    }
 
     schedule_enable();
     schedule();
@@ -514,6 +520,10 @@ void _proc_debug_print(proc_proc_t * p, unsigned int indent){
     printf("-P[%3d]     %08x\r\n", p->id, p);
     for(int i=0; i<indent; i++) printf("\t");
     printf(" cr3:       %08x\r\n", ((proc_proc_arch_data_t*)(p->arch_data))->cr3);
+    for(int i=0; i<indent; i++) printf("\t");
+    printf(" retval:    %08x\r\n", p->retvalue);
+    for(int i=0; i<indent; i++) printf("\t");
+    printf(" reason:    %08x\r\n", p->killreason);
     for(int i=0; i<indent; i++) printf("\t");
     printf(" threads:   %d\r\n", p->threads_number);
     proc_thread_t * t = p->threads;

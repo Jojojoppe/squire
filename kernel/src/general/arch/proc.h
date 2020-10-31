@@ -12,6 +12,12 @@
 #include <general/message.h>
 #include <general/mutex.h>
 
+typedef enum PROC_KILL_REASON{
+    PROC_KILL_REASON_EXIT_NORMAL = 0,
+    PROC_KILL_REASON_KILLED,
+    PROC_KILL_REASON_ERROR
+} proc_kill_reason_t;
+
 typedef struct proc_thread_s{
     struct proc_thread_s * next;
     struct proc_thread_s * prev;
@@ -42,6 +48,10 @@ typedef struct proc_proc_s{
     struct proc_proc_s * child_next;
 
 	mutex_t * mutexes;
+
+    unsigned int retvalue;
+    proc_kill_reason_t killreason;
+    unsigned int parentwaitingthread;
 
     message_info_t message_info;
     unsigned char arch_data[PROC_PROCDATA_SIZE];
