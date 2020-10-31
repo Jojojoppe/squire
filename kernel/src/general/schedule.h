@@ -80,6 +80,14 @@ void schedule_set_state(schedule_schedulable_t * schedulable, schedule_state_t s
  */
 schedule_schedulable_t * schedule_get(unsigned int pid, unsigned int tid);
 
+/**
+ * @brief Move a task to another queue
+ * 
+ * @param schedulable 
+ * @param queue 
+ */
+void schedule_move_queue(schedule_schedulable_t * schedulable, schedule_queue_type_t queue);
+
 void schedule_disable();
 void schedule_enable();
 void schedule_enable_completely();

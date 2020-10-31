@@ -35,10 +35,17 @@ unsigned int syscall_mmap(squire_params_mmap_t * params){
 
 unsigned int syscall_thread(squire_params_thread_t * params){
     schedule_disable();
+
         proc_thread_t * new = proc_thread_new_user(params->entry, params->stack_base, params->stack_length, proc_proc_get_current());
         params->entry = new->id;
         proc_proc_t * pcurrent = proc_proc_get_current();
         params->stack_base = pcurrent->id;
+
+        // Move to priority queue if flags bit 1 is set
+        if((params->flags&1)==1){
+            schedule_move_queue(schedule_get(pcurrent->id, new->id), SCHEDULE_QUEUE_TYPE_PRIORITY);
+        }
+
     schedule_enable();
     // printf("New thread created\r\n");
     // asm("int $0");
@@ -82,7 +89,6 @@ unsigned int syscall_thread_exit(squire_params_exit_t * params){
     schedule_kill(0, params->retval);
     return 0;
 }
-
 
 unsigned int syscall_process(squire_params_process_t * params){
     // printf("Creating process\r\n");

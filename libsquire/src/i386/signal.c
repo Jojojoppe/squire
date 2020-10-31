@@ -15,7 +15,7 @@ void squire_syscall_signal(int (*handler)(int)){
     parms->handler = handler;
     parms->stack = malloc(4096);
     parms->stack_length = 4096;
-    parms->tid = squire_syscall_thread(_signal_handler, parms->stack, 4096, 0, parms);
+    parms->tid = squire_syscall_thread(_signal_handler, parms->stack, 4096, SQUIRE_THREAD_PRIORITY, parms);
 
 	asm __volatile__("int $0x80"::"a"(SQUIRE_SYSCALL_SIGNAL),"c"(sizeof(squire_params_signal_t)),"d"(parms));
 }

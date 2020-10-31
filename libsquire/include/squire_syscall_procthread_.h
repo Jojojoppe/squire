@@ -11,6 +11,8 @@
 #define SQUIRE_SYSCALL_GETID		0x00000017
 #define SQUIRE_SYSCALL_THREAD_EXIT	0x00000018
 
+#define SQUIRE_THREAD_PRIORITY		1
+
 struct squire_params_thread_s{
 	void 			(*entry)(void);
 	void *			stack_base;

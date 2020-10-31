@@ -9,6 +9,17 @@ schedule_queue_type_t schedule_current_queue_type;
 // Schedule queues
 schedule_schedulable_t * schedule_queues[_SCHEDULE_QUEUE_TYPE_SIZE_];
 
+void schedule_debug(){
+    for(int i=0; i<_SCHEDULE_QUEUE_TYPE_SIZE_; i++){
+        schedule_schedulable_t * s = schedule_queues[i];
+        printf("QUEUE %d\r\n", i);
+        while(s){
+            printf("%d-%d [%d]\r\n", s->process->id, s->thread->id, s->state);
+            s = s->next;
+        }
+    }
+}
+
 void schedule_init(proc_proc_t * process, proc_thread_t * thread){
     // Clear out queues
     for(int i=0; i<_SCHEDULE_QUEUE_TYPE_SIZE_; i++){
@@ -97,7 +108,14 @@ void schedule(){
         // Check if next in priority queue
         if(schedule_queues[SCHEDULE_QUEUE_TYPE_PRIORITY]){
             // Switch to one in priority
-            // TODO
+            schedule_schedulable_t * s = schedule_queues[SCHEDULE_QUEUE_TYPE_PRIORITY];
+            while(s){
+                if(s->state == SCHEDULE_STATE_RUNNING){
+                    next = s;
+                    break;
+                }
+                s = s->next;
+            }
         }
 
         // Otherwise check for next in normal queue
@@ -126,10 +144,10 @@ void schedule(){
 
     schedule_current = next;
     if(!current){
-        // printf("** schedule() P(%08x->%08x) T(%08x->%08x)\r\n", 0, next->process, 0, next->thread);
+        // printf("** schedule() P(%d->%d) T(%d->%d)\r\n", 0, next->process->id, 0, next->thread->id);
         proc_switch(next->thread, 0, next->process, 0);
     }else{
-        // printf("** schedule() P(%08x->%08x) T(%08x->%08x)\r\n", current->process, next->process, current->thread, next->thread);
+        // printf("** schedule() P(%d->%d) T(%d->%d)\r\n", current->process->id, next->process->id, current->thread->id, next->thread->id);
         proc_switch(next->thread, current->thread, next->process, current->process);
     }
 }
@@ -167,4 +185,48 @@ void schedule_enable(){
 
 void schedule_enable_completely(){
     schedule_disabled = 0;
+}
+
+void schedule_move_queue(schedule_schedulable_t * schedulable, schedule_queue_type_t queue){
+    schedule_disable();
+    // printf("schedule_move_queue(%08x, %d)\r\n", schedulable, queue);
+
+    // Find in queue
+    for(int q=0; q<_SCHEDULE_QUEUE_TYPE_SIZE_; q++){
+        schedule_schedulable_t * prev = 0;
+        schedule_schedulable_t * s = schedule_queues[q];
+        while(s){
+
+            if(s==schedulable){
+                // Found!
+                // Unlink from current queue
+                if(prev){
+                    // middle of queue
+                    prev->next = s->next;
+                }else{
+                    // Start of queue
+                    schedule_queues[q] = s->next;
+                }
+                // Add to new queue
+                s = schedule_queues[queue];
+                if(s){
+                    // Add to end
+                    while(s->next)
+                        s = s->next;
+                    s->next = schedulable;
+                }else{
+                    // First in queue
+                    schedule_queues[queue] = schedulable;
+                }
+
+                schedule_enable();
+                return;
+            }
+
+            prev = s;
+            s = s->next;
+        }
+    }
+    // Not found. Do nothing
+    schedule_enable();
 }
