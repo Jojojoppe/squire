@@ -31,12 +31,15 @@ reset:
 	${MAKE} clean
 
 # Mount drive
+CURUSER		:= $(shell whoami)
+GID			:= $(shell id -g $(CURUSER))
+UID			:= $(shell id -u $(CURUSER))
 mount:
 	echo + Mount drive
 	sudo losetup /dev/loop0 drive
 	sudo losetup /dev/loop1 drive -o 1048576
 	mkdir mnt
-	sudo mount /dev/loop1 mnt
+	sudo mount -t vfat -o gid=$(GID),uid=$(UID) /dev/loop1 mnt
 
 # Unmount drive
 umount:

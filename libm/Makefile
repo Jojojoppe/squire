@@ -1,39 +1,73 @@
 include ../makefiles/env.mk
 
-.PHONY: all libm headers builddir clean
+TARGET				:= libm.a
 
-# No all target
-all:
+BUILDDIR			:= build
 
-OUTPUTDIR			:= build
+SRCDIRS				:= src
+SRCFILES			:= $(shell find $(SRCDIRS) -type f -name "*.c")
+OBJFILES			:= $(SRCFILES:%.c=$(BUILDDIR)/%.c.o)
+DEPFILES			:= $(SRCFILES:%.c=$(BUILDDIR)/%.c.d)
 
-CFILES				:= $(shell find . -type f -name "*.c")
-COBJ				:= $(CFILES:%.c=$(OUTPUTDIR)/%.c.o)
-DFILES				:= $(CFILES:%.c=$(OUTPUTDIR)/%.c.d)
+INSTALLTARGET		:= $(PREFIX)/lib
+INSTALLHEADER		:= $(PREFIX)/include
 
-CC				:= $(PREFIX)/bin/$(ARCH)-tcc -nostdinc -nostdlib -I $(PREFIX)/usr/include -I $(PREFIX)/lib/tcc/include -I $(PREFIX)/include -D_IEEE_LIBM
-AR				:= $(PREFIX)/bin/$(ARCH)-tcc -ar
-CC_WARNING		:= -Wall -Wextra
+INCFILES1			:= $(shell find include -type f -name "*.h")
+INSFILES1			:= $(INCFILES1:include/%.h=$(INSTALLHEADER)/%.h)
+INCFILES			:= $(INCFILES1)
+INSFILES			:= $(INSFILES1)
 
-builddir:
-	-mkdir -p $(OUTPUTDIR)
+FILESTOCLEAN		:= $(OBJFILES) $(DEPFILES) $(BUILDDIR)/$(TARGET)
+FILESTOUNINSTALL	:= $(INSFILES) $(INSTALLTARGET)/$(TARGET)
 
-libm: headers builddir $(COBJ)
-	echo 'AR ' libm
-	$(AR) rcsv libm.a $(COBJ)
-	cp libm.a $(PREFIX)/usr/lib
+CC					:= $(PREFIX)/bin/$(ARCH)-tcc
+AR					:= $(PREFIX)/bin/$(ARCH)-tcc -ar
+LD					:= $(PREFIX)/bin/$(ARCH)-tcc
+AS					:= $(PREFIX)/bin/$(ARCH)-tcc
 
-$(COBJ): $(OUTPUTDIR)/%.c.o: %.c
-	echo 'CC ' $<
-	$(CC) -g -MD $(CC_WARNING) -o $@ -c $<
+CC_WARNING			:= -Wall -Wextra
+CC_LIBS				:=
+CC_FLAGS			:= -nostdlib
+CC_INCLUDES			:= -I include
 
-headers:
-	echo + Install headers
-	cp fdlibm.h $(PREFIX)/usr/include
+# Add DEPFILE dependencies
+-include $(DEPFILES)
+
+.PHONY: $(TARGET) all clean install uninstall
+all: $(TARGET) install
+
+# PHONY RULES
+# -----------
+
+$(TARGET): $(BUILDDIR)/$(TARGET)
 
 clean:
-	echo + Clean libc
-	-rm -r build
-	-rm libm.a
+	echo CLEAN FILES FOR $(TARGET)
+	-rm -r $(FILESTOCLEAN)
 
--include $(DFILES)
+install: $(INSTALLTARGET)/$(TARGET) $(INSFILES)
+
+uninstall:
+	echo UNISTALL FILES FOR $(TARGET)
+	-rm $(FILESTOUNINSTALL)
+
+# SPECIFIC BUILD RULES
+# --------------------
+
+$(INSTALLTARGET)/$(TARGET): $(BUILDDIR)/$(TARGET)
+	echo 'CP ' $(BUILDDIR)/$(TARGET) $(INSTALLTARGET)/$(TARGET)
+	cp $(BUILDDIR)/$(TARGET) $(INSTALLTARGET)/$(TARGET)
+
+$(BUILDDIR)/$(TARGET): $(OBJFILES)
+	echo 'AR ' $@
+	$(AR) rcs $(BUILDDIR)/$(TARGET) $(OBJFILES)
+
+$(OBJFILES): $(BUILDDIR)/%.c.o: %.c
+	echo 'CC ' $@
+	-mkdir -p $(shell dirname $@)
+	$(CC) $(CC_FLAGS) $(CC_WARNING) $(CC_INCLUDES) -MD -o $@ -c $<
+
+$(INSFILES1): $(INSTALLHEADER)/%.h: include/%.h
+	echo 'CP ' $< $@
+	-mkdir -p $(shell dirname $@)
+	cp -RT $< $@

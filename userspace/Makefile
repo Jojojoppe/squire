@@ -4,7 +4,7 @@
 all: testbin
 
 testbin:
-	cd testbin && ${MAKE} ${MFLAGS}
+	cd testbin && ${MAKE} ${MFLAGS} all
 
 clean:
 	cd testbin && ${MAKE} ${MFLAGS} clean

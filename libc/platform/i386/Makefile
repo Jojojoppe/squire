@@ -1,24 +1,45 @@
 include ../../../makefiles/env.mk
 
-.PHONY: builddir clean crtfiles
+BUILDDIR			:= ../../build
+INSTALLDIR			:= $(PREFIX)/lib
 
-OUTPUTDIR		:= ../../build/$(ARCH)
+CC					:= $(PREFIX)/bin/$(ARCH)-tcc
+AR					:= $(PREFIX)/bin/$(ARCH)-tcc -ar
+LD					:= $(PREFIX)/bin/$(ARCH)-tcc
+AS					:= $(PREFIX)/bin/$(ARCH)-tcc
 
-CC				:= $(PREFIX)/bin/$(ARCH)-tcc -nostdinc -nostdlib -I $(PREFIX)/usr/include -I $(PREFIX)/include
+CC_WARNING			:= -Wall -Wextra
+CC_LIBS				:=
+CC_FLAGS			:= -nostdlib
+CC_INCLUDES			:=
 
-crtfiles: $(OUTPUTDIR)/crt1.o $(OUTPUTDIR)/crti.o $(OUTPUTDIR)/crtn.o
+.PHONY: all clean install uninstall crtfiles
 
-$(OUTPUTDIR)/crt1.o: crt1.c
-	echo 'CC ' crt1.c
-	$(CC) -o $@ -c crt1.c
-
-$(OUTPUTDIR)/crti.o: crti.S
-	echo 'CC ' crti.S
-	$(CC) -o $@ -c crti.S
-
-$(OUTPUTDIR)/crtn.o: crtn.S
-	echo 'CC ' crtn.S
-	$(CC) -o $@ -c crtn.S
+crtfiles: $(BUILDDIR)/crt1.o $(BUILDDIR)/crti.o $(BUILDDIR)/crtn.o
 
 clean:
-	-rm $(OUTPUTDIR)/crt*
+	echo CLEAN FILES FOR CRTFILES
+	-rm $(BUILDDIR)/{crt1.o,crti.o,crtn.o}
+
+install: $(INSTALLDIR)/crt1.o $(INSTALLDIR)/crti.o $(INSTALLDIR)/crtn.o
+
+uninstall:
+	echo UNINSTALL FILES FOR CRTFILES
+	-rm $(INSTALLDIR)/{crt1.o,crti.o,crtn.o}
+
+$(INSTALLDIR)/%.o: $(BUILDDIR)/%.o
+	echo 'CP ' $< $@
+	-mkdir -p $(shell dirname $@)
+	cp -RT $< $@
+
+$(BUILDDIR)/crt1.o: crt1.c
+	echo 'CC ' $@
+	$(CC) -o $@ -c $<
+
+$(BUILDDIR)/crti.o: crti.S
+	echo 'AS ' $@
+	$(AS) -o $@ -c crti.S
+
+$(BUILDDIR)/crtn.o: crtn.S
+	echo 'AS ' $@
+	$(AS) -o $@ -c crtn.S

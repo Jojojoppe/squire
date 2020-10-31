@@ -1,52 +1,73 @@
 include ../makefiles/env.mk
 
-# No all target
-all:
+TARGET				:= libsquire.a
 
-.PHONY: all clean todolist builddir
-.SILENT:
+BUILDDIR			:= build
 
-DIRS			:= src/$(ARCH)
-OUTPUTDIR		:= build
-TARGET			:= libsquire.a
+SRCDIRS				:= src/$(ARCH)
+SRCFILES			:= $(shell find $(SRCDIRS) -type f -name "*.c")
+OBJFILES			:= $(SRCFILES:%.c=$(BUILDDIR)/%.c.o)
+DEPFILES			:= $(SRCFILES:%.c=$(BUILDDIR)/%.c.d)
 
-CFILES			:= $(shell find $(DIRS) -type f -name "*.c")
-HFILES			:= $(shell find $(DIRS) -type f -name "*.h")
-COBJ			:= $(CFILES:%.c=$(OUTPUTDIR)/%.c.o)
-DFILES			:= $(CFILES:%.c=$(OUTPUTDIR)/%.c.d)
+INSTALLTARGET		:= $(PREFIX)/lib
+INSTALLHEADER		:= $(PREFIX)/include
 
-ASMFILES		:= $(shell find $(DIRS) -type f -name "*.S")
-ASMOBJ			:= $(ASMFILES:%.S=$(OUTPUTDIR)/%.S.o)
+INCFILES1			:= $(shell find include -type f -name "*.h")
+INSFILES1			:= $(INCFILES1:include/%.h=$(INSTALLHEADER)/%.h)
+INCFILES			:= $(INCFILES1)
+INSFILES			:= $(INSFILES1)
 
-ALLFILES		:= $(ASMFILES) $(CFILES) $(HFILES)
+FILESTOCLEAN		:= $(OBJFILES) $(DEPFILES) $(BUILDDIR)/$(TARGET)
+FILESTOUNINSTALL	:= $(INSFILES) $(INSTALLTARGET)/$(TARGET)
 
-# Toolchain
-CC				:= $(PREFIX)/bin/$(ARCH)-tcc -nostdinc -nostdlib -I $(PREFIX)/lib/tcc/include -I include
-AR				:= $(PREFIX)/bin/$(ARCH)-tcc -ar
-CC_WARNING		:= -Wall -Wextra
+CC					:= $(PREFIX)/bin/$(ARCH)-tcc
+AR					:= $(PREFIX)/bin/$(ARCH)-tcc -ar
+LD					:= $(PREFIX)/bin/$(ARCH)-tcc
+AS					:= $(PREFIX)/bin/$(ARCH)-tcc
 
-builddir:
-	-mkdir -p $(OUTPUTDIR)/src/$(ARCH)
+CC_WARNING			:= -Wall -Wextra
+CC_LIBS				:=
+CC_FLAGS			:= -nostdlib
+CC_INCLUDES			:= -I include
 
-$(TARGET): builddir $(COBJ) $(ASMOBJ)
-	echo "AR  $(TARGET)"
-	$(AR) rcsv libsquire.a $(COBJ) $(ASMOBJ)
-	find . -name '*.c' -o -name '*.h' | xargs wc -l > $(OUTPUTDIR)/LOC
+# Add DEPFILE dependencies
+-include $(DEPFILES)
 
-$(COBJ): $(OUTPUTDIR)/%.c.o: %.c
-	echo 'CC ' $<
-	$(CC) -MD -I src $(CC_WARNING) -o $@ -c $<
+.PHONY: $(TARGET) all clean install uninstall
+all: $(TARGET) install
 
-$(ASMOBJ): $(OUTPUTDIR)/%.S.o: %.S
-	echo 'AS ' $<
-	$(CC) -MD -I src $(CC_WARNIMG) -o $@ -c $<
+# PHONY RULES
+# -----------
 
-todolist:
-	echo + TODO list
-	-@for file in $(ALLFILES:Makefile=); do fgrep -n -H -e TODO $$file ; done; true
+$(TARGET): $(BUILDDIR)/$(TARGET)
 
 clean:
-	rm -f $(COBJ) $(ASMOBJ) $(DFILES) $(TARGET) $(OUTPUTDIR)/LOC
+	echo CLEAN FILES FOR $(TARGET)
+	-rm -r $(FILESTOCLEAN)
 
-# Header dependencies
--include $(DFILES)
+install: $(INSTALLTARGET)/$(TARGET) $(INSFILES)
+
+uninstall:
+	echo UNISTALL FILES FOR $(TARGET)
+	-rm $(FILESTOUNINSTALL)
+
+# SPECIFIC BUILD RULES
+# --------------------
+
+$(INSTALLTARGET)/$(TARGET): $(BUILDDIR)/$(TARGET)
+	echo 'CP ' $(BUILDDIR)/$(TARGET) $(INSTALLTARGET)/$(TARGET)
+	cp $(BUILDDIR)/$(TARGET) $(INSTALLTARGET)/$(TARGET)
+
+$(BUILDDIR)/$(TARGET): $(OBJFILES)
+	echo 'AR ' $@
+	$(AR) rcs $(BUILDDIR)/$(TARGET) $(OBJFILES)
+
+$(OBJFILES): $(BUILDDIR)/%.c.o: %.c
+	echo 'CC ' $@
+	-mkdir -p $(shell dirname $@)
+	$(CC) $(CC_FLAGS) $(CC_WARNING) $(CC_INCLUDES) -MD -o $@ -c $<
+
+$(INSFILES): $(INSTALLHEADER)/%.h: include/%.h
+	echo 'CP ' $< $@
+	-mkdir -p $(shell dirname $@)
+	cp -RT $< $@

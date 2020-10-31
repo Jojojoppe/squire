@@ -1,69 +1,92 @@
 include ../makefiles/env.mk
 
-# No all target
-all:
+TARGET				:= kernel.bin
 
-.PHONY: all clean todolist builddir infiles
-.SILENT:
+BUILDDIR			:= build
 
+SRCDIRS				:= src/general
+SRCFILES			:= $(shell find $(SRCDIRS) -type f -name "*.c")
+OBJFILES			:= $(SRCFILES:%.c=$(BUILDDIR)/%.c.o)
+DEPFILES			:= $(SRCFILES:%.c=$(BUILDDIR)/%.c.d)
+
+INFILES				:= $(shell find $(SRCDIRS) -type f -name "*.h.in")
+OUTFILES			:= $(INFILES:%.h.in=$(BUILDDIR)/%.h)
+
+INSTALLTARGET		:= ../mnt/boot
+
+FILESTOCLEAN		:= $(OBJFILES) $(DEPFILES) $(BUILDDIR)/$(TARGET) $(OUTFILES)
+FILESTOUNINSTALL	:=  $(INSTALLTARGET)/$(TARGET)
+
+CC					:= $(PREFIX)/bin/$(ARCH)-tcc
+AR					:= $(PREFIX)/bin/$(ARCH)-tcc -ar
+LD					:= $(PREFIX)/bin/$(ARCH)-tcc
+AS					:= $(PREFIX)/bin/$(ARCH)-tcc
+
+# Kernel specific points
 SQUIRE_COMMIT  	:= $(shell git rev-parse --short HEAD)
 SQUIRE_VMAJOR	:= v0.2-
 SQUIRE_VERSION	:= $(SQUIRE_VMAJOR)$(SQUIRE_COMMIT)
 
-DIRS			:= src/$(ARCH) src/general
-OUTPUTDIR		:= build
-TARGET			:= kernel.bin
+# Include arch dependent makefile
+# MUST DEFINE CC_ARCH_FLAGS
+-include src/$(ARCH)/arch.mk
 
-ASMFILES		:= $(shell find $(DIRS) -type f -name "*.S")
-ASMOBJ			:= $(ASMFILES:%.S=$(OUTPUTDIR)/%.S.o)
+CC_WARNING			:= -Wall -Wextra
+CC_LIBS				:=
+CC_FLAGS			:= -nostdlib -nostdinc -DSQUIRE_ARCH=\"$(ARCH)\" -DSQUIRE_VERSION=\"$(SQUIRE_VERSION)\" -O0 -g
+CC_INCLUDES			:= -I src -I src/general -I $(BUILDDIR)/src -I ../libsquire/include
 
-HINFILES		:= $(shell find $(DIRS) -type f -name "*.h.in")
-INHFILES		:= $(HINFILES:%.h.in=$(OUTPUTDIR)/%.h)
-CFILES			:= $(shell find $(DIRS) -type f -name "*.c")
-HFILES			:= $(shell find $(DIRS) -type f -name "*.h") $(INHFILES) 
-COBJ			:= $(CFILES:%.c=$(OUTPUTDIR)/%.c.o)
-DFILES			:= $(CFILES:%.c=$(OUTPUTDIR)/%.c.d)
+LD_FLAGS			:= -nostdinc -nostdlib -static $(CC_ARCH_FLAGS)
 
-ALLFILES		:= $(ASMFILES) $(INCFILES) $(CFILES) $(HFILES)
+# Add DEPFILE dependencies
+-include $(DEPFILES)
 
-# Toolchain
-CC				:= $(PREFIX)/bin/$(ARCH)-tcc
-CC_WARNING		:= -Wall -Wextra
-CC_FLAGS		:= -Isrc -Ibuild/src -Isrc/general -nostdlib -nostdinc -O0 -g
-CC_ARCH_FLAGS	:=
-DEFS			:= -DSQUIRE_ARCH=\"$(ARCH)\" -DSQUIRE_VERSION=\"$(SQUIRE_VERSION)\"
+.PHONY: $(TARGET) all clean install uninstall libarch infiles test
+all: $(TARGET) install
 
-include src/$(ARCH)/arch.mk
+# PHONY RULES
+# -----------
 
-builddir:
-	-mkdir -p $(OUTPUTDIR)/src/{general,$(ARCH)}
-	-mkdir -p  $(OUTPUTDIR)/src/$(ARCH)/memory
-
-$(TARGET): builddir $(INHFILES) $(ASMOBJ) $(COBJ)
-	echo "LD  $(TARGET)"
-	$(CC) $(CC_FLAGS) $(CC_ARCH_FLAGS) -static -o $(TARGET) $(DEFS) $(ASMOBJ) $(COBJ) $(PREFIX)/lib/tcc/$(ARCH)-libtcc1.a
-	find . -name '*.c' -o -name '*.h' -o -name '*.asm' -o -name '*.inc' | xargs wc -l > $(OUTPUTDIR)/LOC
-
-$(INHFILES): $(OUTPUTDIR)/%.h: %.h.in
-	echo '>' $<
-	cp $< $@
-	-sed -i 's/__IN_ARCH_IN__/$(ARCH)/g' $@
-
-$(COBJ): $(OUTPUTDIR)/%.c.o: %.c
-	echo 'CC ' $<
-	$(CC) $(CC_FLAGS) $(DEFS) -MD $(CC_WARNING) -o $@ -c $<
-
-$(ASMOBJ): $(OUTPUTDIR)/%.S.o: %.S
-	echo 'AS ' $<
-	$(CC) $(CC_FLAGS) $(DEFS) -MD $(CC_WARNING) -o $@ -c $<
-
-todolist:
-	echo + TODO list
-	-@for file in $(ALLFILES:Makefile=); do fgrep -n -H -e TODO $$file ; done; true
+$(TARGET): infiles libarch $(BUILDDIR)/$(TARGET)
 
 clean:
-	rm -rf $(ASMOBJ) $(ASMDFILES) $(COBJ) $(DFILES) $(TARGET) $(OUTPUTDIR)
+	echo CLEAN FILES FOR $(TARGET)
+	-rm -r $(FILESTOCLEAN)
+	# Subfolders
+	cd src/$(ARCH) && ${MAKE} ${MFLAGS} clean
 
-# Header dependencies
--include $(ASMDFILES)
--include $(DFILES)
+install: $(INSTALLTARGET)/$(TARGET)
+
+uninstall:
+	echo UNINSTALL FILES FOR $(TARGET)
+	-rm $(FILESTOUNINSTALL)
+	# Subfolders
+	cd src/$(ARCH) && ${MAKE} ${MFLAGS} uninstall
+
+# Subfolders
+libarch:
+	cd src/$(ARCH) && ${MAKE} ${MFLAGS} libarch.o
+
+infiles: $(OUTFILES)
+
+# SPECIFIC BUILD RULES
+# --------------------
+
+$(INSTALLTARGET)/$(TARGET): $(BUILDDIR)/$(TARGET)
+	echo 'CP ' $(BUILDDIR)/$(TARGET) $(INSTALLTARGET)/$(TARGET)
+	cp $(BUILDDIR)/$(TARGET) $(INSTALLTARGET)/$(TARGET)
+
+$(BUILDDIR)/$(TARGET): $(BUILDDIR)/src/$(ARCH)/libarch.o $(OBJFILES)
+	echo 'LD ' $@
+	$(LD) $(LD_FLAGS) -o $(BUILDDIR)/$(TARGET) $(BUILDDIR)/src/$(ARCH)/libarch.o $(OBJFILES) $(PREFIX)/lib/tcc/$(ARCH)-libtcc1.a
+
+$(OBJFILES): $(BUILDDIR)/%.c.o: %.c
+	echo 'CC ' $@
+	-mkdir -p $(shell dirname $@)
+	$(CC) $(CC_FLAGS) $(CC_WARNING) $(CC_INCLUDES) -MD -o $@ -c $<
+
+$(OUTFILES): $(BUILDDIR)/%.h: %.h.in
+	echo 'IO ' $<
+	-mkdir -p $(shell dirname $@)
+	cp $< $@
+	-sed -i 's/__IN_ARCH_IN__/$(ARCH)/g' $@

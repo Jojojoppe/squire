@@ -1,45 +1,65 @@
 include ../makefiles/env.mk
 
-# No all target
-all:
+TARGET				:= init.bin
 
-.PHONY: all clean todolist builddir
-.SILENT:
+BUILDDIR			:= build
 
-DIRS			:= src
-OUTPUTDIR		:= build
-TARGET			:= init.bin
+SRCDIRS				:= src
+SRCFILES			:= $(shell find $(SRCDIRS) -type f -name "*.c")
+OBJFILES			:= $(SRCFILES:%.c=$(BUILDDIR)/%.c.o)
+DEPFILES			:= $(SRCFILES:%.c=$(BUILDDIR)/%.c.d)
 
-CFILES			:= $(shell find $(DIRS) -type f -name "*.c")
-HFILES			:= $(shell find $(DIRS) -type f -name "*.h")
-COBJ			:= $(CFILES:%.c=$(OUTPUTDIR)/%.c.o)
-DFILES			:= $(CFILES:%.c=$(OUTPUTDIR)/%.c.d)
+INSTALLTARGET		:= ../mnt/boot
 
-ALLFILES		:= $(CFILES) $(HFILES)
+FILESTOCLEAN		:= $(OBJFILES) $(DEPFILES) $(BUILDDIR)/$(TARGET)
+FILESTOUNINSTALL	:= $(INSTALLTARGET)/$(TARGET)
 
-# Toolchain
-CC				:= $(PREFIX)/bin/$(ARCH)-tcc -msoft-float
-LD				:= $(PREFIX)/bin/$(ARCH)-tcc
-CC_WARNING		:= -Wall -Wextra
+CC					:= $(PREFIX)/bin/$(ARCH)-tcc
+AR					:= $(PREFIX)/bin/$(ARCH)-tcc -ar
+LD					:= $(PREFIX)/bin/$(ARCH)-tcc
+AS					:= $(PREFIX)/bin/$(ARCH)-tcc
 
-builddir:
-	-mkdir -p $(OUTPUTDIR)/src
+CC_WARNING			:= -Wall -Wextra
+CC_LIBS				:= -lm
+CC_FLAGS			:=
+CC_INCLUDES			:= -I src
 
-$(TARGET): builddir $(COBJ)
-	echo + Link $(TARGET)
-	$(CC) -o $(TARGET) $(COBJ) -lm
-	find . -name '*.c' -o -name '*.h' -o -name '*.asm' -o -name '*.inc' | xargs wc -l > $(OUTPUTDIR)/LOC
+LD_FLAGS			:=
 
-$(COBJ): $(OUTPUTDIR)/%.c.o: %.c
-	echo '>' $<
-	$(CC) -MD $(CC_WARNING) -o $@ -c $<
+# Add DEPFILE dependencies
+-include $(DEPFILES)
 
-todolist:
-	echo + TODO list
-	-@for file in $(ALLFILES:Makefile=); do fgrep -n -H -e TODO $$file ; done; true
+.PHONY: $(TARGET) all clean install uninstall
+all: $(TARGET) install
+
+# PHONY RULES
+# -----------
+
+$(TARGET): $(BUILDDIR)/$(TARGET)
 
 clean:
-	rm -f $(COBJ) $(DFILES) $(TARGET) $(OUTPUTDIR)/LOC
+	echo CLEAN FILES FOR $(TARGET)
+	-rm -r $(FILESTOCLEAN)
 
-# Header dependencies
--include $(DFILES)
+install: $(INSTALLTARGET)/$(TARGET)
+
+uninstall:
+	echo UNISTALL FILES FOR $(TARGET)
+	-rm $(FILESTOUNINSTALL)
+
+# SPECIFIC BUILD RULES
+# --------------------
+
+$(INSTALLTARGET)/$(TARGET): $(BUILDDIR)/$(TARGET)
+	echo 'CP ' $(BUILDDIR)/$(TARGET) $(INSTALLTARGET)/$(TARGET)
+	cp $(BUILDDIR)/$(TARGET) $(INSTALLTARGET)/$(TARGET)
+
+$(BUILDDIR)/$(TARGET): $(OBJFILES)
+	echo 'LD ' $@
+	-mkdir -p $(shell dirname $@)
+	$(LD) $(LD_FLAGS) -o $(BUILDDIR)/$(TARGET) $(OBJFILES) $(CC_LIBS)
+
+$(OBJFILES): $(BUILDDIR)/%.c.o: %.c
+	echo 'CC ' $@
+	-mkdir -p $(shell dirname $@)
+	$(CC) $(CC_FLAGS) $(CC_WARNING) $(CC_INCLUDES) -MD -o $@ -c $<

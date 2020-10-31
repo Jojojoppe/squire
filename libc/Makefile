@@ -1,65 +1,89 @@
 include ../makefiles/env.mk
 
-.PHONY: all libc headers crtfiles builddir clean
+TARGET				:= libc.a
 
-# No all target
-all:
+BUILDDIR			:= build
 
-OUTPUTDIR			:= build
+SRCDIRS				:= functions
+SRCFILES			:= $(shell find $(SRCDIRS) -type f -name "*.c")
+OBJFILES			:= $(SRCFILES:%.c=$(BUILDDIR)/%.c.o)
+DEPFILES			:= $(SRCFILES:%.c=$(BUILDDIR)/%.c.d)
 
-DIRS				:= functions include internals
-CFILES				:= $(shell find $(DIRS) -type f -name "*.c")
-HFILES				:= $(shell find $(DIRS) -type f -name "*.h")
-COBJ				:= $(CFILES:%.c=$(OUTPUTDIR)/%.c.o)
-DFILES				:= $(CFILES:%.c=$(OUTPUTDIR)/%.c.d)
+INSTALLTARGET		:= $(PREFIX)/lib
+INSTALLHEADER		:= $(PREFIX)/include
 
-CC				:= $(PREFIX)/bin/$(ARCH)-tcc -nostdinc -nostdlib -D_PDCLIB_EXTENSIONS
-AR				:= $(PREFIX)/bin/$(ARCH)-tcc -ar
-CC_WARNING		:= -Wall -Wextra
+INCFILES1			:= $(shell find include -type f -name "*.h")
+INSFILES1			:= $(INCFILES1:include/%.h=$(INSTALLHEADER)/%.h)
+INCFILES2			:= $(shell find internals -type f -name "*.h")
+INSFILES2			:= $(INCFILES2:internals/%.h=$(INSTALLHEADER)/%.h)
+INCFILES			:= $(INCFILES1) $(INCFILES2)
+INSFILES			:= $(INSFILES1) $(INSFILES2)
 
-builddir:
-	-mkdir -p $(OUTPUTDIR)/functions/_PDCLIB
-	-mkdir -p $(OUTPUTDIR)/functions/_dlmalloc
-	-mkdir -p $(OUTPUTDIR)/functions/ctype
-	-mkdir -p $(OUTPUTDIR)/functions/errno
-	-mkdir -p $(OUTPUTDIR)/functions/inttypes
-	-mkdir -p $(OUTPUTDIR)/functions/locale
-	-mkdir -p $(OUTPUTDIR)/functions/signal
-	-mkdir -p $(OUTPUTDIR)/functions/stdio
-	-mkdir -p $(OUTPUTDIR)/functions/stdlib
-	-mkdir -p $(OUTPUTDIR)/functions/string
-	-mkdir -p $(OUTPUTDIR)/functions/time
-	-mkdir -p $(OUTPUTDIR)/functions/uchar
-	-mkdir -p $(OUTPUTDIR)/functions/wchar
-	-mkdir -p $(OUTPUTDIR)/functions/wctype
-	-mkdir -p $(OUTPUTDIR)/functions/threads
-	-mkdir -p $(OUTPUTDIR)/$(ARCH)
+FILESTOCLEAN		:= $(OBJFILES) $(DEPFILES) $(BUILDDIR)/$(TARGET)
+FILESTOUNINSTALL	:= $(INSFILES) $(INSTALLTARGET)/$(TARGET)
 
-libc: headers builddir libc.o crtfiles
+CC					:= $(PREFIX)/bin/$(ARCH)-tcc
+AR					:= $(PREFIX)/bin/$(ARCH)-tcc -ar
+LD					:= $(PREFIX)/bin/$(ARCH)-tcc
+AS					:= $(PREFIX)/bin/$(ARCH)-tcc
 
-libc.o: $(COBJ)
-	echo 'AR ' libc
-	$(AR) rcsv libc.a $(COBJ)
-	cp libc.a $(PREFIX)/usr/lib/libc.a
+CC_WARNING			:= -Wall -Wextra
+CC_LIBS				:=
+CC_FLAGS			:= -nostdlib -D_PDCLIB_EXTENSIONS
+CC_INCLUDES			:= -I include -I internals
 
-crtfiles:
-	cd platform/$(ARCH) && ${MAKE} ${MFLAGS} crtfiles
-	echo + Install crt files
-	cp $(OUTPUTDIR)/$(ARCH)/crt* $(PREFIX)/usr/lib
+# Add DEPFILE dependencies
+-include $(DEPFILES)
 
-$(COBJ): $(OUTPUTDIR)/%.c.o: %.c
-	echo 'CC ' $<
-	$(CC) -g -MD -I include -I internals -I $(PREFIX)/usr/include $(CC_WARNING) -o $@ -c $<
+.PHONY: $(TARGET) all clean install uninstall crtfiles
+all: $(TARGET) install crtfiles
 
-headers:
-	echo + Install headers
-	cp -RT include $(PREFIX)/include
-	cp -RT internals $(PREFIX)/include
+# PHONY RULES
+# -----------
+
+$(TARGET): $(BUILDDIR)/$(TARGET)
 
 clean:
-	echo + Clean libc
-	-rm -r $(COBJ) $(DFILES) $(OUTPUTDIR)/crt*
-	-rm libc.a
+	echo CLEAN FILES FOR $(TARGET)
+	-rm -r $(FILESTOCLEAN)
+	# Subfolders
 	cd platform/$(ARCH) && ${MAKE} ${MFLAGS} clean
 
--include $(DFILES)
+install: $(INSTALLTARGET)/$(TARGET) $(INSFILES)
+	# Subfolders
+	cd platform/$(ARCH) && ${MAKE} ${MFLAGS} install
+
+uninstall:
+	echo UNINSTALL FILES FOR $(TARGET)
+	-rm $(FILESTOUNINSTALL)
+	# Subfolders
+	cd platform/$(ARCH) && ${MAKE} ${MFLAGS} uninstall
+
+# Subfolders
+crtfiles:
+	cd platform/$(ARCH) && ${MAKE} ${MFLAGS} crtfiles
+
+# SPECIFIC BUILD RULES
+# --------------------
+
+$(INSTALLTARGET)/$(TARGET): $(BUILDDIR)/$(TARGET)
+	echo 'CP ' $(BUILDDIR)/$(TARGET) $(INSTALLTARGET)/$(TARGET)
+	cp $(BUILDDIR)/$(TARGET) $(INSTALLTARGET)/$(TARGET)
+
+$(BUILDDIR)/$(TARGET): $(OBJFILES)
+	echo 'AR ' $@
+	$(AR) rcs $(BUILDDIR)/$(TARGET) $(OBJFILES)
+
+$(OBJFILES): $(BUILDDIR)/%.c.o: %.c
+	echo 'CC ' $@
+	-mkdir -p $(shell dirname $@)
+	$(CC) $(CC_FLAGS) $(CC_WARNING) $(CC_INCLUDES) -MD -o $@ -c $<
+
+$(INSFILES1): $(INSTALLHEADER)/%.h: include/%.h
+	echo 'CP ' $< $@
+	-mkdir -p $(shell dirname $@)
+	cp -RT $< $@
+$(INSFILES2): $(INSTALLHEADER)/%.h: internals/%.h
+	echo 'CP ' $< $@
+	-mkdir -p $(shell dirname $@)
+	cp -RT $< $@

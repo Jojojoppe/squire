@@ -1,40 +1,52 @@
 include ../../makefiles/env.mk
 
-.PHONY: all clean builddir
-.SILENT:
+TARGET				:= testbin.bin
 
-DIRS			:= src
-OUTPUTDIR		:= build
-TARGET			:= testbin.bin
+BUILDDIR			:= build
 
-CFILES			:= $(shell find $(DIRS) -type f -name "*.c")
-HFILES			:= $(shell find $(DIRS) -type f -name "*.h")
-COBJ			:= $(CFILES:%.c=$(OUTPUTDIR)/%.c.o)
-DFILES			:= $(CFILES:%.c=$(OUTPUTDIR)/%.c.d)
+SRCDIRS				:= src
+SRCFILES			:= $(shell find $(SRCDIRS) -type f -name "*.c")
+OBJFILES			:= $(SRCFILES:%.c=$(BUILDDIR)/%.c.o)
+DEPFILES			:= $(SRCFILES:%.c=$(BUILDDIR)/%.c.d)
 
-ALLFILES		:= $(CFILES) $(HFILES)
+FILESTOCLEAN		:= $(OBJFILES) $(DEPFILES) $(BUILDDIR)/$(TARGET)
 
-# Toolchain
-CC				:= $(PREFIX)/bin/$(ARCH)-tcc
-CC_WARNING		:= -Wall -Wextra
-CC_LIBS			:= 
+CC					:= $(PREFIX)/bin/$(ARCH)-tcc
+AR					:= $(PREFIX)/bin/$(ARCH)-tcc -ar
+LD					:= $(PREFIX)/bin/$(ARCH)-tcc
+AS					:= $(PREFIX)/bin/$(ARCH)-tcc
 
-# No all target
+CC_WARNING			:= -Wall -Wextra
+CC_LIBS				:= -lm
+CC_FLAGS			:=
+CC_INCLUDES			:= -I src
+
+LD_FLAGS			:=
+
+# Add DEPFILE dependencies
+-include $(DEPFILES)
+
+.PHONY: $(TARGET) all clean
 all: $(TARGET)
 
-builddir:
-	-mkdir -p $(OUTPUTDIR)/src
+# PHONY RULES
+# -----------
 
-$(TARGET): builddir $(COBJ)
-	echo + Link $(TARGET)
-	$(CC) -o $(TARGET) $(COBJ)
-
-$(COBJ): $(OUTPUTDIR)/%.c.o: %.c
-	echo '>' $<
-	$(CC) -MD $(CC_WARNING) -o $@ -c $<
+$(TARGET): $(BUILDDIR)/$(TARGET)
 
 clean:
-	rm -f $(COBJ) $(DFIELS) $(TARGET)
+	echo CLEAN FILES FOR $(TARGET)
+	-rm -r $(FILESTOCLEAN)
 
-# Header dependencies
--include $(DFILES)
+# SPECIFIC BUILD RULES
+# --------------------
+
+$(BUILDDIR)/$(TARGET): $(OBJFILES)
+	echo 'LD ' $@
+	-mkdir -p $(shell dirname $@)
+	$(LD) $(LD_FLAGS) -o $(BUILDDIR)/$(TARGET) $(OBJFILES) $(CC_LIBS)
+
+$(OBJFILES): $(BUILDDIR)/%.c.o: %.c
+	echo 'CC ' $@
+	-mkdir -p $(shell dirname $@)
+	$(CC) $(CC_FLAGS) $(CC_WARNING) $(CC_INCLUDES) -MD -o $@ -c $<
