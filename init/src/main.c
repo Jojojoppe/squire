@@ -16,8 +16,6 @@ int main(int argc, char ** argv){
 	void * testbin = tar_get(tar_start, "testbin.bin", &length);
 	printf("testbin.bin starts at %08x /w length %08x\r\n", testbin, length);
 
-	// for(;;);
-
 	char * argv0 = "testbin.bin";
 	char * argv1 = "test123";
 	char ** testbin_argv[2];

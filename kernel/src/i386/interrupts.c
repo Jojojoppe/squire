@@ -165,7 +165,7 @@ int interrupts_init(){
 
     // Setup exception handlers
     idt_set_interrupt_c(0, isr_dz);
-    idt_set_interrupt_c(1, isr_db);
+    idt_set_interrupt_user_c(1, isr_db);
     idt_set_interrupt_c(2, isr_nmi);
     idt_set_interrupt_c(3, isr_br);
     idt_set_interrupt_c(4, isr_of);

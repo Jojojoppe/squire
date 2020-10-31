@@ -155,6 +155,9 @@ void proc_user_exec(){
     __asm__ __volatile__("nop":"=c"(address));
     __asm__ __volatile__("nop":"=d"(user_stack));
 
+	//printf("proc_user_exec(%08x, %08x)\r\n", address, user_stack);
+	//hexDump("First few bytes of executable", address, 64);
+
     // Load current esp as kernel stack in tss
     unsigned int esp;
     __asm__ __volatile__("mov %%esp, %%eax":"=a"(esp));

@@ -36,7 +36,7 @@ CC_LIBS				:=
 CC_FLAGS			:= -nostdlib -nostdinc -DSQUIRE_ARCH=\"$(ARCH)\" -DSQUIRE_VERSION=\"$(SQUIRE_VERSION)\" -O0 -g
 CC_INCLUDES			:= -I src -I src/general -I $(BUILDDIR)/src -I ../libsquire/include
 
-LD_FLAGS			:= -nostdinc -nostdlib -static $(CC_ARCH_FLAGS)
+LD_FLAGS			:= -nostdinc -nostdlib -static $(CC_ARCH_FLAGS) -g
 
 # Add DEPFILE dependencies
 -include $(DEPFILES)

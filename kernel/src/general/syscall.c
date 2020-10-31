@@ -152,7 +152,7 @@ unsigned int syscall_log(squire_params_log_t * params){
 
 unsigned int syscall(unsigned int opcode, void * param_block, size_t param_len){
     unsigned int returncode;
-    // printf("SYSCALL %08x\r\n", opcode);
+    //printf("[%3d,%3d] SYSCALL %08x\r\n", proc_proc_get_current()->id, proc_thread_get_current()->id, opcode);
 
     switch(opcode){
 

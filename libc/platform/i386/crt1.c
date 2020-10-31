@@ -4,7 +4,6 @@
 extern int main(int argc, char ** argv);
 
 void _start(){
-
     unsigned int from;
     unsigned int length = sizeof(unsigned int)*2;
     unsigned int buffer[2];
