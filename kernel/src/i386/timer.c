@@ -2,8 +2,8 @@
 
 int timer_init(){
 
-    // Initialize timer at 1000 hz
-    unsigned short timer_val = 1193180 / 1000;
+    // Initialize timer at 100 hz
+    unsigned short timer_val = 1193180 / 100;
     io_outb(0x43, 0x36);
     io_outb(0x40, timer_val);
     io_outb(0x40, timer_val >> 8);

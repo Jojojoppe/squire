@@ -3,4 +3,10 @@
 
 #include <squire_syscall.h>
 
+/**
+ * @brief Frequency of a jiffie (kernel tick)
+ *
+ */
+#define SQUIRE_HZ 100
+
 #endif
