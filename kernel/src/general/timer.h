@@ -13,6 +13,7 @@ typedef struct timer_callback_s{
 void timer_add_callback(unsigned int PID, unsigned long long time, unsigned int id);
 
 void timer_interrupt();
+void timer_update();
 unsigned int timer_get();
 
 #endif

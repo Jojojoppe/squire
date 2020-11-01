@@ -148,6 +148,8 @@ void isr_c_timer(){
     io_outb(0xa0, 0x20);
     io_outb(0x20, 0x20);
     timer_interrupt();
+    __asm__ __volatile__("sti");
+    timer_update();
 }
 extern void isr_timer();
 

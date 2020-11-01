@@ -8,16 +8,25 @@
 
 unsigned long long timer_value;
 timer_callback_t * timer_callbacks;
+unsigned int timer_dirty = 0;
 
 void timer_interrupt(){
     timer_value++;
+}
+
+void timer_update(){
+    if(timer_dirty){
+        return;
+    }
+    timer_dirty = 1;
+    unsigned long long curvalue = timer_value;
 
     // Check timer callbacks
     if(timer_callbacks){
         timer_callback_t * t = timer_callbacks;
         while(t){
             // Check if may send signal
-            if(timer_value>=t->timer_value){
+            if(curvalue>=t->timer_value){
                 // Send signal
                 // TODO use SIGTIM
                 unsigned long long elapsed = timer_value - t->start_value;
@@ -35,7 +44,9 @@ void timer_interrupt(){
         }
     }
 
-    if((timer_value&0x03)==0x03)
+    timer_dirty = 0;
+
+    if((curvalue&0x03)==0x03)
         schedule();
 }
 
