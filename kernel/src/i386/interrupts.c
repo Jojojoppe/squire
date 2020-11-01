@@ -80,68 +80,54 @@ void panic(struct state * s){
     debug_print_s(" DR7: "); debug_print_x(s->dr7);
 }
 
-// List of kill reasons
-// TODO the ETC reasons should have their own isr and should NOT kill the process
-kill_reason_t INTERRUPT_KILL_dz = KILL_REASON_FPE;
-kill_reason_t INTERRUPT_KILL_nmi = KILL_REASON_ETC;
-kill_reason_t INTERRUPT_KILL_br = KILL_REASON_INT;
-kill_reason_t INTERRUPT_KILL_of = KILL_REASON_FPE;
-kill_reason_t INTERRUPT_KILL_be = KILL_REASON_FPE;
-kill_reason_t INTERRUPT_KILL_io = KILL_REASON_ILL;
-kill_reason_t INTERRUPT_KILL_dn = KILL_REASON_ETC;
-kill_reason_t INTERRUPT_KILL_df = KILL_REASON_ILL;
-kill_reason_t INTERRUPT_KILL_cs = KILL_REASON_SEGV;
-kill_reason_t INTERRUPT_KILL_ts = KILL_REASON_ETC;
-kill_reason_t INTERRUPT_KILL_sn = KILL_REASON_SEGV;
-kill_reason_t INTERRUPT_KILL_ss = KILL_REASON_SEGV;
-kill_reason_t INTERRUPT_KILL_gp = KILL_REASON_ILL;
-kill_reason_t INTERRUPT_KILL_87 = KILL_REASON_FPE;
-kill_reason_t INTERRUPT_KILL_ac = KILL_REASON_ILL;
-kill_reason_t INTERRUPT_KILL_mc = KILL_REASON_ETC;
-kill_reason_t INTERRUPT_KILL_si = KILL_REASON_FPE;
-kill_reason_t INTERRUPT_KILL_vi = KILL_REASON_ETC;
-kill_reason_t INTERRUPT_KILL_se = KILL_REASON_ILL;
-
-#define ISR_N(name, shortname) void isr_c_ ## shortname (struct state * s){ \
-        debug_print_s("\r\nEXCEPTION: "); \
-        debug_print_s(name); \
-        debug_print_s("\r\n"); \
-        panic(s); \
-        printf("\r\n\r\n"); \
-        kill(0, INTERRUPT_KILL_ ## shortname); \
+#define ISR_N(name, shortname, sig) void isr_c_ ## shortname (struct state * s){ \
+		if(sig != -1) \
+			kill(0, sig); \
+		else{ \
+			debug_print_s("\r\nEXCEPTION: "); \
+			debug_print_s(name); \
+			debug_print_s("\r\n"); \
+			panic(s); \
+			printf("\r\n\r\n"); \
+			for(;;); \
+		} \
     }\
     extern void isr_ ## shortname ();
-#define ISR_E(name, shortname) void isr_c_ ## shortname (struct state * s, unsigned int error_code){ \
-        debug_print_s("\r\nEXCEPTION: "); \
-        debug_print_s(name); \
-        debug_print_sx("\r\nerror code: ", error_code); \
-        panic(s); \
-        printf("\r\n\r\n"); \
-        kill(0, INTERRUPT_KILL_ ## shortname); \
+#define ISR_E(name, shortname, sig) void isr_c_ ## shortname (struct state * s, unsigned int error_code){ \
+		if(sig != -1) \
+			kill(0, sig); \
+		else{ \
+			debug_print_s("\r\nEXCEPTION: "); \
+			debug_print_s(name); \
+			debug_print_sx("\r\nerror code: ", error_code); \
+			panic(s); \
+			printf("\r\n\r\n"); \
+			for(;;); \
+		} \
     }\
     extern void isr_ ## shortname ();
 
-ISR_N("Divide-by-zero", dz)
+ISR_N("Divide-by-zero", dz, KILL_REASON_FPE)
 // ISR_N("Debug", db)
-ISR_N("Non-maskable Interrupt", nmi)
-ISR_N("Breakpoint", br)
-ISR_N("Overflow", of)
-ISR_N("Bound Range Exceeded", be)
-ISR_N("Invalid Opcode", io)
-ISR_N("Device Not Available", dn)
-ISR_E("Double Fault", df)
-ISR_N("Coprocessor Segment Overrun", cs)
-ISR_E("Invalid TSS", ts)
-ISR_E("Segment Not Present", sn)
-ISR_E("Stack-Segment Fault", ss)
-ISR_E("General Protection Fault", gp)
+ISR_N("Non-maskable Interrupt", nmi, -1)
+ISR_N("Breakpoint", br, -1)
+ISR_N("Overflow", of, KILL_REASON_FPE)
+ISR_N("Bound Range Exceeded", be, KILL_REASON_FPE)
+ISR_N("Invalid Opcode", io, KILL_REASON_ILL)
+ISR_N("Device Not Available", dn, -1)
+ISR_E("Double Fault", df, -1)
+ISR_N("Coprocessor Segment Overrun", cs, KILL_REASON_SEGV)
+ISR_E("Invalid TSS", ts, -1)
+ISR_E("Segment Not Present", sn, KILL_REASON_SEGV)
+ISR_E("Stack-Segment Fault", ss, KILL_REASON_SEGV)
+ISR_E("General Protection Fault", gp, KILL_REASON_ILL)
 //ISR_E("Page Fault", pf)
-ISR_N("x87 Floating-Point Exception", 87)
-ISR_E("Alignment Check", ac)
-ISR_N("Machine Check", mc)
-ISR_N("SIMD Floating-Point Exceptions", si)
-ISR_N("Virtualization Exception", vi)
-ISR_E("Security Exception", se)
+ISR_N("x87 Floating-Point Exception", 87, KILL_REASON_FPE)
+ISR_E("Alignment Check", ac, -1)
+ISR_N("Machine Check", mc, -1)
+ISR_N("SIMD Floating-Point Exceptions", si, KILL_REASON_FPE)
+ISR_N("Virtualization Exception", vi, -1)
+ISR_E("Security Exception", se, KILL_REASON_ILL)
 
 
 void isr_c_timer(){

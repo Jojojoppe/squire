@@ -22,7 +22,7 @@ int proc_init(void (*return_addr)()){
     // Initialize the TSS
     TSS[1] = 0 ;        // ESP0
     TSS[2] = 0x10;      // SS0
-    TSS[25] = 104;      // IOPB
+    TSS[25] = 104<<16;  // IOPB
 
     proc_PID_counter = 2;
 
@@ -166,6 +166,7 @@ void proc_user_exec(){
     __asm__ __volatile__("mov %%esp, %%eax":"=a"(esp));
     TSS[1] = esp;
     TSS[2] = 0x10;
+	TSS[25] = 104<<16;
 
     // Get EFLAGS
     unsigned int EFLAGS;
@@ -173,6 +174,8 @@ void proc_user_exec(){
     __asm__ __volatile__("pop %%eax":"=a"(EFLAGS));
     // Re-enable interrupts
     EFLAGS |= 0x200;
+	// Set IOPL=0
+	EFLAGS &= ~0x3000;
 
     // Jump to user space
     __asm__ __volatile__("mov $0x23, %eax");

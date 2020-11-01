@@ -42,12 +42,12 @@ void _PDCLIB_sighandler(int sig){
         case SIGSEGV:
             message = "Segmentation error (SIGSEGV)\r\n";
             break;
-        case SIGETC:
-            message = "Unknown kernel interrupt (SITETC)\r\n";
-            break;
+		case SIGINT:
+			message = "Unhandled software interrupt (SIGINT)\r\n";
+		break;
 
-        case SIGINT:
         case SIGTIM:
+        case SIGINTR:
         case _SIGUNDEF:
         default:
             return;

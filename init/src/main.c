@@ -15,6 +15,10 @@ int main(int argc, char ** argv){
 
 	squire_misc_timer_add(0, 0);
 
+	char v = 0;
+	asm volatile("in %%dx, %%ax":"=a"(v):"d"(0x20));
+	printf("v=%02x\r\n", v);
+
 	for(;;){
 	}
 

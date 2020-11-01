@@ -8,9 +8,9 @@ typedef enum KILL_REASON{
     KILL_REASON_FPE,
     KILL_REASON_ILL,
     KILL_REASON_SEGV,
-    KILL_REASON_ETC,
     KILL_REASON_INT,
-    KILL_REASON_TIM
+    KILL_REASON_TIM,
+	KILL_REASON_INTR
 } kill_reason_t;
 
 typedef struct signal_s{

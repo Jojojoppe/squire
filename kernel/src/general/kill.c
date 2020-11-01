@@ -76,15 +76,15 @@ void kill_extra(unsigned int pid, kill_reason_t reason, unsigned int extraval0, 
         switch(reason){
             case KILL_REASON_ABRT:
             case KILL_REASON_TERM:
-            case KILL_REASON_ETC:
             case KILL_REASON_FPE:
             case KILL_REASON_SEGV:
             case KILL_REASON_ILL:
             case KILL_REASON_KILL:
+            case KILL_REASON_INT:
                 kill_childs(p, reason);
                 break;
 
-            case KILL_REASON_INT:
+			case KILL_REASON_INTR:
             case KILL_REASON_TIM:
             default:
                 break;

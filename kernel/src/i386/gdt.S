@@ -9,36 +9,36 @@ gdt_base:
     .long       0
 
     # KERNEL CODE
-    .short      0xffff
-    .short      0x0000
-    .byte       0x0
-    .byte       0x9a
-    .byte       0xcf
-    .byte       0x0
+	.short		0xffffff	# limit 0:15
+	.short		0x000000	# base 0:15
+	.byte		0x00		# base 16:23
+	.byte		0x9a		# access byte (10011010) {PR, PRIV[2], S, Ex, DC, RW, AC}
+	.byte		0xcf		# flags (1100) {GR, Sz} - limit 16:19
+	.byte		0x0000		# base 24:31
 
     # KERNEL DATA
-    .short      0xffff
-    .short      0x0000
-    .byte       0x0
-    .byte       0x92
-    .byte       0xcf
-    .byte       0x0
+	.short		0xffffff	# limit 0:15
+	.short		0x000000	# base 0:15
+	.byte		0x00		# base 16:23
+	.byte		0x92		# access byte (10010010) {PR, PRIV[2], S, Ex, DC, RW, AC}
+	.byte		0xcf		# flags (1100) {GR, Sz} - limit 16:19
+	.byte		0x0000		# base 24:31
 
     # USER CODE
-    .short      0xffff
-    .short      0x0000
-    .byte       0x0
-    .byte       0xfa
-    .byte       0xcf
-    .byte       0x0
+	.short		0xffffff	# limit 0:15
+	.short		0x000000	# base 0:15
+	.byte		0x00		# base 16:23
+	.byte		0xfa		# access byte (11111010) {PR, PRIV[2], S, Ex, DC, RW, AC}
+	.byte		0xcf		# flags (1100) {GR, Sz} - limit 16:19
+	.byte		0x0000		# base 24:31
 
     # USER DATA
-    .short      0xffff
-    .short      0x0000
-    .byte       0x0
-    .byte       0xf2
-    .byte       0xcf
-    .byte       0x0
+	.short		0xffffff	# limit 0:15
+	.short		0x000000	# base 0:15
+	.byte		0x00		# base 16:23
+	.byte		0xf2		# access byte (11110010) {PR, PRIV[2], S, Ex, DC, RW, AC}
+	.byte		0xcf		# flags (1100) {GR, Sz} - limit 16:19
+	.byte		0x0000		# base 24:31
 
     # TSS
     .short      0x0067

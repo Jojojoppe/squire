@@ -28,8 +28,7 @@
       the signal handler returns (optional for SIGILL)
 */
 
-/* These are the values used by Linux. */
-
+// STANDARD SIGNALS
 /* Abnormal termination / abort() */
 #define SIGABRT 2
 /* Arithmetic exception / division by zero / overflow */
@@ -37,19 +36,21 @@
 /* Illegal instruction */
 #define SIGILL  4
 /* Interactive attention signal */
-#define SIGINT  7
+#define SIGINT  6
 /* Invalid memory access */
 #define SIGSEGV 5
 /* Termination request */
 #define SIGTERM 0
 /* Forced kill */
 #define SIGKILL 1
-/* Unknown kernel interrupt */
-#define SIGETC 6
+
+// SQUIRE SPECIFIC SIGNALS
+/* Timer signal */
+#define SIGTIM 7
+/* Interrupt signal */
+#define SIGINTR 8
 /* Undefined signal */
 #define _SIGUNDEF 9
-/* Timer signal */
-#define SIGTIM 8
 
 /* The following should be defined to pointer values that could NEVER point to
    a valid signal handler function. (They are used as special arguments to
