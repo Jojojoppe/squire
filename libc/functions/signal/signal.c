@@ -2,6 +2,7 @@
 #include <squire.h>
 #include <stdio.h>
 #include <errno.h>
+#include <stdlib.h>
 
 static unsigned int _PDCLIB_signal_initialized;
 
@@ -64,7 +65,7 @@ void _PDCLIB_signal_initialize(){
         _PDCLIB_sighandlers[i] = SIG_DFL;
     }
 
-    squire_syscall_signal(_PDCLIB_sighandler);
+    squire_procthread_signal(_PDCLIB_sighandler);
 }
 
 void (*signal( int sig, void (*func)( int ) ) )( int ){

@@ -4,9 +4,6 @@
 #include <stdlib.h>
 
 thrd_t thrd_current(){
-    unsigned int pid, tid;
-    squire_syscall_getid(&pid, &tid);
-    thrd_t t;
-    t = tid;
+    thrd_t t = squire_procthread_gettid();
     return t;
 }

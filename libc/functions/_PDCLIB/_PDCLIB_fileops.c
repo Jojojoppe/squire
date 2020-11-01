@@ -16,7 +16,7 @@ static bool writef( _PDCLIB_fd_t self, const void * buf, size_t length,
                    size_t * numBytesWritten )
 {
 
-    squire_syscall_log(buf, length);
+    squire_debug_log(buf, length);
     *numBytesWritten = length;
 
     return true;

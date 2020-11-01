@@ -4,5 +4,5 @@
 #include <squire.h>
 
 void _PDCLIB_Exit(int status){
-    squire_syscall_exit(status);
+    squire_procthread_exit_process(status);
 }

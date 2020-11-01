@@ -4,7 +4,7 @@ TARGET				:= libsquire.a
 
 BUILDDIR			:= build
 
-SRCDIRS				:= src/$(ARCH)
+SRCDIRS				:= src
 SRCFILES			:= $(shell find $(SRCDIRS) -type f -name "*.c")
 OBJFILES			:= $(SRCFILES:%.c=$(BUILDDIR)/%.c.o)
 DEPFILES			:= $(SRCFILES:%.c=$(BUILDDIR)/%.c.d)

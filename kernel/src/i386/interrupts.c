@@ -169,6 +169,7 @@ void isr_c_pf(struct state * s, unsigned int error){
         return;
     panic(s);
     printf("\r\n\r\n");
+    for(;;);
     kill(0, KILL_REASON_SEGV);
 }
 extern void isr_pf();

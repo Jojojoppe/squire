@@ -4,5 +4,5 @@
 #include <stdlib.h>
 
 void thrd_exit(int res){
-    squire_syscall_thread_exit(res);
+    squire_procthread_exit_thread(res);
 }

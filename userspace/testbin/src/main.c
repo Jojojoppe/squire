@@ -7,7 +7,7 @@
 void sighanlder(int signal){
 	printf("SIGNAL: %d\r\n", signal);
 	printf("Some correct cleanup\r\n");
-	exit(0);
+	exit(0xfedcba98);
 }
 
 int main(int argc, char ** argv){

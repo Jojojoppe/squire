@@ -21,10 +21,10 @@ AS					:= $(PREFIX)/bin/$(ARCH)-tcc
 
 CC_WARNING			:= -Wall -Wextra
 CC_LIBS				:= -lm
-CC_FLAGS			:=
+CC_FLAGS			:= -g
 CC_INCLUDES			:= -I src
 
-LD_FLAGS			:=
+LD_FLAGS			:= -g
 
 # Add DEPFILE dependencies
 -include $(DEPFILES)

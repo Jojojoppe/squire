@@ -14,7 +14,7 @@ typedef enum KILL_REASON{
 
 typedef struct signal_s{
     kill_reason_t value;
-    struct kill_reason_t * next;
+    struct signal_t * next;
     unsigned int source_tid;
 } signal_t;
 

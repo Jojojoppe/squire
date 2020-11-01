@@ -18,7 +18,6 @@ void * _PDCLIB_allocpages( size_t n ){
     prev_heap_end = heap_end;
     heap_end += (incr/4096+1)*4096;
 
-    extern void * squire_syscall_mmap(void *, size_t, unsigned int);
-    squire_syscall_mmap(prev_heap_end, (incr/4096+1)*4096, 0);
+    squire_memory_mmap(prev_heap_end, (incr/4096+1)*4096, MMAP_READ | MMAP_WRITE);
     return (void *) prev_heap_end;
 }

@@ -21,6 +21,6 @@ int thrd_create(thrd_t * thr, thrd_start_t func, void * arg){
     param->arg = arg;
     param->func = func;
     param->stack = malloc(THRD_STACK_LENGTH);    
-    *thr = squire_syscall_thread(_thrd_start, param->stack, THRD_STACK_LENGTH, 0, param);
+    *thr = squire_procthread_create_thread(_thrd_start, param->stack, THRD_STACK_LENGTH, 0, param);
     return thrd_success;
 }
