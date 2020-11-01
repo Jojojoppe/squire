@@ -10,6 +10,12 @@
 // Operation flags
 #define THREAD_QUEUE_PRIORITY   1       /** @brief Place a thread in priority queue */
 
+// Static variables
+extern unsigned int squire_extraval0;
+extern unsigned int squire_extraval1;
+extern unsigned int squire_extraval2;
+extern unsigned int squire_extraval3;
+
 /**
  * @brief Multithreading operations
  * 
@@ -84,7 +90,8 @@ typedef enum SQUIRE_SYSCALL_PROCTHREAD_OPERATION{
     /**
      * @brief Wait for a signal
      * 
-     * After execution value0 contains the signal
+     * After execution value0 contains the signal. value1, value2, value3 and value4
+     * contain the extravals of the signal (used for interrupts and timers)
      */
     SQUIRE_SYSCALL_PROCTHREAD_OPERATION_GETSIG,
     /**
@@ -112,6 +119,9 @@ typedef struct{
     size_t                                  length1;
     int                                     value0;
     int                                     value1;
+    int                                     value2;
+    int                                     value3;
+    int                                     value4;
 } squire_syscall_procthread_t;
 
 // SQUIRE SYSCALL WRAPPER FUNCTIONS
@@ -200,6 +210,7 @@ extern void squire_procthread_kill(unsigned int pid, int signal);
  * @brief Registers a function as signal handler
  * 
  * Sets up stack and uses a wrapper function to call SQUIRE_SYSCALL_PROCTHREAD_OPERATION_GETSIG
+ * Variables squire_extraval0 - squire_extraval3 are set accordingly
  * 
  * @param handler Entry of signal handler
  */

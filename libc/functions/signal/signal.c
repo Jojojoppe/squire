@@ -6,13 +6,13 @@
 
 static unsigned int _PDCLIB_signal_initialized;
 
-static void (*_PDCLIB_sighandlers[9])(int);
+static void (*_PDCLIB_sighandlers[_SIGUNDEF+1])(int);
 
 void _PDCLIB_sighandler(int sig){
     int signumber = sig;
-    if(sig>7){
+    if(sig>=_SIGUNDEF){
         // Raised signal not a valid signal, take general sighandler
-        sig = 8;
+        sig = _SIGUNDEF;
     }
     // Check if sighandler is installed and if it may be handled
     if(_PDCLIB_sighandlers[sig] && sig!=SIGKILL){
@@ -45,10 +45,9 @@ void _PDCLIB_sighandler(int sig){
         case SIGETC:
             message = "Unknown kernel interrupt (SITETC)\r\n";
             break;
-        case SIGINT:
-            message = "Unhandled software interrupt (SIGINT)\r\n";
-            break;
 
+        case SIGINT:
+        case SIGTIM:
         case _SIGUNDEF:
         default:
             return;
@@ -61,7 +60,7 @@ void _PDCLIB_signal_initialize(){
     // Register overall signal handler
     _PDCLIB_signal_initialized = 1;
 
-    for(int i=0; i<8; i++){
+    for(int i=0; i<_SIGUNDEF; i++){
         _PDCLIB_sighandlers[i] = SIG_DFL;
     }
 
@@ -73,9 +72,9 @@ void (*signal( int sig, void (*func)( int ) ) )( int ){
         _PDCLIB_signal_initialize();
     }
 
-    if(sig>7){
+    if(sig>=_SIGUNDEF){
         // sig not a valid signal, take general sighandler
-        sig = 8;
+        sig = _SIGUNDEF;
     }
 
     void (*oldhandler)(int) = _PDCLIB_sighandlers[sig];

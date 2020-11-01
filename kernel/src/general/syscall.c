@@ -6,6 +6,7 @@
 #include <general/syscall_message.h>
 #include <general/syscall_procthread.h>
 #include <general/syscall_mutex.h>
+#include <general/syscall_misc.h>
 
 #include <general/arch/proc.h>
 
@@ -49,8 +50,11 @@ unsigned int syscall(unsigned int opcode, void * param_block, size_t param_len){
             returncode = syscall_mutex((squire_syscall_mutex_t*)param_block);        
         } break;
 
-        case SQUIRE_SYSCALL_MISC:
-            break;
+        case SQUIRE_SYSCALL_MISC:{
+            if(param_len<sizeof(squire_syscall_misc_t))
+                break;
+            returncode = syscall_misc((squire_syscall_misc_t*)param_block);        
+        } break;
 
         default:
             printf("UNKNOWN SYSCALL\r\n");

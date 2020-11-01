@@ -3,6 +3,11 @@
 extern void * malloc(size_t);
 extern void free(void *);
 
+unsigned int squire_extraval0;
+unsigned int squire_extraval1;
+unsigned int squire_extraval2;
+unsigned int squire_extraval3;
+
 struct __squire_procthread_signal_handler_params_s__{
     void (*handler)(int);
     void * stack;
@@ -16,6 +21,11 @@ int __squire_procthread_signal_handler__(void * p){
         squire_syscall_procthread_t params;
         params.operation = SQUIRE_SYSCALL_PROCTHREAD_OPERATION_GETSIG;
         squire_syscall(SQUIRE_SYSCALL_PROCTHREAD, sizeof(params), &params);
+        // Set extra values
+        squire_extraval0 = params.value1;
+        squire_extraval1 = params.value2;
+        squire_extraval2 = params.value3;
+        squire_extraval3 = params.value4;
         if(s->handler)
             s->handler(params.value0);
     }

@@ -10,5 +10,10 @@ int timer_init(){
 
     __asm__ __volatile__("sti");    
 
+    extern timer_callback_t * timer_callbacks;
+    timer_callbacks = 0;
+    extern unsigned long long timer_value;
+    timer_value = 0;
+
     return 0;
 }

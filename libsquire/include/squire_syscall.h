@@ -6,6 +6,7 @@
 #include <squire_syscall_message.h>
 #include <squire_syscall_procthread.h>
 #include <squire_syscall_mutex.h>
+#include <squire_syscall_misc.h>
 
 /**
  * @brief The different syscall groups

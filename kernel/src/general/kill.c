@@ -31,6 +31,10 @@ void kill_childs(proc_proc_t * p, kill_reason_t reason){
 }
 
 void kill(unsigned int pid, kill_reason_t reason){
+    kill_extra(pid, reason, 0, 0, 0, 0);
+}
+
+void kill_extra(unsigned int pid, kill_reason_t reason, unsigned int extraval0, unsigned int extraval1, unsigned int extraval2, unsigned int extraval3){
     schedule_disable();
 
     if(pid==0){
@@ -51,8 +55,12 @@ void kill(unsigned int pid, kill_reason_t reason){
         signal_t * signals = p->signals;
         signal_t * newsignal = (signal_t*) kmalloc(sizeof(signal_t));
         newsignal->value = reason;
-        newsignal->next;
+        newsignal->next = 0;
         newsignal->source_tid = proc_thread_get_current()->id;
+        newsignal->extraval0 = extraval0;
+        newsignal->extraval1 = extraval1;
+        newsignal->extraval2 = extraval2;
+        newsignal->extraval3 = extraval3;
         if(signals){
             while(signals->next)
                 signals = signals->next;
@@ -68,7 +76,6 @@ void kill(unsigned int pid, kill_reason_t reason){
         switch(reason){
             case KILL_REASON_ABRT:
             case KILL_REASON_TERM:
-            case KILL_REASON_INT:
             case KILL_REASON_ETC:
             case KILL_REASON_FPE:
             case KILL_REASON_SEGV:
@@ -77,6 +84,8 @@ void kill(unsigned int pid, kill_reason_t reason){
                 kill_childs(p, reason);
                 break;
 
+            case KILL_REASON_INT:
+            case KILL_REASON_TIM:
             default:
                 break;
         }

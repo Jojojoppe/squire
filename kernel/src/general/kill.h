@@ -10,10 +10,15 @@ typedef enum KILL_REASON{
     KILL_REASON_SEGV,
     KILL_REASON_ETC,
     KILL_REASON_INT,
+    KILL_REASON_TIM
 } kill_reason_t;
 
 typedef struct signal_s{
     kill_reason_t value;
+    unsigned int extraval0;
+    unsigned int extraval1;
+    unsigned int extraval2;
+    unsigned int extraval3;
     struct signal_t * next;
     unsigned int source_tid;
 } signal_t;
@@ -25,6 +30,7 @@ typedef struct signal_s{
  * @param reason 
  */
 void kill(unsigned int pid, kill_reason_t reason);
+void kill_extra(unsigned int pid, kill_reason_t reason, unsigned int extraval0, unsigned int extraval1, unsigned int extraval2, unsigned int extraval3);
 
 /**
  * @brief Exit current running process (uses KILL_REASON_TERM)

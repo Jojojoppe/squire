@@ -87,6 +87,10 @@ int syscall_procthread(squire_syscall_procthread_t * params){
             signal_t * s = pcur->signals;
             pcur->signals = s->next;
             params->value0 = s->value;
+            params->value1 = s->extraval0;
+            params->value2 = s->extraval1;
+            params->value3 = s->extraval2;
+            params->value4 = s->extraval3;
             kfree(s);
         } break;
 
