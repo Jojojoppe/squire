@@ -14,7 +14,7 @@ void remap_PIC();
 void isr_empty_N();
 void isr_empty_E(unsigned int error_code);
 extern void isr_test();
-
+extern void finalize_fatal_error();
 
 // EXCEPTION HANDLERS
 // ------------------
@@ -86,11 +86,13 @@ void panic(struct state * s){
 		if(sig != -1) \
 			kill(0, sig); \
 		else{ \
+			finalize_fatal_error(); \
 			debug_print_s("\r\nEXCEPTION: "); \
 			debug_print_s(name); \
 			debug_print_s("\r\n"); \
 			panic(s); \
 			printf("\r\n\r\n"); \
+			asm("hlt"); \
 			for(;;); \
 		} \
     }\
@@ -99,18 +101,20 @@ void panic(struct state * s){
 		if(sig != -1) \
 			kill(0, sig); \
 		else{ \
+			finalize_fatal_error(); \
 			debug_print_s("\r\nEXCEPTION: "); \
 			debug_print_s(name); \
 			debug_print_sx("\r\nerror code: ", error_code); \
 			panic(s); \
 			printf("\r\n\r\n"); \
+			asm("hlt"); \
 			for(;;); \
 		} \
     }\
     extern void isr_ ## shortname ();
 
 ISR_N("Divide-by-zero", dz, KILL_REASON_FPE)
-// ISR_N("Debug", db)
+ISR_N("Debug", db, -1)
 ISR_N("Non-maskable Interrupt", nmi, -1)
 ISR_N("Breakpoint", br, -1)
 ISR_N("Overflow", of, KILL_REASON_FPE)
@@ -158,19 +162,9 @@ extern void isr_syscall();
 void isr_c_pf(struct state * s, unsigned int error){
     if(!vas_pagefault(s->cr2, error))
         return;
-    panic(s);
-    printf("\r\n\r\n");
-    for(;;);
     kill(0, KILL_REASON_SEGV);
 }
 extern void isr_pf();
-
-void isr_c_db(struct state * s){
-    printf("\r\nDEBUG\r\n");
-    panic(s);\
-    printf("\r\n-----\r\n");
-}
-extern void isr_db();
 
 void isr_c_user(unsigned int PID, unsigned int id){
 	kill_extra(PID, KILL_REASON_INTR, id, 0, 0, 0);

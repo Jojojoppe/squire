@@ -7,6 +7,10 @@
 
 #include <stddef.h>
 
+// Operation defines
+#define IO_PORT_READ 1
+#define IO_PORT_WRITE 2
+
 /**
  * @brief IO operations
  * 
@@ -24,7 +28,33 @@ typedef enum SQUIRE_SYSCALL_IO_OPERATION{
 	 * After execution return0 contains the status of the registration: Zero
 	 * for success and non-zero for error (TODO assign values for errors)
 	 */
-	SQUIRE_SYSCALL_IO_OPERATION_REGISTER_ISR
+	SQUIRE_SYSCALL_IO_OPERATION_REGISTER_ISR,
+	/**
+	 * @brief Register IO port
+	 *
+	 * Registers an IO port for use. Flags contain R/W access status
+	 * value0:		The port to register
+	 * value1:		Range: amount of ports from value0
+	 * After execution return0 contains the status of the registration: Zero
+	 * for success and non-zero for error
+	 */
+	SQUIRE_SYSCALL_IO_OPERATION_REGISTER_PORT,
+	/**
+	 * @brief Output byte to port
+	 *
+	 * value0:		The port
+	 * value1:		The value to write
+	 * After execution return0 contains status. Zero on success
+	 */
+	SQUIRE_SYSCALL_IO_OPERATION_PORT_OUTB,
+	/**
+	 * @brief Output byte from port
+	 *
+	 * value0:		The port
+	 * After execution return0 contains status. Zero on success. value1
+	 * contains the value from the port
+	 */
+	SQUIRE_SYSCALL_IO_OPERATION_PORT_INB
 } squire_syscall_io_operation_t;
 
 /**
@@ -35,6 +65,7 @@ typedef struct{
     squire_syscall_io_operation_t           operation;      /** @brief opcode */
     int                                     flags;          /** @brief flags */
 	unsigned int							value0;
+	unsigned int							value1;
 	int										return0;
 } squire_syscall_io_t;
 
@@ -44,7 +75,10 @@ typedef struct{
 extern "C" {
 #endif
 
-
+extern int squire_io_register_isr(unsigned int id);
+extern int squire_io_register_port(unsigned int port, unsigned int range, unsigned int flags);
+extern int squire_io_port_outb(unsigned int port, unsigned char val);
+extern int squire_io_port_inb(unsigned int port, unsigned char * val);
 
 #if defined(__cplusplus)
 } /* extern "C" */

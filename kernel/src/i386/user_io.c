@@ -25,3 +25,32 @@ void user_io_arch_register_isr(unsigned int nr, unsigned int PID){
 	// Set the interrupt
 	idt_set_interrupt_user_c(nr, usrisr);
 }
+
+int user_io_arch_may_register_port(unsigned int port, unsigned int flags){
+	// TODO check which ports to disable (PIT?)
+	return 0;
+}
+
+void user_io_arch_register_port(unsigned int port, unsigned int flags, unsigned int PID){
+}
+
+void user_io_arch_outb(unsigned int address, unsigned char val){
+	io_outb(address, val);
+}
+void user_io_arch_outw(unsigned int address, unsigned short val){
+	io_outw(address, val);
+}
+void user_io_arch_outd(unsigned int address, unsigned int val){
+	io_outd(address, val);
+}
+unsigned char user_io_arch_inb(unsigned int address){
+	return io_inb(address);
+}
+unsigned short user_io_arch_inw(unsigned int address){
+	return io_inw(address);
+}
+unsigned int user_io_arch_ind(unsigned int address){
+	return io_ind(address);
+}
+
+

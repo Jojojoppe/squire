@@ -5,21 +5,42 @@
 #include <squire.h>
 
 void SIGINTRhandler(int sig){
-	printf("SIGINTR occured: interrupt id %08x\r\n", squire_extraval0);
+	if(squire_extraval0 == 0x24){
+		unsigned status;
+		squire_io_port_inb(0x3f8+5, &status);
+		if(status&1){
+			char c;
+			squire_io_port_inb(0x3f8, &c);
+			printf("%c\r\n", c);
+		}
+		squire_io_port_outb(0x20, 0x20);
+	}
+}
+
+void SIGTIMhandler(int sig){
+	printf("SIGTIM\r\n");
+	asm("cli");
 }
 
 int main(int argc, char ** argv){
 	signal(SIGINTR, SIGINTRhandler);
+	signal(SIGTIM, SIGTIMhandler);
+	squire_misc_finalize();
 	printf("Main thread of init.bin\r\n");
 
-	// Register ISR 40
-	squire_syscall_io_t params;
-	params.operation = SQUIRE_SYSCALL_IO_OPERATION_REGISTER_ISR;
-	params.value0 = 40;
-	squire_syscall(SQUIRE_SYSCALL_IO, sizeof(params), &params);
-	printf("Registration value: %d\r\n", params.return0);
+	squire_io_register_isr(0x24);
+	squire_io_register_port(0x3f8, 8, IO_PORT_WRITE|IO_PORT_READ);
+	squire_io_register_port(0x20, 2, IO_PORT_WRITE|IO_PORT_READ);
 
-	asm("int $40");
+	// Enable COM1 interrupts on UART
+	squire_io_port_outb(0x3f8+1, 1);
+
+	// Enable COM1 interrupts in PIC
+	unsigned char pic1_mask;
+	squire_io_port_inb(0x21, &pic1_mask);
+	squire_io_port_outb(0x21, pic1_mask & ~(1<<4));
+
+	squire_misc_timer_add(500, 0);
 
 	for(;;);
 	return 0;
