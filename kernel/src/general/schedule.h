@@ -92,5 +92,8 @@ void schedule_disable();
 void schedule_enable();
 void schedule_enable_completely();
 
+
+schedule_queue_type_t schedule_get_current_queue_type();
+
 #endif
 

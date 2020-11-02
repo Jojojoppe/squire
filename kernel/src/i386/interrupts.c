@@ -6,6 +6,8 @@
 #include <general/kill.h>
 #include <general/kmalloc.h>
 #include <general/string.h>
+#include <general/arch/finalize.h>
+#include <general/schedule.h>
 
 extern idt_set_interrupt_c(unsigned int num, void (*handler)());
 extern idt_set_interrupt_user_c(unsigned int num, void (*handler)());
@@ -14,7 +16,6 @@ void remap_PIC();
 void isr_empty_N();
 void isr_empty_E(unsigned int error_code);
 extern void isr_test();
-extern void finalize_fatal_error();
 
 // EXCEPTION HANDLERS
 // ------------------
@@ -82,10 +83,16 @@ void panic(struct state * s){
     debug_print_s(" DR7: "); debug_print_x(s->dr7);
 }
 
+// TODO check if happened in PRIORITY thread. If so send SIGKILL
+
 #define ISR_N(name, shortname, sig) void isr_c_ ## shortname (struct state * s){ \
-		if(sig != -1) \
-			kill(0, sig); \
-		else{ \
+		if(sig != -1){ \
+			if(schedule_get_current_queue_type() == SCHEDULE_QUEUE_TYPE_PRIORITY){ \
+				kill(0, sig); \
+			}else{ \
+				kill(0, KILL_REASON_KILL); \
+			} \
+		}else{ \
 			finalize_fatal_error(); \
 			debug_print_s("\r\nEXCEPTION: "); \
 			debug_print_s(name); \
@@ -98,9 +105,13 @@ void panic(struct state * s){
     }\
     extern void isr_ ## shortname ();
 #define ISR_E(name, shortname, sig) void isr_c_ ## shortname (struct state * s, unsigned int error_code){ \
-		if(sig != -1) \
-			kill(0, sig); \
-		else{ \
+		if(sig != -1){ \
+			if(schedule_get_current_queue_type() == SCHEDULE_QUEUE_TYPE_PRIORITY){ \
+				kill(0, sig); \
+			}else{ \
+				kill(0, KILL_REASON_KILL); \
+			} \
+		}else{ \
 			finalize_fatal_error(); \
 			debug_print_s("\r\nEXCEPTION: "); \
 			debug_print_s(name); \
@@ -126,7 +137,7 @@ ISR_N("Coprocessor Segment Overrun", cs, KILL_REASON_SEGV)
 ISR_E("Invalid TSS", ts, -1)
 ISR_E("Segment Not Present", sn, KILL_REASON_SEGV)
 ISR_E("Stack-Segment Fault", ss, KILL_REASON_SEGV)
-ISR_E("General Protection Fault", gp, -1) //KILL_REASON_ILL)
+ISR_E("General Protection Fault", gp, KILL_REASON_ILL)
 //ISR_E("Page Fault", pf)
 ISR_N("x87 Floating-Point Exception", 87, KILL_REASON_FPE)
 ISR_E("Alignment Check", ac, -1)
@@ -162,7 +173,11 @@ extern void isr_syscall();
 void isr_c_pf(struct state * s, unsigned int error){
     if(!vas_pagefault(s->cr2, error))
         return;
-    kill(0, KILL_REASON_SEGV);
+	if(schedule_get_current_queue_type() == SCHEDULE_QUEUE_TYPE_PRIORITY){
+		kill(0, KILL_REASON_KILL);
+	}else{
+		kill(0, KILL_REASON_SEGV);
+	}
 }
 extern void isr_pf();
 
@@ -229,6 +244,7 @@ void remap_PIC(){
 
 void isr_empty_N(){
     io_outb(0x20, 0x20);
+    io_outb(0xa0, 0x20);
 }
 
 void arch_disable_interrupts(){

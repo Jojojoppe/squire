@@ -5,7 +5,7 @@
 unsigned int schedule_disabled = 0;
 
 schedule_schedulable_t * schedule_current;
-schedule_queue_type_t schedule_current_queue_type;
+schedule_queue_type_t schedule_current_queue_type = 0;
 // Schedule queues
 schedule_schedulable_t * schedule_queues[_SCHEDULE_QUEUE_TYPE_SIZE_];
 
@@ -106,6 +106,7 @@ void schedule(){
 
     while(!next){
         // Check if next in priority queue
+		schedule_current_queue_type = SCHEDULE_QUEUE_TYPE_PRIORITY;
         if(schedule_queues[SCHEDULE_QUEUE_TYPE_PRIORITY]){
             // Switch to one in priority
             schedule_schedulable_t * s = schedule_queues[SCHEDULE_QUEUE_TYPE_PRIORITY];
@@ -116,26 +117,27 @@ void schedule(){
                 }
                 s = s->next;
             }
+			if(next)
+				break;
         }
 
         // Otherwise check for next in normal queue
-        if(schedule_current_queue_type == SCHEDULE_QUEUE_TYPE_NORMAL){
-            if(try->next){
-                if(try->next->state != SCHEDULE_STATE_RUNNING){
-                    try = try->next;
-                }else{
-                    // Schedule to next
-                    next = try->next;
-                }
-            }else{
-                // Schedule start of queue
-                try = schedule_queues[SCHEDULE_QUEUE_TYPE_NORMAL];
-                if(try->state == SCHEDULE_STATE_RUNNING){
-                    next = try;
-                }else{
-                }
-            }
-        }
+		schedule_current_queue_type = SCHEDULE_QUEUE_TYPE_NORMAL;
+		if(try->next){
+			if(try->next->state != SCHEDULE_STATE_RUNNING){
+				try = try->next;
+			}else{
+				// Schedule to next
+				next = try->next;
+			}
+		}else{
+			// Schedule start of queue
+			try = schedule_queues[SCHEDULE_QUEUE_TYPE_NORMAL];
+			if(try->state == SCHEDULE_STATE_RUNNING){
+				next = try;
+			}else{
+			}
+		}
     }
 
     // Do nothing if there's no new next one
@@ -229,4 +231,8 @@ void schedule_move_queue(schedule_schedulable_t * schedulable, schedule_queue_ty
     }
     // Not found. Do nothing
     schedule_enable();
+}
+
+schedule_queue_type_t schedule_get_current_queue_type(){
+	return schedule_current_queue_type;
 }

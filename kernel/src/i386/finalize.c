@@ -13,4 +13,6 @@ void finalize_fatal_error(){
 	printf("   + serial\r\n");
 	finalize_boot_finalized = 0;
 	asm volatile("call serial_init");
+	printf("- Retaken boot resources\r\n");
+	printf("   + serial\r\n");
 }

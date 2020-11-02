@@ -7,6 +7,7 @@
 #include <general/string.h>
 #include <general/elf.h>
 #include <general/kill.h>
+#include <general/arch/finalize.h>
 
 extern unsigned int * TSS;
 
@@ -436,6 +437,7 @@ int _0_proc_thread_kill(proc_thread_t * thread, proc_proc_t * process, int retva
         // printf("kill process %08x\r\n", process);
 
         if(process->id == 1){
+			finalize_fatal_error();
             printf("CANNOT KILL PROCESS 1\r\n");
             for(;;){
                 __asm__ __volatile__("cli; hlt");

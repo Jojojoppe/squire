@@ -15,7 +15,7 @@ void _PDCLIB_sighandler(int sig){
         sig = _SIGUNDEF;
     }
     // Check if sighandler is installed and if it may be handled
-    if(_PDCLIB_sighandlers[sig] && sig!=SIGKILL){
+    if(_PDCLIB_sighandlers[sig]!=SIG_DFL && sig!=SIGKILL){
         // Call sighandler
         _PDCLIB_sighandlers[sig](signumber);
 

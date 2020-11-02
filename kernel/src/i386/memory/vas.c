@@ -135,7 +135,7 @@ int vas_pagefault(void * addr, unsigned int error){
     unsigned int PDE = *((unsigned int*)(KERNEL_PD)+PD);
     if(!PDE&0x01){
         // There is no PD entry
-        printf("\r\nPAGE FAULT\r\n----------\r\nP  [%d]\tRW [%d]\tUS [%d]\r\n", P, RW, US);
+        //printf("\r\nPAGE FAULT\r\n----------\r\nP  [%d]\tRW [%d]\tUS [%d]\r\n", P, RW, US);
         return 1;
     }
     unsigned int PTE = *((unsigned int*)(KERNEL_PT)+PT);
@@ -156,10 +156,10 @@ int vas_pagefault(void * addr, unsigned int error){
         return 0;
     }
 
-    printf("\r\nPAGE FAULT\r\n----------\r\nP  [%d]\tRW [%d]\tUS [%d]\r\n", P, RW, US);
-    printf("COW[%d]\tAOA[%d]\r\n", (PTE>>COW_BIT)&1, (PTE>>AOA_BIT)&1);
-    printf("PTE = %08x\r\n", PTE);
-    printf("----------");
+   // printf("\r\nPAGE FAULT\r\n----------\r\nP  [%d]\tRW [%d]\tUS [%d]\r\n", P, RW, US);
+   // printf("COW[%d]\tAOA[%d]\r\n", (PTE>>COW_BIT)&1, (PTE>>AOA_BIT)&1);
+   // printf("PTE = %08x\r\n", PTE);
+   // printf("----------");
 
     return 1;
 }
