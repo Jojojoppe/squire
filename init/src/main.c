@@ -4,23 +4,23 @@
 
 #include <squire.h>
 
-void SIGTIMhandler(int sig){
-	squire_misc_timer_add(SQUIRE_HZ*0.5, squire_misc_timer_get_id()+1);
-	printf("%d] Elapsed time: %ld\r\n", squire_misc_timer_get_id(), squire_misc_timer_get_elapsed());
+void SIGINTRhandler(int sig){
+	printf("SIGINTR occured: interrupt id %08x\r\n", squire_extraval0);
 }
 
 int main(int argc, char ** argv){
-	signal(SIGTIM, SIGTIMhandler);
+	signal(SIGINTR, SIGINTRhandler);
 	printf("Main thread of init.bin\r\n");
 
-	squire_misc_timer_add(0, 0);
+	// Register ISR 40
+	squire_syscall_io_t params;
+	params.operation = SQUIRE_SYSCALL_IO_OPERATION_REGISTER_ISR;
+	params.value0 = 40;
+	squire_syscall(SQUIRE_SYSCALL_IO, sizeof(params), &params);
+	printf("Registration value: %d\r\n", params.return0);
 
-	char v = 0;
-	asm volatile("in %%dx, %%ax":"=a"(v):"d"(0x20));
-	printf("v=%02x\r\n", v);
+	asm("int $40");
 
-	for(;;){
-	}
-
+	for(;;);
 	return 0;
 } 

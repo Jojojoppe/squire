@@ -7,6 +7,7 @@
 #include <general/syscall_procthread.h>
 #include <general/syscall_mutex.h>
 #include <general/syscall_misc.h>
+#include <general/syscall_io.h>
 
 #include <general/arch/proc.h>
 
@@ -35,8 +36,11 @@ unsigned int syscall(unsigned int opcode, void * param_block, size_t param_len){
             returncode = syscall_message((squire_syscall_message_t*)param_block);
         }break;
 
-        case SQUIRE_SYSCALL_IO:
-            break;
+		case SQUIRE_SYSCALL_IO:{
+		   if(param_len<sizeof(squire_syscall_io_t))
+                break;
+            returncode = syscall_io((squire_syscall_io_t*)param_block);
+        }break;
 
         case SQUIRE_SYSCALL_DEBUG:{
             if(param_len<sizeof(squire_syscall_debug_t))

@@ -4,6 +4,8 @@
 #include <general/stdint.h>
 #include <i386/memory/vas.h>
 #include <general/kill.h>
+#include <general/kmalloc.h>
+#include <general/string.h>
 
 extern idt_set_interrupt_c(unsigned int num, void (*handler)());
 extern idt_set_interrupt_user_c(unsigned int num, void (*handler)());
@@ -120,7 +122,7 @@ ISR_N("Coprocessor Segment Overrun", cs, KILL_REASON_SEGV)
 ISR_E("Invalid TSS", ts, -1)
 ISR_E("Segment Not Present", sn, KILL_REASON_SEGV)
 ISR_E("Stack-Segment Fault", ss, KILL_REASON_SEGV)
-ISR_E("General Protection Fault", gp, KILL_REASON_ILL)
+ISR_E("General Protection Fault", gp, -1) //KILL_REASON_ILL)
 //ISR_E("Page Fault", pf)
 ISR_N("x87 Floating-Point Exception", 87, KILL_REASON_FPE)
 ISR_E("Alignment Check", ac, -1)
@@ -169,6 +171,11 @@ void isr_c_db(struct state * s){
     printf("\r\n-----\r\n");
 }
 extern void isr_db();
+
+void isr_c_user(unsigned int PID, unsigned int id){
+	kill_extra(PID, KILL_REASON_INTR, id, 0, 0, 0);
+}
+extern void isr_user();
 
 // ------------------
 
