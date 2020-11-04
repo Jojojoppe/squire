@@ -8,6 +8,7 @@
 #include <general/elf.h>
 #include <general/kill.h>
 #include <general/arch/finalize.h>
+#include <general/user_io.h>
 
 extern unsigned int * TSS;
 
@@ -478,6 +479,9 @@ int _0_proc_thread_kill(proc_thread_t * thread, proc_proc_t * process, int retva
         }
 
         vas_unmap_free(0);
+
+		// Free used user_io
+		user_io_clean(process->id);
 
         // Set return value
         process->retvalue = retval;

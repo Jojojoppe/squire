@@ -14,8 +14,14 @@ int user_io_arch_may_register_isr(unsigned int id);
  *
  * @param id The id or number of the interrupt
  * @param PID The PID of the process
+ * @param archdata Architecture specific data field
  */
-void user_io_arch_register_isr(unsigned int id, unsigned int PID);
+void user_io_arch_register_isr(unsigned int id, unsigned int PID, unsigned int * archdata);
+
+/**
+ * @brief Unregister isr
+ */
+void user_io_arch_unregister_isr(unsigned int id, unsigned int PID, unsigned int * archdata);
 
 /**
  * @brief Check if IO access on port is allowed
@@ -32,8 +38,12 @@ int user_io_arch_may_register_port(unsigned int port, unsigned int flags);
  * @param port The port to register
  * @param flags R/W flag. bit 0 for read bit 1 for write
  * @param PID PID of the process
+ * @param archdata Architecture specific data field
  */
-void user_io_arch_register_port(unsigned int port, unsigned int flags, unsigned int PID);
+void user_io_arch_register_port(unsigned int port, unsigned int flags, unsigned int PID, unsigned int * archdata);
+
+
+void user_io_arch_unregister_port(unsigned int port, unsigned int flags, unsigned int PID, unsigned int * archdata);
 
 // The IO port functions
 void user_io_arch_outb(unsigned int address, unsigned char val);

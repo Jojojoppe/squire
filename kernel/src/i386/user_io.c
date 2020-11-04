@@ -9,7 +9,7 @@ int user_io_arch_may_register_isr(unsigned int id){
 	return 0;
 }
 
-void user_io_arch_register_isr(unsigned int nr, unsigned int PID){
+void user_io_arch_register_isr(unsigned int nr, unsigned int PID, unsigned int * archdata){
 	extern char isr_user_start;
 	extern char isr_user_end;
 	size_t isr_user_length = &isr_user_end - &isr_user_start;
@@ -24,6 +24,12 @@ void user_io_arch_register_isr(unsigned int nr, unsigned int PID){
 	*pid = PID;
 	// Set the interrupt
 	idt_set_interrupt_user_c(nr, usrisr);
+	*archdata = (unsigned int)usrisr;
+}
+
+void user_io_arch_unregister_isr(unsigned int id, unsigned int PID, unsigned int * archdata){
+	kfree(*archdata);
+	idt_set_interrupt_user_c(id, 0);
 }
 
 int user_io_arch_may_register_port(unsigned int port, unsigned int flags){
@@ -31,7 +37,10 @@ int user_io_arch_may_register_port(unsigned int port, unsigned int flags){
 	return 0;
 }
 
-void user_io_arch_register_port(unsigned int port, unsigned int flags, unsigned int PID){
+void user_io_arch_register_port(unsigned int port, unsigned int flags, unsigned int PID, unsigned int * archdata){
+}
+
+void user_io_arch_unregister_port(unsigned int port, unsigned int flags, unsigned int PID, unsigned int * archdata){
 }
 
 void user_io_arch_outb(unsigned int address, unsigned char val){

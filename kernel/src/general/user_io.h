@@ -7,6 +7,7 @@ typedef struct user_io_isr_registration_s{
 	struct user_io_isr_registration_s * next;
 	unsigned int id;
 	unsigned int PID;
+	unsigned int archdata;
 } user_io_isr_registration_t;
 
 typedef struct user_io_port_registration_s{
@@ -15,7 +16,16 @@ typedef struct user_io_port_registration_s{
 	unsigned int range;
 	unsigned int flags;
 	unsigned int PID;
+	unsigned int archdata;
 } user_io_port_registration_t;
+
+/**
+ * @brief Clear process from data strucures
+ *
+ * Must be called by a proc kill
+ * @param pid The processes PID
+ */
+void user_io_clear(unsigned int pid);
 
 /**
  * @brief Register ISR

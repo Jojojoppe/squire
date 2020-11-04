@@ -77,6 +77,10 @@ idt_set_interrupt_user:
         mov     %edi, -4(%ebp)
         mov     %eax, -8(%ebp)
 
+		# Check if address is zero: invalidate isr
+		cmp		$0, %edx
+		je		idt_set_interrupt_user.clear
+
         mov     $idt_base, %edi
         shl     $3, %eax
         add     %eax, %edi
@@ -91,6 +95,21 @@ idt_set_interrupt_user:
         mov     %al, 5(%edi)
 
         mov     -4(%ebp), %edi
+        mov     -8(%ebp), %eax
+
+        mov     %ebp, %esp
+        pop     %ebp
+        ret
+idt_set_interrupt_user.clear:
+        mov     $idt_base, %edi
+        shl     $3, %eax
+        add     %eax, %edi
+
+		xor		%eax, %eax
+		mov		%eax, (%edi)
+		mov		%eax, 4(%edi)
+		
+		mov     -4(%ebp), %edi
         mov     -8(%ebp), %eax
 
         mov     %ebp, %esp
