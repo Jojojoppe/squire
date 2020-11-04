@@ -51,6 +51,8 @@ int user_io_register_isr(unsigned int id, unsigned int PID);
 int user_io_register_port(unsigned int port, unsigned int range, unsigned int flags, unsigned int PID);
 
 int user_io_port_outb(unsigned int port, unsigned char val);
+int user_io_port_outd(unsigned int port, unsigned int val);
 int user_io_port_inb(unsigned int port, unsigned char * val);
+int user_io_port_ind(unsigned int port, unsigned int * val);
 
 #endif

@@ -47,6 +47,7 @@ typedef enum SQUIRE_SYSCALL_IO_OPERATION{
 	 * After execution return0 contains status. Zero on success
 	 */
 	SQUIRE_SYSCALL_IO_OPERATION_PORT_OUTB,
+	SQUIRE_SYSCALL_IO_OPERATION_PORT_OUTD,
 	/**
 	 * @brief Output byte from port
 	 *
@@ -54,7 +55,8 @@ typedef enum SQUIRE_SYSCALL_IO_OPERATION{
 	 * After execution return0 contains status. Zero on success. value1
 	 * contains the value from the port
 	 */
-	SQUIRE_SYSCALL_IO_OPERATION_PORT_INB
+	SQUIRE_SYSCALL_IO_OPERATION_PORT_INB,
+	SQUIRE_SYSCALL_IO_OPERATION_PORT_IND
 } squire_syscall_io_operation_t;
 
 /**
@@ -78,7 +80,9 @@ extern "C" {
 extern int squire_io_register_isr(unsigned int id);
 extern int squire_io_register_port(unsigned int port, unsigned int range, unsigned int flags);
 extern int squire_io_port_outb(unsigned int port, unsigned char val);
+extern int squire_io_port_outd(unsigned int port, unsigned int val);
 extern int squire_io_port_inb(unsigned int port, unsigned char * val);
+extern int squire_io_port_ind(unsigned int port, unsigned int * val);
 
 #if defined(__cplusplus)
 } /* extern "C" */
