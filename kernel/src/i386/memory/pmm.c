@@ -11,7 +11,7 @@ static unsigned int pmm_mem_free;
 int pmm_init(void * bootinfo){
     mboot_info_t * mboot_info = (mboot_info_t*)bootinfo;
 
-    // Traverse mboot mmap
+	// Traverse mboot mmap
     mboot_mmap_t * mmap_entry = 0;
     void * base = 0;
     unsigned long length = 0;

@@ -13,7 +13,7 @@ int syscall_memory(squire_syscall_memory_t * params){
             // Check OK memory region
             if(params->length0<PAGE_SIZE || params->length0>VMM_USERREGION_LENGTH)
                 return SYSCALL_ERROR_PARAMS;
-            if(params->address0<VMM_USERREGION_BASE || params->address0+params->length0 > VMM_USERREGION_BASE+VMM_USERREGION_LENGTH)
+            if(params->address0!=0 && (params->address0<VMM_USERREGION_BASE || params->address0+params->length0 > VMM_USERREGION_BASE+VMM_USERREGION_LENGTH))
                 return SYSCALL_ERROR_PARAMS;
 
             unsigned int flags;
@@ -25,13 +25,55 @@ int syscall_memory(squire_syscall_memory_t * params){
                 flags |= VMM_FLAGS_WRITE;
 
             vmm_region_t * memory = proc_get_memory();
-            if(vmm_alloc(params->address0, params->length0, flags, &memory)){
-                params->length0 = 0;
-                return SYSCALL_ERROR_GENERAL;
-            }
+			// If automatic allocation
+			if(params->address0){
+				if(vmm_alloc(params->address0, params->length0, flags, &memory)){
+					params->length0 = 0;
+					return SYSCALL_ERROR_GENERAL;
+				}
+			}else{
+				if(vmm_alloc_auto(&params->address0, params->length0, flags, &memory)){
+					params->length0 = 0;
+					params->address0 = 0;
+					return SYSCALL_ERROR_GENERAL;
+				}
+			}
             proc_set_memory(memory);
             
         }break;
+
+        case SQUIRE_SYSCALL_MEMORY_OPERATION_MMAP_PHYS:{
+			// Check OK memory region
+            if(params->length0<PAGE_SIZE || params->length0>VMM_USERREGION_LENGTH)
+                return SYSCALL_ERROR_PARAMS;
+            if(params->address0!=0 && (params->address0<VMM_USERREGION_BASE || params->address0+params->length0 > VMM_USERREGION_BASE+VMM_USERREGION_LENGTH))
+                return SYSCALL_ERROR_PARAMS;
+
+            unsigned int flags = 0;
+            if((params->flags&MMAP_EXEC))
+                flags |= VMM_FLAGS_EXEC;
+            if((params->flags&MMAP_READ))
+                flags |= VMM_FLAGS_READ;
+            if((params->flags&MMAP_WRITE))
+                flags |= VMM_FLAGS_WRITE;
+
+            vmm_region_t * memory = proc_get_memory();
+			// If automatic allocation
+			if(params->address0){
+				if(vmm_map_phys(params->address0, params->address1, params->length0, flags, &memory)){
+					params->length0 = 0;
+					return SYSCALL_ERROR_GENERAL;
+				}
+			}else{
+				if(vmm_map_phys_auto(&params->address0, params->address1, params->length0, flags, &memory)){
+					params->length0 = 0;
+					params->address0 = 0;
+					return SYSCALL_ERROR_GENERAL;
+				}
+			}
+            proc_set_memory(memory);
+        }break;
+
 
         default:
             return SYSCALL_ERROR_OPERATION;
