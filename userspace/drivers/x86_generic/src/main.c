@@ -7,44 +7,22 @@
 #include <squire.h>
 #include <squire_driver.h>
 
+void function_callback(unsigned int from, squire_driver_submessage_function_t * func){
+	printf("Function requested %d for device %s\r\n", func->function, func->id);
+}
+
 squire_driver_t driver_x86_generic = {
-	"x86_generic",
-	1,0,
-	DRIVER_FUNCTIONS_INIT | DRIVER_FUNCTIONS_DEINIT | DRIVER_FUNCTIONS_ENUM,
+	"x86_generic",																	// Name of the driver
+	1,0,																			// Version of the driver
+	0,																				// Simple message box the driver listens to
 	{
-		{"x86_generic_8259PIC", "x86_generic_8259PIC"},
-		{"x86_generic_16650UART", "x86_generic_16650UART"},
-		{"x86_generic_PCI", "x86_generic_PCI"},
-		{0, 0},
-	},
+		{"x86_generic", DRIVER_FUNCTIONS_INIT|DRIVER_FUNCTIONS_ENUM|DRIVER_FUNCTIONS_DEINIT},
+		{"x86_generic_PCI", DRIVER_FUNCTIONS_INIT|DRIVER_FUNCTIONS_ENUM|DRIVER_FUNCTIONS_DEINIT},
+		{0},
+	}																				// Supported device ID's
 };
-
-// Driver is called as 'driver.bin DevMan_PID DevMan_message_box'
-int main(int argc, char ** argv){
-
-	// On entry the driver must send the driver information to the driver manager	
-
-	// The main functions becomes the message handler
-	uint8_t * msg_buffer = (uint8_t *) squire_memory_mmap(0, 4096, MMAP_READ|MMAP_WRITE);
-	unsigned int from;
-	for(;;){
-		// Wait for message and block main thread
-		size_t length = 4096;
-		squire_message_status_t status = squire_message_simple_receive(msg_buffer, &length, &from, RECEIVE_BLOCKED);
-		if(!status){
-
-			// Message is received
-			squire_driver_message_t * message = (squire_driver_message_t*)msg_buffer;
-			squire_driver_submessage_t * submessage = &message->messages[0];
-			for(int sub=0; sub<message->amount_messages; sub++){
-
-				// Calculate address of next submessage
-				submessage = (squire_driver_submessage_t*)((void*)submessage + submessage->size);
-			}
-
-		}else{
-			printf("Message receive error: %d\r\n", status);
-		}
-	}
-	return 0;
-} 
+SQUIRE_DRIVER_INFO driver_info = {
+	&driver_x86_generic,
+	function_callback,
+};
+DRIVER(driver_info)
