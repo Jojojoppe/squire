@@ -30,12 +30,19 @@ typedef struct{
 
 typedef struct{
 	uint8_t id[64];								// Identifier of the device
+	uint32_t instance;							// Instance of the device
 	uint32_t function;							// The function to execute
 } squire_driver_submessage_function_t __attribute__((__packed__));
 
 typedef struct{
 	squire_driver_t driverinfo;					// The driver information structure
 } squire_driver_submessage_infodriver_t __attribute__((__packed));
+
+typedef struct{
+	uint8_t parent[64];							// Id of the parent device
+	uint8_t id[64];								// Identification of the device
+	uint32_t instance;							// Instance of the device
+} squire_driver_submessage_device_t __attribute__((__packed__));
 
 typedef struct{
 	char name[64];								// The name of the driver for which the message is intended (zero's for message to device manager)
@@ -55,6 +62,9 @@ typedef struct{
 	squire_driver_t * driver_info;
 	void (*function_callback)(unsigned int from, squire_driver_submessage_function_t *);
 } SQUIRE_DRIVER_INFO;
+
+extern unsigned int device_manager_pid;
+extern unsigned int device_manager_box;
 
 #define DRIVER(DRIVER_INFO) \
 	SQUIRE_DRIVER_INFO * _driver_info = &DRIVER_INFO ; \

@@ -20,6 +20,7 @@ typedef struct devman_device_s{
 	struct devman_device_s * next;
 
 	uint8_t id[64];
+	uint32_t instance;
 	uint32_t functions;
 	devman_driver_t * driver;
 } devman_device_t;
