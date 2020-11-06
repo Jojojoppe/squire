@@ -136,6 +136,7 @@ void schedule(){
 			if(try->state == SCHEDULE_STATE_RUNNING){
 				next = try;
 			}else{
+				// End of queue
 			}
 		}
     }

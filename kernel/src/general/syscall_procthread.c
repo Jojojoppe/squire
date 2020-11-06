@@ -96,7 +96,8 @@ int syscall_procthread(squire_syscall_procthread_t * params){
 
         case SQUIRE_SYSCALL_PROCTHREAD_OPERATION_CREATE_PROCESS:{
             // TODO use something else than brk!!!
-            void * newelf = vas_brk((params->length0/4096+1)*4096);
+            //void * newelf = vas_brk((params->length0/4096+1)*4096);
+			void * newelf = kmalloc((params->length0/4096+1)*4096);
             memcpy(newelf, params->address0, params->length0);
             proc_proc_t * pnew = proc_proc_new(newelf);
             unsigned int params_data1[2];
@@ -105,6 +106,7 @@ int syscall_procthread(squire_syscall_procthread_t * params){
             unsigned int status = message_simple_send(pnew->id, sizeof(unsigned int)*2, params_data1);
             status = message_simple_send(pnew->id, params_data1[1], params->address1);
             params->pid0 = pnew->id;
+			kfree(newelf);
         } break;
 
         default:

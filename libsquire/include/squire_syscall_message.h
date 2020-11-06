@@ -51,7 +51,33 @@ typedef enum SQUIRE_SYSCALL_MESSAGE_OPERATION{
      * in case of successful reception, in case of error it contains the length of the
      * next message. from0 contains the PID of the sending process
      */
-    SQUIRE_SYSCALL_MESSAGE_OPERATION_SIMPLE_RECEIVE
+    SQUIRE_SYSCALL_MESSAGE_OPERATION_SIMPLE_RECEIVE,
+    /**
+     * @brief Send a simple message to a box
+     * 
+     * Sends a message to a processes simple queue.
+     * data0:       Pointer to the data to be sent
+     * length0:     Length of the data to be sent
+     * to0:         PID of the receiving process
+     * to1:         Box of the receiving process
+     * After execution return0 contains the status of the execution following
+     * squire_message_status_t
+     */
+    SQUIRE_SYSCALL_MESSAGE_OPERATION_SIMPLE_BOX_SEND,
+    /**
+     * @brief Receive a simple message from a box
+     * 
+     * Receive a message from its own simple queue. A blocked receiving is executed
+     * by adding the RECEIVE_BLOCKED flag. If not the operation will be returned directly
+     * data0:       Pointer to a bufer
+     * length0:     Length of the buffer
+	 * from1:		Box to receive from
+     * After execution return0 contains the status of the execution following
+     * squire_message_status_t. length0 contains the length of the received message
+     * in case of successful reception, in case of error it contains the length of the
+     * next message. from0 contains the PID of the sending process
+     */
+    SQUIRE_SYSCALL_MESSAGE_OPERATION_SIMPLE_BOX_RECEIVE,
 } squire_syscall_message_operation_t;
 
 /**
@@ -64,7 +90,9 @@ typedef struct{
     void *                                  data0;          /** @brief first data */
     size_t                                  length0;        /** @brief first length */
     unsigned int                            from0;          /** @brief first from */
+    unsigned int                            from1;          /** @brief second from */
     unsigned int                            to0;            /** @brief first to */
+    unsigned int                            to1;            /** @brief second to */
     int                                     return0;        /** @brief first return value */
 } squire_syscall_message_t;
 
@@ -94,6 +122,31 @@ extern squire_message_status_t squire_message_simple_send(void * buffer, size_t 
  * @return squire_message_status_t Return status of the function
  */
 extern squire_message_status_t squire_message_simple_receive(void * buffer, size_t * length, unsigned int * from, int flags);
+
+/**
+ * @brief Send a message to a simple box queue
+ * 
+ * @param buffer Pointer to a region containing the message
+ * @param length The length of the message
+ * @param to The PID of the receiving process
+ * @param box The box number
+ * @return squire_message_status_t Return status of the function
+ */
+extern squire_message_status_t squire_message_simple_box_send(void * buffer, size_t length, unsigned int to, unsigned int box);
+
+/**
+ * @brief Receive a message from a simple box queue
+ * 
+ * @param buffer Pointer to buffer
+ * @param length Pointer to length of buffer. Contains length of message after execution
+ * @param from Pointer to variable storing from PID
+ * @param flags Flags
+ * @param box The box number
+ * @return squire_message_status_t Return status of the function
+ */
+extern squire_message_status_t squire_message_simple_box_receive(void * buffer, size_t * length, unsigned int * from, int flags, unsigned int box);
+
+
 
 #if defined(__cplusplus)
 } /* extern "C" */

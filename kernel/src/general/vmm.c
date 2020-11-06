@@ -25,9 +25,11 @@ int vmm_destroy(vmm_region_t ** base){
         if((region->flags&VMM_FLAGS_USED)!=0){
             // Free all pages if not shared
             // TODO check for shared region or mapped physical page
-            for(int i=0; i<region->length/PAGE_SIZE; i++){
-                vas_unmap_free(region->base + i*PAGE_SIZE);
-            }
+			if((region->flags&VMM_FLAGS_PHYSICAL)!=0){
+				for(int i=0; i<region->length/PAGE_SIZE; i++){
+					vas_unmap_free(region->base + i*PAGE_SIZE);
+				}
+			}
         }
         vmm_region_t * next = region->next;
         if(next){

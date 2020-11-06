@@ -1,6 +1,6 @@
-include ../../makefiles/env.mk
+include ../../../makefiles/env.mk
 
-TARGET				:= testbin.bin
+TARGET				:= x86_generic.bin
 
 BUILDDIR			:= build
 

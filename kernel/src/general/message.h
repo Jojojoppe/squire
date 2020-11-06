@@ -30,9 +30,14 @@ typedef struct message_simple_s{
  * information needed for message passing
  */
 typedef struct{
+	// Simple message
     message_simple_t * simple;
     unsigned int simple_number;
     unsigned int simple_recv_thread;
+	// Simple message box
+	message_simple_t * simple_box[256];
+	unsigned int simple_box_number[256];
+	unsigned int simple_box_recv_thread[256];
 } message_info_t;
 
 /**
@@ -80,5 +85,38 @@ unsigned int message_simple_receive(void * buffer, size_t * length, unsigned int
  * @return Zero if successfull
  */
 unsigned int message_simple_receive_blocking(void * buffer, size_t * length, unsigned int * from);
+
+/**
+ * @brief Send a simple message to a box
+ * 
+ * @param to PID of receiver
+ * @param length Length of the message, must be at least 8 bytes
+ * @param data Pointer to the data to be send
+ * @param box Message box
+ * @return Zero if successfull
+ */
+unsigned int message_simple_box_send(unsigned int to, size_t length, void * data, unsigned int box);
+
+/**
+ * @brief Receive a simple message from a box
+ * 
+ * @param buffer Pointer to large enough receive buffer
+ * @param length Length of receive buffer
+ * @param from Pointer to place to store sender PID
+ * @param box Message box
+ * @return Zero if successfull
+ */
+unsigned int message_simple_box_receive(void * buffer, size_t * length, unsigned int * from, unsigned int box);
+
+/**
+ * @brief Receive a simple message from a box blocking the thread
+ * 
+ * @param buffer Pointer to large enough receive buffer
+ * @param length Length of receive buffer
+ * @param from Pointer to place to store sender PID
+ * @param box Message box
+ * @return Zero if successfull
+ */
+unsigned int message_simple_box_receive_blocking(void * buffer, size_t * length, unsigned int * from, unsigned int box);
 
 #endif

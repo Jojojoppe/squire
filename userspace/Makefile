@@ -1,11 +1,11 @@
 .SILENT:
-.PHONY: all testbin
+.PHONY: all drivers
 
-all: testbin
+all: drivers
 
-testbin:
-	cd testbin && ${MAKE} ${MFLAGS} all
+drivers:
+	cd drivers && ${MAKE} ${MFLAGS} all
 
 clean:
-	cd testbin && ${MAKE} ${MFLAGS} clean
+	cd drivers && ${MAKE} ${MFLAGS} clean
 	
