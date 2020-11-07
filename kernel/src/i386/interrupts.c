@@ -183,6 +183,11 @@ extern void isr_pf();
 
 void isr_c_user(unsigned int PID, unsigned int id){
 	kill_extra(PID, KILL_REASON_INTR, id, 0, 0, 0);
+	// If a PIC interrupt, clear PIC
+	if(id>=0x20 && id<0x30){
+	    io_outb(0xa0, 0x20);
+		io_outb(0x20, 0x20);
+	}
 }
 extern void isr_user();
 

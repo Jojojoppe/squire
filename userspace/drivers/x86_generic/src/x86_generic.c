@@ -1,13 +1,36 @@
 #include <x86_generic.h>
 
-unsigned int nr_connected_devices = 1;
+#include <stdint.h>
+#include <string.h>
+#include <stdio.h>
+#include <signal.h>
+
+#include <squire.h>
+
+#include <x86_generic_RTC.h>
+
+unsigned int nr_connected_devices = 2;
 char * connected_devices[] = {
 	"x86_generic_PCI",
+	"x86_generic_RTC",
 };
+
+void INTRhandler(int sig){
+	unsigned int intr_id = squire_extraval0;
+	if(intr_id==RTC_INTR){
+		x86_generic_RTC_INTR();
+	}
+}
 
 void x86_generic_function_callback(unsigned int from, squire_driver_submessage_function_t * func){
 	switch(func->function){
 	
+		case DRIVER_FUNCTIONS_INIT: {
+			printf("x86_generic %08x] Initialize device\r\n", func->instance);
+			// Setup interrupt handler
+			signal(SIGINTR, INTRhandler);
+		} break;
+
 		case DRIVER_FUNCTIONS_ENUM:{
 			printf("x86_generic %08x] Enumerate device\r\n", func->instance);
 
