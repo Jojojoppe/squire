@@ -14,13 +14,17 @@ kill_reason_t wait(unsigned int * retval, unsigned int * pid){
 		// Mark all childs with parentwaitingthread
 		proc_proc_t * c = childs;
 		while(c){
-			c->parentwaitingthread = tcur->id;
+			if(c->threads_number){
+				c->parentwaitingthread = tcur->id;
+			}else{
+				c->parentwaitingthread = 0xffffffff;
+			}
 			c = c->child_next;
 		}
 		for(;;){
 			c = childs;
 			while(c){
-				if(!c->threads_number){
+				if(c->parentwaitingthread==tcur->id && !c->threads_number){
 					// Found a killed thread!
 					*retval = c->retvalue;
 					*pid = c->id;

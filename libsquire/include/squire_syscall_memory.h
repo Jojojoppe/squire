@@ -36,7 +36,26 @@ typedef enum SQUIRE_SYSCALL_MEMORY_OPERATION{
 	 * length0:			Length of region
 	 * After execution address0 contains the starting address of the allocation and length contains the lenght of the allocation. Length0 and address0 will be zero if mapping is unsuccessful
 	 */
-	SQUIRE_SYSCALL_MEMORY_OPERATION_MMAP_PHYS
+	SQUIRE_SYSCALL_MEMORY_OPERATION_MMAP_PHYS,
+	/**
+	 * @brief Create a shared memory region
+	 *
+	 * address0:		Base of virtual memory to map to. Zero if kernel may decide
+	 * length0:			Length of region
+	 * id0:				ID of shared memory region
+	 * After execution address0 contains the starting address of the allocation and length0
+	 * contains the length of the allocation
+	 */
+	SQUIRE_SYSCALL_MEMORY_OPERATION_CREATE_SHARED,
+	/**
+	 * @brief Map a shared memory region
+	 * address0:		Base of virtual memory to map to. Zero if kernel may decide
+	 * pid0:			PID of the owner
+	 * id0:				ID of shared memory region
+	 * After execution address0 contains the starting address of the allocation and length0
+	 * contains the length of the allocation
+	 */
+	SQUIRE_SYSCALL_MEMORY_OPERATION_MAP_SHARED
 } squire_syscall_memory_operation_t;
 
 /**
@@ -50,6 +69,8 @@ typedef struct{
     void *                                  address1;       /** @brief second address */
     size_t                                  length0;        /** @brief first length */
     size_t                                  length1;        /** @brief second length */
+	char									id0[32];
+	unsigned int							pid0;
 } squire_syscall_memory_t;
 
 // SQUIRE SYSCALL WRAPPER FUNCTIONS
@@ -78,6 +99,10 @@ extern void * squire_memory_mmap(void * addr, size_t length, int flags);
  * @return void* Base address of allocated region
  */
 extern void * squire_memory_mmap_phys(void * addr, void * phys, size_t length, int flags);
+
+extern void * squire_memory_create_shared(void * addr, size_t length, char id[32], int flags);
+
+extern void * squire_memory_map_shared(void * addr, unsigned int pid, char id[32], int flags);
 
 #if defined(__cplusplus)
 } /* extern "C" */

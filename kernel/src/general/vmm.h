@@ -13,12 +13,23 @@
 #define VMM_FLAGS_WRITE 4
 #define VMM_FLAGS_EXEC 8
 #define VMM_FLAGS_PHYSICAL 16
+#define VMM_FLAGS_SHARED 32
+
+typedef struct vmm_shared_s{
+	struct vmm_shared_s * next;
+	unsigned int owner;
+	char id[32];
+	void * phys_base;
+	size_t phys_length;
+} vmm_shared_t;
+
 typedef struct vmm_region_s{
     struct vmm_region_s * next;
     struct vmm_region_s * prev;
     void * base;
     size_t length;
     unsigned int flags;
+	vmm_shared_t * shared;
 } vmm_region_t;
 
 /**
@@ -73,6 +84,14 @@ int vmm_alloc_auto(void ** base, size_t length, unsigned int flags, vmm_region_t
 
 int vmm_map_phys(void * base, void * phys, size_t length, unsigned int flags, vmm_region_t ** list);
 
-int vmm_map_phys_autp(void ** base, void * phys, size_t length, unsigned int flags, vmm_region_t ** list);
+int vmm_map_phys_auto(void ** base, void * phys, size_t length, unsigned int flags, vmm_region_t ** list);
+
+int vmm_create_shared(void * base, size_t length, unsigned int flags, char id[32], vmm_region_t ** list);
+
+int vmm_create_shared_auto(void ** base, size_t length, unsigned int flags, char id[32], vmm_region_t ** list);
+
+int vmm_map_shared(void * base, unsigned int flags, unsigned int owner, char id[32], vmm_region_t ** list);
+
+int vmm_map_shared_auto(void ** base, unsigned int flags, unsigned int owner, char id[32], vmm_region_t ** list);
 
 #endif
