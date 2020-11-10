@@ -40,7 +40,7 @@ int syscall_procthread(squire_syscall_procthread_t * params){
         } break;
 
         case SQUIRE_SYSCALL_PROCTHREAD_OPERATION_WAIT_PROCESS: {
-            params->value0 = wait(&params->value1, params->pid0);
+            params->value0 = wait(&params->value1, &params->pid0);
         } break;
 
         case SQUIRE_SYSCALL_PROCTHREAD_OPERATION_JOIN_THREAD:{

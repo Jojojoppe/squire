@@ -6,6 +6,9 @@
 
 #include <squire.h>
 
+#define DEVICE_ID "x86_generic_PCI"
+#define DEVICE_INSTANCE 0
+
 #define PCI_CONFIG_ADDRESS 0xcf8
 #define PCI_CONFIG_DATA 0xcfc
 
@@ -139,7 +142,8 @@ void x86_generic_PCI_function_callback(unsigned int from, squire_driver_submessa
 				submsg->type = SUBMESSAGE_TYPE_O_REGDEVICE;
 				submsg->size = sizeof(squire_driver_submessage_device_t);
 				squire_driver_submessage_device_t * dev = (squire_driver_submessage_device_t*)submsg->content;
-				strcpy(dev->parent, "x86_generic_PCI");
+				strcpy(dev->parent, DEVICE_ID);
+				dev->parent_instance = DEVICE_INSTANCE;
 				sprintf(dev->id, "PCI_%04x:%04x", func->vendor, func->device);
 				dev->instance = 0;
 				dev->instance = ((func->bus<<16)&0xff0000) | ((func->slot<<8)&0xff00) | (func->func&0xff);

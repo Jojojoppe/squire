@@ -27,7 +27,10 @@ typedef struct{
 // out messages
 #define SUBMESSAGE_TYPE_O_REGDEVICE			2	// Register a device
 #define SUBMESSAGE_TYPE_O_INFODRIVER		4	// Send driver information
+#define SUBMESSAGE_TYPE_O_ERROR				8	// Send a driver error
 
+// Submessage content structures
+// ---
 typedef struct{
 	uint8_t id[64];								// Identifier of the device
 	uint32_t instance;							// Instance of the device
@@ -36,13 +39,19 @@ typedef struct{
 
 typedef struct{
 	squire_driver_t driverinfo;					// The driver information structure
-} squire_driver_submessage_infodriver_t __attribute__((__packed));
+} squire_driver_submessage_infodriver_t __attribute__((__packed__));
+
+typedef struct{
+	
+} squire_driver_submessage_error_t __attribute__((__packed__));
 
 typedef struct{
 	uint8_t parent[64];							// Id of the parent device
+	uint32_t parent_instance;
 	uint8_t id[64];								// Identification of the device
 	uint32_t instance;							// Instance of the device
 } squire_driver_submessage_device_t __attribute__((__packed__));
+// ---
 
 typedef struct{
 	char name[64];								// The name of the driver for which the message is intended (zero's for message to device manager)

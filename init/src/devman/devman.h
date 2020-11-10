@@ -9,6 +9,7 @@
 typedef struct devman_driver_s{
 	struct devman_driver_s * next;
 	char name[64];
+	uint16_t version_major, version_minor;
 	uint8_t id[64];
 	uint32_t functions;
 	unsigned int PID;

@@ -41,6 +41,11 @@ void x86_generic_RTC_INTR(){
 	// Read date and time
 	rtc_read_datetime();
 	printf("RTC] %d:%d:%d\r\n", bcd_to_bin(rtc_hours), bcd_to_bin(rtc_minutes), bcd_to_bin(rtc_seconds));
+
+	if((bcd_to_bin(rtc_seconds)&0xf)==0){
+		printf("EXIT!!!\r\n");
+		exit(1234);
+	}
 }
 
 void x86_generic_RTC_function_callback(unsigned int from, squire_driver_submessage_function_t * func){
@@ -65,9 +70,10 @@ void x86_generic_RTC_function_callback(unsigned int from, squire_driver_submessa
 			squire_io_port_outb(RTC_IO_PORT_INDEX, 0x0c);	// Index C
 			uint8_t valC;
 			squire_io_port_inb(RTC_IO_PORT_DATA, &valC);
-			
+		
 			// Read date and time for the first time
 			rtc_read_datetime();
+			printf("RTC] %d:%d:%d\r\n", bcd_to_bin(rtc_hours), bcd_to_bin(rtc_minutes), bcd_to_bin(rtc_seconds));
 
 		} break;
 

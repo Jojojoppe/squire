@@ -9,6 +9,9 @@
 
 #include <x86_generic_RTC.h>
 
+#define DEVICE_ID "x86_generic"
+#define DEVICE_INSTANCE 0
+
 unsigned int nr_connected_devices = 2;
 char * connected_devices[] = {
 	"x86_generic_PCI",
@@ -45,7 +48,8 @@ void x86_generic_function_callback(unsigned int from, squire_driver_submessage_f
 				submsg->type = SUBMESSAGE_TYPE_O_REGDEVICE;
 				submsg->size = sizeof(squire_driver_submessage_device_t);
 				squire_driver_submessage_device_t * dev = (squire_driver_submessage_device_t*)submsg->content;
-				strcpy(dev->parent, "x86_generic");
+				strcpy(dev->parent, DEVICE_ID);
+				dev->parent_instance = DEVICE_INSTANCE;
 				dev->instance = 0;
 				strcpy(dev->id, connected_devices[i]);
 				submsg = (squire_driver_submessage_t*)((void*)&submsg->content + submsg->size);

@@ -75,7 +75,7 @@ typedef enum SQUIRE_SYSCALL_PROCTHREAD_OPERATION{
      * 
      * pid0:        PID of child to wait for. 0 if waiting for all childs
      * After execution value0 contains the signal which caused the process to exit
-     * and value1 contains the return value
+     * and value1 contains the return value. pid0 contains the PID of the killed child
      */
     SQUIRE_SYSCALL_PROCTHREAD_OPERATION_WAIT_PROCESS,
     /**
@@ -188,7 +188,7 @@ extern unsigned int squire_procthread_gettid();
  * @param returnvalue Pointer to where the return value is stored. 0 if not stored
  * @return int Terminating signal of the process
  */
-extern int squire_procthread_wait(unsigned int pid, int * returnvalue);
+extern int squire_procthread_wait(unsigned int * pid, int * returnvalue);
 
 /**
  * @brief Join a thread

@@ -37,6 +37,12 @@ int main(int argc, char ** argv){
 	thrd_t thrd_devman;
 	thrd_create(&thrd_devman, devman_main, "x86_generic");
 
+	// Wait for a child
+	unsigned int pid = 0;
+	int retval = 0;
+	int reason = squire_procthread_wait(&pid, &retval);
+	printf("killed: %d %d %d\r\n", pid, retval, reason);
+
 	for(;;);
 	return 0;
 } 

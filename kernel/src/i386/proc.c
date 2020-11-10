@@ -435,7 +435,7 @@ int _0_proc_thread_kill(proc_thread_t * thread, proc_proc_t * process, int retva
     // Check if process must be deleted
     // TODO move to seperate function
     if(!process->threads_number){
-        // printf("kill process %08x\r\n", process);
+//        printf("kill process %08x\r\n", process);
 
         if(process->id == 1){
 			finalize_fatal_error();
@@ -481,12 +481,14 @@ int _0_proc_thread_kill(proc_thread_t * thread, proc_proc_t * process, int retva
         vas_unmap_free(0);
 
 		// Free used user_io
-		user_io_clean(process->id);
+		//user_io_clean(process->id);
 
         // Set return value
         process->retvalue = retval;
 
+//		printf("Wake parent up if needed\r\n");
         if(process->parentwaitingthread){
+//			printf("YES, waking up\r\n");
             schedule_set_state(schedule_get(process->parent->id, process->parentwaitingthread), SCHEDULE_STATE_RUNNING);
         }
 
