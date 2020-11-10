@@ -67,17 +67,21 @@ unsigned int _message_simple_receive(void * buffer, size_t * length, unsigned in
         return MESSAGE_SIMPLE_ERROR_BUFFER_TO_SHORT;
 
 	if(!blocked){
-		if(!(*number))
-        return MESSAGE_SIMPLE_ERROR_NO_MESSAGES;
+		if(!(*number)){
+			return MESSAGE_SIMPLE_ERROR_NO_MESSAGES;
+		}
 	}else{
-		if((*thread))
+		if((*thread)){
+			printf("Thread: %d\r\n", thread);
 			return MESSAGE_SIMPLE_ERROR_ALREADY_BLOCKED_RECEIVE;
+		}
 		while(!(*number)){
 			*thread = proc_thread_get_current()->id;
 //			printf("-- waiting for message from %d\r\n", *thread);
 			schedule_set_state(0, SCHEDULE_STATE_IDLE);
 			schedule();
 //			printf("-- woken up\r\n");
+			*thread = 0;
 		}
 	}
 

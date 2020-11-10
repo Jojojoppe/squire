@@ -2,7 +2,7 @@
 
 squire_message_status_t squire_message_simple_box_receive(void * buffer, size_t * length, unsigned int * from, int flags, unsigned int box){
     squire_syscall_message_t params;
-    params.operation = SQUIRE_SYSCALL_MESSAGE_OPERATION_SIMPLE_RECEIVE;
+    params.operation = SQUIRE_SYSCALL_MESSAGE_OPERATION_SIMPLE_BOX_RECEIVE;
     params.data0 = buffer;
     params.length0 = *length;
     params.flags = flags;

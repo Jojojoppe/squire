@@ -9,6 +9,7 @@
 
 #include "tar.h"
 #include "devman/devman.h"
+#include "vfs/vfs.h"
 
 int main(int argc, char ** argv){
 	printf("Main thread of init.bin\r\n");
@@ -39,26 +40,39 @@ int main(int argc, char ** argv){
 	thrd_create(&thrd_devman, devman_main, "x86_generic");
 	*/
 
+	// Start Virtual File System
 	void * tar_start = (void*)(*((unsigned int*)argv[1]));
-	unsigned int length;
-	void * testbin = tar_get(tar_start, "testbin.bin", &length);
-	char * testbin_argv0 = "testbin.bin";
-	char ** testbin_argv[3];
-	testbin_argv[0] = testbin_argv0;
-	unsigned int testbin_PID = squire_procthread_create_process(testbin, length, 1, testbin_argv);
+	thrd_t thrd_vfs;
+	thrd_create(&thrd_vfs, vfs_main, tar_start);
 
-	// Create test shared memory
-	char shared_id[32] = "0123456789";
-	void * shared = squire_memory_create_shared(0, 4096, shared_id, MMAP_READ | MMAP_WRITE);
-	printf("Shared memory at %08x with id %s\r\n", shared, shared_id);
-	strcpy(shared, "Hello this is a message left in shared memory!\r\n");
+	// Register init as initramfs driver and mount on mp1
+	size_t msglen = sizeof(vfs_message_t)+2*sizeof(vfs_submessage_t)+sizeof(vfs_submessage_reg_fsdriver_t)+sizeof(vfs_submessage_mount_t);
+	vfs_message_t * msg = (vfs_message_t*)malloc(msglen);
+	msg->amount_messages = 2;
+	msg->messages[0].type = SUBMESSAGE_TYPE_REG_FSDRIVER;
+	msg->messages[0].size = sizeof(vfs_submessage_reg_fsdriver_t);
+	vfs_submessage_reg_fsdriver_t * content = (vfs_submessage_reg_fsdriver_t*)msg->messages[0].content;
+	content->box = 10;
+	content->pid = 1;
+	strcpy(content->name, "initramfs");
+	vfs_submessage_t * mntsubmsg = (vfs_submessage_t*)((void*)msg->messages + msg->messages[0].size + sizeof(vfs_submessage_t));
+	mntsubmsg->type = SUBMESSAGE_TYPE_MOUNT;
+	mntsubmsg->size = sizeof(vfs_submessage_mount_t);
+	vfs_submessage_mount_t * mntmsg = (vfs_submessage_mount_t*)mntsubmsg->content;
+	strcpy(mntmsg->fsname, "initramfs");
+	mntmsg->mountpoint = 1;
+	mntmsg->permissions = PERMISSIONS_READALL|PERMISSIONS_READOWN|PERMISSIONS_EXECALL|PERMISSIONS_EXECOWN;
+	strcpy(mntmsg->device_id, "");
+	mntmsg->device_instance = 0;
+	squire_message_simple_box_send(msg, msglen, 1, 1);
 
+	uint8_t * msg_buffer = (uint8_t *) squire_memory_mmap(0, 4096, MMAP_READ|MMAP_WRITE);
+	unsigned int from;
 	for(;;){
-		// Wait for a child
-		unsigned int pid = 0;
-		int retval = 0;
-		int reason = squire_procthread_wait(&pid, &retval);
-		printf("killed: %d %d %d\r\n", pid, retval, reason);
+		// Wait for message and block main thread
+		size_t length = 4096;;
+		squire_message_status_t status = squire_message_simple_box_receive(msg_buffer, &length, &from, RECEIVE_BLOCKED, 10);
+
 	}
 	return 0;
 } 
