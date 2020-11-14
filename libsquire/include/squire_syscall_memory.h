@@ -65,7 +65,13 @@ typedef enum SQUIRE_SYSCALL_MEMORY_OPERATION{
 	 * address0:		Base of virtual memory to unmap
 	 * length0:			Length of region to unmap
 	 */
-	SQUIRE_SYSCALL_MEMORY_OPERATION_MUNMAP
+	SQUIRE_SYSCALL_MEMORY_OPERATION_MUNMAP,
+	/**
+	 * @brief Set ownership of shared memory to first process which maps it
+	 *
+	 * id0:				ID of shared memory region
+	 */
+	SQUIRE_SYSCALL_MEMORY_OPERATION_TRANSFER_SHARED
 } squire_syscall_memory_operation_t;
 
 /**
@@ -115,6 +121,8 @@ extern void * squire_memory_create_shared(void * addr, size_t length, char id[32
 extern void * squire_memory_map_shared(void * addr, unsigned int pid, char id[32], int flags);
 
 extern void squire_memory_munmap(void * addr, size_t length);
+
+extern void squire_memory_transfer_shared(char id[32]);
 
 #if defined(__cplusplus)
 } /* extern "C" */

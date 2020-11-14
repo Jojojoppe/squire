@@ -429,6 +429,7 @@ int vmm_create_shared(void * base, size_t length, unsigned int flags, char id[32
 			region->shared->next = 0;
 			region->shared->phys_base = physical_mem;
 			region->shared->phys_length = length;
+			region->shared->flags = 0;
 			memcpy(region->shared->id, id, 32);
 
 			// Link in system wide list
@@ -580,7 +581,20 @@ int vmm_map_shared(void * base, unsigned int flags, unsigned int owner, char id[
 
 			// Point shared region field to shared region descriptor
 			region->shared = sr;
-			sr->shared_with = proc_proc_get_current()->id;
+			if((sr->flags&VMM_FLAGS_SHARED_TRANSFER)==VMM_FLAGS_SHARED_TRANSFER){
+//				printf("Map a shared page in ownership transfer\r\n");
+				// Memory in ownership transfer
+				sr->shared_with = sr->owner;
+				sr->owner = proc_proc_get_current()->id;
+				sr->flags &= ~VMM_FLAGS_SHARED_TRANSFER;
+				if((sr->flags&VMM_FLAGS_SHARED_TRANSFER_DISOWNED)==VMM_FLAGS_SHARED_TRANSFER_DISOWNED){
+//					printf("Page is disowned: now Im the only one mapped\r\n");
+					sr->shared_with = 0;
+					sr->flags &= ~VMM_FLAGS_SHARED_TRANSFER_DISOWNED;
+				}
+			}else{
+				sr->shared_with = proc_proc_get_current()->id;
+			}
 
             // Check if list is prepended
             if((*list)->prev){
@@ -650,6 +664,42 @@ int vmm_map_shared_auto(void ** base, unsigned int flags, unsigned int owner, ch
 	return -1;
 }
 
+int vmm_transfer_shared(char id[32]){
+//	printf("vmm_transfer_shared(%s)\r\n", id);
+	
+	unsigned int owner = proc_proc_get_current()->id;
+	// Find shared region of owner
+	vmm_shared_t * sr = vmm_shared_regions;
+	size_t length = 0;
+	void * phys = 0;
+	while(sr){
+		if(sr->owner == owner && strcmp(id, sr->id)==0){
+			// Found shared region
+			length = sr->phys_length;
+			phys = sr->phys_base;
+			break;
+		}
+		sr = sr->next;
+	}
+
+	if(sr==0 || length==0){
+		return -1;
+	}
+
+	if(sr->shared_with){
+		// Already shared: switch ownership
+		sr->owner = sr->shared_with;
+		sr->shared_with = owner;
+	}else{
+		// Not already shared: mark transfership
+		sr->flags = VMM_FLAGS_SHARED_TRANSFER;
+	}
+
+//	printf("sr->owner: %d\r\nsr->shared_with: %d\r\nsr->flags: %d\r\n", sr->owner, sr->shared_with, sr->flags);
+
+	return 0;
+}
+
 int vmm_unmap(void * base, size_t length, vmm_region_t ** list){
     if(!length)
         return -1;
@@ -708,11 +758,16 @@ int vmm_unmap(void * base, size_t length, vmm_region_t ** list){
 
 			// Check type of region
 			if((region->flags&VMM_FLAGS_SHARED)==VMM_FLAGS_SHARED){
+//				printf("Unmap shared memory\r\n");
+
+//				printf("owner: %d, shared_with: %d, flags: %d\r\n", region->shared->owner, region->shared->shared_with, region->shared->flags);
+
 				// Shared memory
 				// Check if owner
 				if(region->shared->owner==proc_proc_get_current()->id){
 					// Check if shared
 					if(region->shared->shared_with){
+//						printf("Transfer ownership\r\n");
 						// Set shared with as owner
 						region->shared->owner = region->shared->shared_with;
 						region->shared->shared_with = 0;
@@ -721,13 +776,27 @@ int vmm_unmap(void * base, size_t length, vmm_region_t ** list){
 							vas_unmap(region->base + PAGE_SIZE*i);
 						}
 					}else{
-						// Not shared and owner: free pages
-						for(int i=0; i<region->length/PAGE_SIZE; i++){
-							vas_unmap_free(region->base + PAGE_SIZE*i);
+						// Check if in transfer
+						if((region->shared->flags&VMM_FLAGS_SHARED_TRANSFER)==VMM_FLAGS_SHARED_TRANSFER){
+							// Shared memory in ownership transfer
+							// Just unmap from VAS
+//							printf("In transfer: unmap\r\n");
+							for(int i=0; i<region->length/PAGE_SIZE; i++){
+								vas_unmap(region->base + PAGE_SIZE*i);
+							}
+							region->shared->flags |= VMM_FLAGS_SHARED_TRANSFER_DISOWNED;
+						}else{
+//							printf("Destoy memory\r\n");
+							// Not shared and owner: free pages
+							for(int i=0; i<region->length/PAGE_SIZE; i++){
+								vas_unmap_free(region->base + PAGE_SIZE*i);
+							}
+							// TODO delete from shared memory list
 						}
 					}
 				}else{
 					// Shared with me: unmap pages
+//					printf("Free memory\r\n");
 					region->shared->shared_with = 0;
 					for(int i=0; i<region->length/PAGE_SIZE; i++){
 						vas_unmap(region->base + PAGE_SIZE*i);

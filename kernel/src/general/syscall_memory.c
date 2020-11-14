@@ -143,7 +143,12 @@ int syscall_memory(squire_syscall_memory_t * params){
             
         }break;
 
-
+        case SQUIRE_SYSCALL_MEMORY_OPERATION_TRANSFER_SHARED:{
+			if(vmm_transfer_shared(params->id0)){
+				return SYSCALL_ERROR_GENERAL;
+			}
+            
+        }break;
 
         default:
             return SYSCALL_ERROR_OPERATION;

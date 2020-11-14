@@ -14,9 +14,12 @@
 #define VMM_FLAGS_EXEC 8
 #define VMM_FLAGS_PHYSICAL 16
 #define VMM_FLAGS_SHARED 32
+#define VMM_FLAGS_SHARED_TRANSFER 64
+#define VMM_FLAGS_SHARED_TRANSFER_DISOWNED 128
 
 typedef struct vmm_shared_s{
 	struct vmm_shared_s * next;
+	unsigned int flags;
 	unsigned int owner;
 	unsigned int shared_with;
 	char id[32];
@@ -94,6 +97,8 @@ int vmm_create_shared_auto(void ** base, size_t length, unsigned int flags, char
 int vmm_map_shared(void * base, unsigned int flags, unsigned int owner, char id[32], vmm_region_t ** list);
 
 int vmm_map_shared_auto(void ** base, unsigned int flags, unsigned int owner, char id[32], vmm_region_t ** list);
+
+int vmm_transfer_shared(char id[32]);
 
 int vmm_unmap(void * base, size_t length, vmm_region_t ** list);
 
