@@ -18,6 +18,7 @@
 typedef struct vmm_shared_s{
 	struct vmm_shared_s * next;
 	unsigned int owner;
+	unsigned int shared_with;
 	char id[32];
 	void * phys_base;
 	size_t phys_length;
@@ -93,5 +94,7 @@ int vmm_create_shared_auto(void ** base, size_t length, unsigned int flags, char
 int vmm_map_shared(void * base, unsigned int flags, unsigned int owner, char id[32], vmm_region_t ** list);
 
 int vmm_map_shared_auto(void ** base, unsigned int flags, unsigned int owner, char id[32], vmm_region_t ** list);
+
+int vmm_unmap(void * base, size_t length, vmm_region_t ** list);
 
 #endif

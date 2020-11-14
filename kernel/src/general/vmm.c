@@ -27,13 +27,13 @@ int vmm_destroy(vmm_region_t ** base){
     while(region){
         // Check if memory must be freed
         if((region->flags&VMM_FLAGS_USED)!=0){
-            // Free all pages if not shared
-            // TODO check for shared region or mapped physical page
-			if((region->flags&VMM_FLAGS_PHYSICAL)!=0){
+            // Free all pages if not shared or mapped physical
+			if((region->flags&VMM_FLAGS_PHYSICAL)!=VMM_FLAGS_PHYSICAL && (region->flags&VMM_FLAGS_SHARED)!=VMM_FLAGS_SHARED){
 				for(int i=0; i<region->length/PAGE_SIZE; i++){
 					vas_unmap_free(region->base + i*PAGE_SIZE);
 				}
 			}
+			// TODO if shared, what happens to owner?
         }
         vmm_region_t * next = region->next;
         if(next){
@@ -53,8 +53,8 @@ void vmm_clean(vmm_region_t * list){
 	while(list){
 		// Check if there is a next one
 		if(list->next){
-			// Check if it has the same flags
-			if(list->flags == list->next->flags){
+			// Check if it has the same flags and it is not shared memory or physical mapped
+			if(list->flags == list->next->flags && (list->flags&VMM_FLAGS_SHARED)!=VMM_FLAGS_SHARED && (list->flags&VMM_FLAGS_PHYSICAL)!=VMM_FLAGS_PHYSICAL){
 				// Merge current one with next one
 				list->length += list->next->length;
 				vmm_region_t * tmp = list->next;
@@ -425,6 +425,7 @@ int vmm_create_shared(void * base, size_t length, unsigned int flags, char id[32
 			// Create shared block
 			region->shared = (vmm_shared_t*)kmalloc(sizeof(vmm_shared_t));
 			region->shared->owner = proc_proc_get_current()->id;
+			region->shared->shared_with = 0;
 			region->shared->next = 0;
 			region->shared->phys_base = physical_mem;
 			region->shared->phys_length = length;
@@ -509,6 +510,11 @@ int vmm_map_shared(void * base, unsigned int flags, unsigned int owner, char id[
 		return -1;
 	}
 
+	// Check if already shared
+	if(sr->shared_with){
+		return -1;
+	}
+
     // Find the descriptor of the region
     vmm_region_t * region = *list;
     while(region){
@@ -574,6 +580,7 @@ int vmm_map_shared(void * base, unsigned int flags, unsigned int owner, char id[
 
 			// Point shared region field to shared region descriptor
 			region->shared = sr;
+			sr->shared_with = proc_proc_get_current()->id;
 
             // Check if list is prepended
             if((*list)->prev){
@@ -617,6 +624,11 @@ int vmm_map_shared_auto(void ** base, unsigned int flags, unsigned int owner, ch
 		return -1;
 	}
 
+	// Check if already shared
+	if(sr->shared_with){
+		return -1;
+	}
+
 	vmm_region_t * region = *list;
 	while(region){
 
@@ -638,4 +650,122 @@ int vmm_map_shared_auto(void ** base, unsigned int flags, unsigned int owner, ch
 	return -1;
 }
 
+int vmm_unmap(void * base, size_t length, vmm_region_t ** list){
+    if(!length)
+        return -1;
+	
+    // Find the descriptor of the region
+    vmm_region_t * region = *list;
+    while(region){
+        if((size_t)region->base<=(size_t)base && (size_t)region->base+region->length>(size_t)base){
+            // Within this current region
+            // Check if used
+            if((region->flags&VMM_FLAGS_USED)==0){
+                // Not in use
+                return 0;
+            }
+            // Check if within region bounds (if request is not to large)
+            if((size_t)region->base+region->length<(size_t)base+length){
+                // Request to large
+				// Set length to region length
+				// TODO check if right
+				length = (size_t)region->base+region->length - (size_t)base;
+            }
+            // Region usable
+            // Check if new region must be made before new one
+            if((size_t)base>(size_t)region->base){
+                // Create new region before current one
+                vmm_region_t * preregion = kmalloc(sizeof(vmm_region_t));
+                preregion->base = region->base;
+                preregion->flags = region->flags;
+                preregion->length = (size_t)base - (size_t)region->base;
+                preregion->next = region;
+                preregion->prev = region->prev;
+                if(region->prev){
+                    region->prev->next = preregion;
+                }
+                region->prev = preregion;
+                region->length -= preregion->length;
+                region->base = base;
+            }
+            // Check if new region must be made after new one
+            if(length<region->length){
+                // Create new region after current one
+                vmm_region_t * postregion = kmalloc(sizeof(vmm_region_t));
+                postregion->base = (size_t)region->base + length;
+                postregion->flags = region->flags;
+                postregion->length = region->length - length;
+                postregion->next = region->next;
+                postregion->prev = region;
+                if(postregion->next){
+                    postregion->next->prev = postregion;
+                }
+                region->next = postregion;
+                region->length = length;
+            }else{
+                region->next = 0;
+            }
+
+			// Check type of region
+			if((region->flags&VMM_FLAGS_SHARED)==VMM_FLAGS_SHARED){
+				// Shared memory
+				// Check if owner
+				if(region->shared->owner==proc_proc_get_current()->id){
+					// Check if shared
+					if(region->shared->shared_with){
+						// Set shared with as owner
+						region->shared->owner = region->shared->shared_with;
+						region->shared->shared_with = 0;
+						// Unmap from VAS
+						for(int i=0; i<region->length/PAGE_SIZE; i++){
+							vas_unmap(region->base + PAGE_SIZE*i);
+						}
+					}else{
+						// Not shared and owner: free pages
+						for(int i=0; i<region->length/PAGE_SIZE; i++){
+							vas_unmap_free(region->base + PAGE_SIZE*i);
+						}
+					}
+				}else{
+					// Shared with me: unmap pages
+					region->shared->shared_with = 0;
+					for(int i=0; i<region->length/PAGE_SIZE; i++){
+						vas_unmap(region->base + PAGE_SIZE*i);
+					}
+				}
+			}else if((region->flags&VMM_FLAGS_PHYSICAL)){
+				// Physical mapped memory
+				for(int i=0; i<region->length/PAGE_SIZE; i++){
+					vas_unmap(region->base + PAGE_SIZE*i);
+				}
+			}else{
+				// Normal allocated memory
+				for(int i=0; i<region->length/PAGE_SIZE; i++){
+					vas_unmap_free(region->base + PAGE_SIZE*i);
+				}
+			}
+
+			region->flags = 0;
+            
+            // Check if list is prepended
+            if((*list)->prev){
+                *list = (*list)->prev;
+            }
+
+			// Clean list
+			vmm_clean(*list);
+            return 0;
+        }
+
+        // To next region
+        if(region->next){
+            region = region->next;
+            continue;
+        }
+        // No more regions
+        return -1;
+    }
+
+    return 0;
+}
 

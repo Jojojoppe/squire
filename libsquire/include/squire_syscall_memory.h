@@ -49,13 +49,23 @@ typedef enum SQUIRE_SYSCALL_MEMORY_OPERATION{
 	SQUIRE_SYSCALL_MEMORY_OPERATION_CREATE_SHARED,
 	/**
 	 * @brief Map a shared memory region
+	 *
 	 * address0:		Base of virtual memory to map to. Zero if kernel may decide
 	 * pid0:			PID of the owner
 	 * id0:				ID of shared memory region
 	 * After execution address0 contains the starting address of the allocation and length0
 	 * contains the length of the allocation
 	 */
-	SQUIRE_SYSCALL_MEMORY_OPERATION_MAP_SHARED
+	SQUIRE_SYSCALL_MEMORY_OPERATION_MAP_SHARED,
+	/**
+	 * @brief Unmap a memory region
+	 *
+	 * Unmaps a region of memory. Cannot cross region type boundaries! Doing so will result in
+	 * unmapping the first region (starting with the base address)
+	 * address0:		Base of virtual memory to unmap
+	 * length0:			Length of region to unmap
+	 */
+	SQUIRE_SYSCALL_MEMORY_OPERATION_MUNMAP
 } squire_syscall_memory_operation_t;
 
 /**
@@ -103,6 +113,8 @@ extern void * squire_memory_mmap_phys(void * addr, void * phys, size_t length, i
 extern void * squire_memory_create_shared(void * addr, size_t length, char id[32], int flags);
 
 extern void * squire_memory_map_shared(void * addr, unsigned int pid, char id[32], int flags);
+
+extern void squire_memory_munmap(void * addr, size_t length);
 
 #if defined(__cplusplus)
 } /* extern "C" */

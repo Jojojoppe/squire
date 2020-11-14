@@ -134,6 +134,16 @@ int syscall_memory(squire_syscall_memory_t * params){
             
         }break;
 
+        case SQUIRE_SYSCALL_MEMORY_OPERATION_MUNMAP:{
+            vmm_region_t * memory = proc_get_memory();
+			if(vmm_unmap(params->address0, params->length0, &memory)){
+				return SYSCALL_ERROR_GENERAL;
+			}
+            proc_set_memory(memory);
+            
+        }break;
+
+
 
         default:
             return SYSCALL_ERROR_OPERATION;
