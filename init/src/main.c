@@ -6,7 +6,6 @@
 #include <threads.h>
 
 #include <squire.h>
-#include <squire_fsdriver.h>
 
 #include "tar.h"
 #include "devman/devman.h"
@@ -30,19 +29,20 @@ int main(int argc, char ** argv){
 	for(int i=0; i<100000000; i++);
 
 	// MOUNT INITRAMFS
-	size_t msglen = sizeof(vfs_message_t)+sizeof(vfs_submessage_t)+sizeof(vfs_submessage_mount_t);
-	vfs_message_t * msg = (vfs_message_t*)malloc(msglen);
-	msg->amount_messages = 1;
-	vfs_submessage_t * mntsubmsg = msg->messages;
-	mntsubmsg->type = SUBMESSAGE_TYPE_MOUNT;
-	mntsubmsg->size = sizeof(vfs_submessage_mount_t);
-	vfs_submessage_mount_t * mntmsg = (vfs_submessage_mount_t*)mntsubmsg->content;
-	mntmsg->mountpoint = 1;
-	mntmsg->owner = 0;
-	strcpy(mntmsg->fsname, "initramfs");
-	mntmsg->permissions = PERMISSIONS_READALL|PERMISSIONS_READOWN|PERMISSIONS_EXECALL|PERMISSIONS_EXECOWN;
-	squire_message_simple_box_send(msg, msglen, 1, 1);
-	free(msg);
+	squire_vfs_mount(1, 0, PERMISSIONS_READALL|PERMISSIONS_EXECALL|PERMISSIONS_READOWN|PERMISSIONS_EXECOWN, "initramfs", "", 0);
+
+	// Start Device manager
+	thrd_t thrd_devman;
+	thrd_create(&thrd_devman, devman_main, "x86_generic");
+
+	// Start root device driver
+	unsigned int root_device_driver_size;
+	void * root_device_driver = tar_get(tar_start, "x86_generic.bin", &root_device_driver_size);
+	char ** rdd_argv[3];
+	rdd_argv[0] = "x86_generic";
+	rdd_argv[1] = "1";
+	rdd_argv[2] = "0";
+	squire_procthread_create_process(root_device_driver, root_device_driver_size, 3, rdd_argv);
 
 	for(;;);
 	return 0;

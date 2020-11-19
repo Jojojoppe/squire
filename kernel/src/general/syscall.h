@@ -2,7 +2,7 @@
 #define __H_SYSCALL 1
 
 #include <general/stdint.h>
-#include <squire.h>
+#include <squire_syscall.h>
 
 enum SYSCALL_ERROR{
     SYSCALL_ERROR_NOERROR = 0,

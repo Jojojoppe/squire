@@ -2,6 +2,7 @@
 #define __H_SQUIRE 1
 
 #include <squire_syscall.h>
+#include <squire_vfs.h>
 
 /**
  * @brief Frequency of a jiffie (kernel tick)

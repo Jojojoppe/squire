@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include <squire.h>
 #include <squire_fsdriver.h>
 
 #define MSG_BOX_VFS_SIMPLE 1

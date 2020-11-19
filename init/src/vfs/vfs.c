@@ -7,6 +7,7 @@
 #include <signal.h>
 
 #include <squire.h>
+#include <squire_fsdriver.h>
 
 // List of mountpoints
 vfs_mountpoint_t * vfs_mountpoints[256] = {0};

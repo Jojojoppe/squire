@@ -6,7 +6,6 @@
 #include <threads.h>
 
 #include <squire.h>
-#include <squire_driver.h>
 
 #include "devman.h"
 

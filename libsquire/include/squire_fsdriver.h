@@ -1,7 +1,8 @@
 #ifndef __H_FSDRIVER
-#define __H_FSDRIVER
+#define __H_FSDRIVER 1
 
 #include <stdint.h>
+#include <stddef.h>
 
 #define VFS_FSDRIVER_FLAGS_NODEVICE 1			// If filesystem does not need a device
 #define VFS_FSDRIVER_FLAGS_NOCACHE 2			// Tree structure of filesystem cannot be cached
