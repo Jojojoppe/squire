@@ -40,6 +40,11 @@ typedef struct{
 	unsigned int simple_box_recv_thread[256];
 } message_info_t;
 
+typedef struct{
+	unsigned int pid;
+	unsigned int box;
+} message_simple_dock_t;
+
 /**
  * @brief Initialize the message info structure of a process
  * 

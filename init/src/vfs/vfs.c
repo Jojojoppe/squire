@@ -107,7 +107,7 @@ void vfs_fsmount_r(vfs_submessage_fsmount_r_t * msg_mount){
 	fslsdir->fsdriver_private = mp->rootnode->fsdriver_private;
 	squire_message_simple_box_send(msg, msglen, mp->fsdriver->pid, mp->fsdriver->box);
 	free(msg);
-	
+
 }
 
 /**

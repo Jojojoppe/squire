@@ -3,6 +3,7 @@
 
 #include <squire_syscall.h>
 #include <squire_vfs.h>
+#include <squire_rpc.h>
 
 /**
  * @brief Frequency of a jiffie (kernel tick)

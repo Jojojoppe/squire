@@ -20,5 +20,6 @@ build/src/main.c.o: \
  /home/joppe/Documents/Projects/squire/toolchain/include/squire_syscall_io.h \
  /home/joppe/Documents/Projects/squire/toolchain/include/squire_vfs.h \
  /home/joppe/Documents/Projects/squire/toolchain/include/squire_fsdriver.h \
+ /home/joppe/Documents/Projects/squire/toolchain/include/squire_rpc.h \
  /home/joppe/Documents/Projects/squire/toolchain/include/squire_driver.h \
 

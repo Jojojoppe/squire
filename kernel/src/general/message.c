@@ -4,6 +4,9 @@
 #include <general/kmalloc.h>
 #include <general/schedule.h>
 
+// All the message docks
+message_simple_dock_t message_docks[512];
+
 void message_init_info(message_info_t * info){
 	// Init simple message
     info->simple = 0;
