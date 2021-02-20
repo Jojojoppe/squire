@@ -11,6 +11,7 @@ void function_callback(unsigned int from, squire_fsdriver_message_t * msg){
 	if(!strcmp(msg->id, "initramfs")){
 		switch(msg->function){
 
+			// MOUNT
 			case FSDRIVER_FUNCTION_MOUNT:{
 				printf("init_fsdrivers] mount '%s-%08x' at mp%d [%s]\r\n", msg->string0, msg->uint1, msg->uint0, msg->id);
 
@@ -24,6 +25,19 @@ void function_callback(unsigned int from, squire_fsdriver_message_t * msg){
 				// msg->id = initramfs
 				squire_message_simple_box_send(msg, sizeof(squire_fsdriver_message_t), from, VFS_FSDRIVER_BOX);				
 			}break;
+
+			// UNMOUNT
+			case FSDRIVER_FUNCTION_UNMOUNT:{
+				printf("init_fsdrivers] unmount mp%d\r\n", msg->uint0);
+
+				unsigned int mountpoint = msg->uint0;
+
+				msg->function = FSDRIVER_FUNCTION_UNMOUNT_R;
+				msg->uint0 = VFS_RPC_RETURN_NOERR;
+				msg->uint1 = mountpoint;
+				// msg->id = initramfs
+				squire_message_simple_box_send(msg, sizeof(squire_fsdriver_message_t), from, VFS_FSDRIVER_BOX);				
+			} break;
 
 			default:
 				break;
@@ -48,7 +62,6 @@ SQUIRE_FSDRIVER_INFO fsdriver_info = {
 SQUIRE_FSDRIVER_INFO * _fsdriver_info = &fsdriver_info;
 
 int init_fsdrivers_start(void * p){
-	void * tar_start = p;
 	char ** argv_a[3];
 	char * argv0 = "init-fsdrivers"; argv_a[0] = argv0;
 	char * argv1 = "1"; argv_a[1] = argv1;	// VFS_PID
