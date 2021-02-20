@@ -26,6 +26,7 @@ int fsdriver_main(int argc, char ** argv){
 	strcpy(msg.string0, _fsdriver_info->fsdriver_info->name);
 	msg.uint1 = _fsdriver_info->fsdriver_info->simple_box;
 	msg.uint2 = squire_procthread_getpid();
+	msg.uint3 = _fsdriver_info->fsdriver_info->version_major<<16 | _fsdriver_info->fsdriver_info->version_minor;
 	squire_fsdriver_supported_t * supported = _fsdriver_info->fsdriver_info->supported;
 	while(supported->id[0]){
 		memcpy(msg.string1, supported->id, 64);

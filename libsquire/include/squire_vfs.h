@@ -67,6 +67,6 @@ squire_vfs_rpc_return_t squire_vfs_mount(int mountpoint, char fsname[32], char d
 squire_vfs_rpc_return_t squire_vfs_unmount(int mountpoint);
 
 squire_vfs_rpc_return_t squire_vfs_open(unsigned int mountpoint, const char * path, const char * fname, unsigned int operations, unsigned int * fid);
-squire_vfs_rpc_return_t squire_vfs_close(unsigned int * fid);
+squire_vfs_rpc_return_t squire_vfs_close(unsigned int mountpoint, unsigned int fid);
 
 #endif

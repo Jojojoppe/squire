@@ -77,7 +77,7 @@ void function_callback(unsigned int from, squire_fsdriver_message_t * msg){
 
 			// CLOSE
 			case FSDRIVER_FUNCTION_CLOSE: {
-				printf("init_fsdrivers] close %08x\r\n", msg->uint0);
+				printf("init_fsdrivers] close %08x\r\n", msg->uint1);
 
 				msg->function = FSDRIVER_FUNCTION_CLOSE_R;
 				msg->uint0 = VFS_RPC_RETURN_NOERR;

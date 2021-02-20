@@ -91,10 +91,11 @@ squire_vfs_rpc_return_t squire_vfs_open(unsigned int mountpoint, const char * pa
 	return msg.uint0;
 }
 
-squire_vfs_rpc_return_t squire_vfs_close(unsigned int * fid){
+squire_vfs_rpc_return_t squire_vfs_close(unsigned int mountpoint, unsigned int fid){
 	squire_vfs_message_t msg;
 	msg.function = VFS_RPC_FUNCTION_CLOSE;
-	msg.uint0 = *fid;
+	msg.uint0 = mountpoint;
+	msg.uint1 = fid;
 	msg.box = VFS_OUTBOX;
 
 	// Wait until OUTBOX is free
