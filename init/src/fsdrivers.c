@@ -14,9 +14,14 @@ void function_callback(unsigned int from, squire_fsdriver_message_t * msg){
 			case FSDRIVER_FUNCTION_MOUNT:{
 				printf("init_fsdrivers] mount '%s-%08x' at mp%d [%s]\r\n", msg->string0, msg->uint1, msg->uint0, msg->id);
 
-				// Return could not mount
+				unsigned int mountpoint = msg->uint0;
+
 				msg->function = FSDRIVER_FUNCTION_MOUNT_R;
-				msg->uint0 = VFS_RPC_RETURN_CANNOT_MOUNT;
+				msg->uint0 = VFS_RPC_RETURN_NOERR;
+				msg->uint1 = mountpoint;
+				msg->voidp0 = 0; // private_mount
+				msg->voidp1 = 0; // private_root
+				// msg->id = initramfs
 				squire_message_simple_box_send(msg, sizeof(squire_fsdriver_message_t), from, VFS_FSDRIVER_BOX);				
 			}break;
 

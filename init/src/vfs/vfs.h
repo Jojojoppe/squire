@@ -13,6 +13,12 @@ typedef struct vfs_fsdriver_s{
 	unsigned int simple_box;
 } vfs_fsdriver_t;
 
+typedef struct vfs_mountpoint_s{
+	vfs_fsdriver_t * fsdriver;
+	void * private_mount;
+	void * private_root;
+} vfs_mountpoint_t;
+
 int vfs_main(void * p);
 
 #endif

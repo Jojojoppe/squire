@@ -11,6 +11,7 @@
 #include <squire_fsdriver.h>
 
 vfs_fsdriver_t * fsdriver_list;
+vfs_mountpoint_t vfs_mountpoints[256];
 
 vfs_fsdriver_t * fsdriver_find(char * fsname){
 	vfs_fsdriver_t * f = fsdriver_list;
@@ -49,6 +50,21 @@ void vfs_register_fsdriver(unsigned int pid, unsigned int box, char * name, uint
 void vfs_mount(unsigned int pid, unsigned int box, unsigned int mountpoint, unsigned int device_instance, unsigned int permissions, char * fsname, uint8_t * device_id){
 	printf("VFS] MOUNT '%s-%08x' at mp%d [%s/%08x]\r\n", device_id, device_instance, mountpoint, fsname, permissions);
 
+	// Check if valid mountpoint
+	if(mountpoint>=256){
+		squire_vfs_message_t msg;
+		msg.function = VFS_RPC_RETURN_ERR;
+		msg.uint0 = VFS_RPC_RETURN_CANNOT_MOUNT;
+		squire_message_simple_box_send(&msg, sizeof(msg), pid, box);
+	}
+	// Check if already in use
+	if(vfs_mountpoints[mountpoint].fsdriver!=NULL){
+		squire_vfs_message_t msg;
+		msg.function = VFS_RPC_RETURN_ERR;
+		msg.uint0 = VFS_RPC_RETURN_ALREADY_MOUNTED;
+		squire_message_simple_box_send(&msg, sizeof(msg), pid, box);
+	}
+
 	squire_fsdriver_message_t msg;
 	msg.function = FSDRIVER_FUNCTION_MOUNT;
 	msg.pid = pid;
@@ -64,14 +80,30 @@ void vfs_mount(unsigned int pid, unsigned int box, unsigned int mountpoint, unsi
 		squire_message_simple_box_send(&msg, sizeof(msg), fsdriver->PID, fsdriver->simple_box);
 	}else{
 		squire_vfs_message_t msg;
-		msg.function = VFS_RPC_RETURN_CANNOT_MOUNT;
+		msg.function = VFS_RPC_RETURN_NOERR;
+		msg.uint0 = VFS_RPC_RETURN_CANNOT_MOUNT;
 		squire_message_simple_box_send(&msg, sizeof(msg), pid, box);
 	}
 }
 
-void vfs_mount_r(unsigned int status, unsigned int box, unsigned pid){
+void vfs_mount_r(unsigned int status, unsigned int mountpoint, void * private_mount, void * private_root, uint8_t * fsname, unsigned int box, unsigned pid){
+	if(status!=VFS_RPC_RETURN_NOERR){
+		// ERROR
+		squire_vfs_message_t msg;
+		msg.function = VFS_RPC_RETURN_ERR;
+		msg.uint0 = status;
+		squire_message_simple_box_send(&msg, sizeof(msg), pid, box);
+	}
+
+	// Fill mountpoint data
+	vfs_mountpoints[mountpoint].fsdriver = fsdriver_find(fsname);
+	vfs_mountpoints[mountpoint].private_mount = private_mount;
+	vfs_mountpoints[mountpoint].private_root = private_root;
+
+	// Return NOERR
 	squire_vfs_message_t msg;
 	msg.function = VFS_RPC_RETURN_NOERR;
+	msg.uint0 = status;
 	squire_message_simple_box_send(&msg, sizeof(msg), pid, box);
 }
 
@@ -103,7 +135,11 @@ int vfs_fsdriver_main(void * p){
 				unsigned int status = msg.uint0;
 				unsigned int pid = msg.pid;
 				unsigned int box = msg.box;
-				vfs_mount_r(status, box, pid);					   
+				unsigned int mountpoint = msg.uint1;
+				void * private_mount = msg.voidp0;
+				void * private_root = msg.voidp1;
+				uint8_t * fsname = msg.id;
+				vfs_mount_r(status, mountpoint, private_mount, private_root, fsname, box, pid);					   
 			} break;
 
 			default:

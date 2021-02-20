@@ -30,7 +30,8 @@ int main(int argc, char ** argv){
 	thrd_create(&thrd_fsdriver, init_fsdrivers_start, tar_start);
 
 	for(unsigned int i=0; i<0x2000000; i++);
-	squire_vfs_mount(0, "initramfs", "", 0, VFS_PERMISSIONS_EXECALL|VFS_PERMISSIONS_EXECOWN|VFS_PERMISSIONS_READALL|VFS_PERMISSIONS_READOWN);
+	int ret = squire_vfs_mount(0, "initramfs", "", 0, VFS_PERMISSIONS_EXECALL|VFS_PERMISSIONS_EXECOWN|VFS_PERMISSIONS_READALL|VFS_PERMISSIONS_READOWN);
+	printf("squire_vfs_mount() returned %08x\r\n", ret);
 
 	for(;;);
 	return 0;
