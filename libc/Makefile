@@ -30,12 +30,12 @@ AS					:= $(PREFIX)/bin/$(ARCH)-tcc
 CC_WARNING			:= -Wall -Wextra
 CC_LIBS				:=
 CC_FLAGS			:= -nostdlib -D_PDCLIB_EXTENSIONS
-CC_INCLUDES			:= -I include -I internals
+CC_INCLUDES			:= -I include -I internals -I $(PREFIX)/include
 
 # Add DEPFILE dependencies
 -include $(DEPFILES)
 
-.PHONY: $(TARGET) all clean install uninstall crtfiles
+.PHONY: $(TARGET) all clean install uninstall crtfiles preinstall
 all: $(TARGET) install crtfiles
 
 # PHONY RULES
@@ -58,6 +58,9 @@ uninstall:
 	-rm $(FILESTOUNINSTALL)
 	# Subfolders
 	cd platform/$(ARCH) && ${MAKE} ${MFLAGS} uninstall
+
+preinstall: $(INSFILES)
+	# Copy important headers
 
 # Subfolders
 crtfiles:

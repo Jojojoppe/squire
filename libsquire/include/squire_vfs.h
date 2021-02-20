@@ -1,15 +1,15 @@
 #ifndef __H_SQUIRE_VFS
 #define __H_SQUIRE_VFS 1
 
-#include <squire_fsdriver.h>
 #include <stdint.h>
+#include <stddef.h>
 
 /**
  * @brief VFS RPC functions
  */
 typedef enum VFS_RPC_FUNCTION{
 	VFS_RPC_FUNCTION_MOUNT,
-	VFS_RPC_FUNCTION_UMOUNT,
+	VFS_RPC_FUNCTION_UNMOUNT,
 	VFS_RPC_FUNCTION_OPEN,
 	VFS_RPC_FUNCTION_CLOSE,
 	VFS_RPC_FUNCTION_READ,
@@ -43,7 +43,7 @@ typedef struct{
 	unsigned int uint0, uint1, uint2, uint3, box;
 	void * voidp0, * voidp1;
 	size_t size0, size1;
-} squrie_vfs_message_t;
+} squire_vfs_message_t;
 
 #define VFS_PID 1
 #define VFS_BOX 1
@@ -57,7 +57,7 @@ typedef struct{
 #define VFS_PERMISSIONS_WRITEOWN 16
 #define VFS_PERMISSIONS_EXECOWN 32
 
-squire_vfs_rpc_return_t vfs_mount(int mountpoint, char fsname[32], char device_id[64], unsigned int device_instance, int permissions);
-squire_vfs_rpc_return_t vfs_unmount(int mountpoint);
+squire_vfs_rpc_return_t squire_vfs_mount(int mountpoint, char fsname[32], char device_id[64], unsigned int device_instance, int permissions);
+squire_vfs_rpc_return_t squire_vfs_unmount(int mountpoint);
 
 #endif

@@ -7,7 +7,7 @@
 // Create VFS_OUTBOX mutex
 squire_mutex_t m_vfs_outbox = 0;
 
-squire_vfs_rpc_return_t vfs_mount(int mountpoint, char fsname[32], char device_id[64], unsigned int device_instance, int permissions){
+squire_vfs_rpc_return_t squire_vfs_mount(int mountpoint, char fsname[32], char device_id[64], unsigned int device_instance, int permissions){
 
 	squire_vfs_message_t msg;
 	msg.function = VFS_RPC_FUNCTION_MOUNT;
@@ -15,7 +15,7 @@ squire_vfs_rpc_return_t vfs_mount(int mountpoint, char fsname[32], char device_i
 	msg.uint1 = device_instance;
 	msg.uint2 = permissions;
 	strcpy(msg.string0, fsname);
-	memcpy(msg.string1, device_id);
+	memcpy(msg.string1, device_id, 64);
 	msg.box = VFS_OUTBOX;
 
 	// Wait until OUTBOX is free
@@ -33,12 +33,10 @@ squire_vfs_rpc_return_t vfs_mount(int mountpoint, char fsname[32], char device_i
 		return VFS_RPC_RETURN_ERR;
 	}
 
-	// TODO check return message msg
-
-	return VFS_RPC_RETURN_NOERR;
+	return msg.uint0;
 }
 
-squire_vfs_rpc_return_t vfs_unmount(int mountpoint){
+squire_vfs_rpc_return_t squire_vfs_unmount(int mountpoint){
 
 	squire_vfs_message_t msg;
 	msg.function = VFS_RPC_FUNCTION_UNMOUNT;

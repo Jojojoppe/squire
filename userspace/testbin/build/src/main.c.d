@@ -1,25 +1,24 @@
 build/src/main.c.o: \
  src/main.c \
- /home/joppe/Documents/Projects/squire/toolchain/include/stdio.h \
- /home/joppe/Documents/Projects/squire/toolchain/include/_PDCLIB_int.h \
- /home/joppe/Documents/Projects/squire/toolchain/include/_PDCLIB_config.h \
- /home/joppe/Documents/Projects/squire/toolchain/include/_PDCLIB_aux.h \
- /home/joppe/Documents/Projects/squire/toolchain/include/stdlib.h \
- /home/joppe/Documents/Projects/squire/toolchain/include/stdint.h \
- /home/joppe/Documents/Projects/squire/toolchain/include/string.h \
- /home/joppe/Documents/Projects/squire/toolchain/include/signal.h \
- /home/joppe/Documents/Projects/squire/toolchain/include/squire.h \
- /home/joppe/Documents/Projects/squire/toolchain/include/squire_syscall.h \
- /home/joppe/Documents/Projects/squire/toolchain/include/squire_syscall_debug.h \
- /home/joppe/Documents/Projects/squire/toolchain/include/stddef.h \
- /home/joppe/Documents/Projects/squire/toolchain/include/squire_syscall_memory.h \
- /home/joppe/Documents/Projects/squire/toolchain/include/squire_syscall_message.h \
- /home/joppe/Documents/Projects/squire/toolchain/include/squire_syscall_procthread.h \
- /home/joppe/Documents/Projects/squire/toolchain/include/squire_syscall_mutex.h \
- /home/joppe/Documents/Projects/squire/toolchain/include/squire_syscall_misc.h \
- /home/joppe/Documents/Projects/squire/toolchain/include/squire_syscall_io.h \
- /home/joppe/Documents/Projects/squire/toolchain/include/squire_vfs.h \
- /home/joppe/Documents/Projects/squire/toolchain/include/squire_fsdriver.h \
- /home/joppe/Documents/Projects/squire/toolchain/include/squire_rpc.h \
- /home/joppe/Documents/Projects/squire/toolchain/include/squire_driver.h \
+ /media/hdd2/Documents/Projects/squire/toolchain/include/stdio.h \
+ /media/hdd2/Documents/Projects/squire/toolchain/include/_PDCLIB_int.h \
+ /media/hdd2/Documents/Projects/squire/toolchain/include/_PDCLIB_config.h \
+ /media/hdd2/Documents/Projects/squire/toolchain/include/_PDCLIB_aux.h \
+ /media/hdd2/Documents/Projects/squire/toolchain/include/stdlib.h \
+ /media/hdd2/Documents/Projects/squire/toolchain/include/stdint.h \
+ /media/hdd2/Documents/Projects/squire/toolchain/include/string.h \
+ /media/hdd2/Documents/Projects/squire/toolchain/include/signal.h \
+ /media/hdd2/Documents/Projects/squire/toolchain/include/squire.h \
+ /media/hdd2/Documents/Projects/squire/toolchain/include/squire_syscall.h \
+ /media/hdd2/Documents/Projects/squire/toolchain/include/squire_syscall_debug.h \
+ /media/hdd2/Documents/Projects/squire/toolchain/include/stddef.h \
+ /media/hdd2/Documents/Projects/squire/toolchain/include/squire_syscall_memory.h \
+ /media/hdd2/Documents/Projects/squire/toolchain/include/squire_syscall_message.h \
+ /media/hdd2/Documents/Projects/squire/toolchain/include/squire_syscall_procthread.h \
+ /media/hdd2/Documents/Projects/squire/toolchain/include/squire_syscall_mutex.h \
+ /media/hdd2/Documents/Projects/squire/toolchain/include/squire_syscall_misc.h \
+ /media/hdd2/Documents/Projects/squire/toolchain/include/squire_syscall_io.h \
+ /media/hdd2/Documents/Projects/squire/toolchain/include/squire_vfs.h \
+ /media/hdd2/Documents/Projects/squire/toolchain/include/squire_rpc.h \
+ /media/hdd2/Documents/Projects/squire/toolchain/include/squire_driver.h \
 

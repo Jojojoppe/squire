@@ -4,187 +4,149 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
-#include <signal.h>
+#include <threads.h>
 
 #include <squire.h>
+#include <squire_vfs.h>
 #include <squire_fsdriver.h>
 
-// List of mountpoints
-vfs_mountpoint_t * vfs_mountpoints[256] = {0};
-// List of filesystem drivers
-vfs_fsdriver_t * vfs_fsdrivers = 0;
+vfs_fsdriver_t * fsdriver_list;
 
-/**
- * Get a filesystem driver info structure
- */
-vfs_fsdriver_t * vfs_find_fsdriver(char name[32]){
-	vfs_fsdriver_t * d = vfs_fsdrivers;
-	while(d){
-		if(!strcmp(d->name, name)){
-			return d;
+vfs_fsdriver_t * fsdriver_find(char * fsname){
+	vfs_fsdriver_t * f = fsdriver_list;
+	while(f){
+		if(!strcmp(f->id, fsname)){
+			return f;
 		}
-		d = d->next;
+		f = f->next;
+	}
+	return NULL;
+}
+
+// -----------------------------------------------------------------------------------
+
+void vfs_register_fsdriver(unsigned int pid, unsigned int box, char * name, uint8_t * id, uint32_t flags, squire_fsdriver_message_t * msg){
+	vfs_fsdriver_t * fsdriver = (vfs_fsdriver_t*)malloc(sizeof(vfs_fsdriver_t));
+	fsdriver->next = 0;
+	strcpy(fsdriver->name, name);
+	memcpy(fsdriver->id, id, 64);
+	fsdriver->PID = pid;
+	fsdriver->simple_box = box;
+	fsdriver->flags = flags;
+	printf("Added fsdriver definition for '%s' with driver '%s v%d.%d' on %d-%d with flags %08x\r\n", fsdriver->id, fsdriver->name, fsdriver->version_major, fsdriver->version_minor, fsdriver->PID, fsdriver->simple_box, fsdriver->flags);
+
+	if(fsdriver_list){
+		vfs_fsdriver_t * l = fsdriver_list;
+		while(l->next) l=l->next;
+		l->next = fsdriver;
+	}else{
+		fsdriver_list = fsdriver;
+	}
+}
+
+// -----------------------------------------------------------------------------------
+
+void vfs_mount(unsigned int pid, unsigned int box, unsigned int mountpoint, unsigned int device_instance, unsigned int permissions, char * fsname, uint8_t * device_id){
+	printf("VFS] MOUNT '%s-%08x' at mp%d [%s/%08x]\r\n", device_id, device_instance, mountpoint, fsname, permissions);
+
+	squire_fsdriver_message_t msg;
+	msg.function = FSDRIVER_FUNCTION_MOUNT;
+	msg.pid = pid;
+	msg.box = box;
+	msg.uint0 = mountpoint;
+	msg.uint1 = device_instance;
+	strcpy(msg.id, fsname);
+	strcpy(msg.string0, device_id);
+	
+	// Find driver
+	vfs_fsdriver_t * fsdriver = fsdriver_find(fsname);
+	if(fsdriver){
+		squire_message_simple_box_send(&msg, sizeof(msg), fsdriver->PID, fsdriver->simple_box);
+	}else{
+		squire_vfs_message_t msg;
+		msg.function = VFS_RPC_RETURN_CANNOT_MOUNT;
+		squire_message_simple_box_send(&msg, sizeof(msg), pid, box);
+	}
+}
+
+void vfs_mount_r(unsigned int status, unsigned int box, unsigned pid){
+	squire_vfs_message_t msg;
+	msg.function = VFS_RPC_RETURN_NOERR;
+	squire_message_simple_box_send(&msg, sizeof(msg), pid, box);
+}
+
+// -----------------------------------------------------------------------------------
+
+int vfs_fsdriver_main(void * p){
+	printf("Starting VFS-FSDRIVER interface\r\n");
+
+	// MESSAGE RECEIVING FOR FSDRIVER INTERFACE
+	squire_fsdriver_message_t msg;
+	unsigned int from;
+	for(;;){
+		// Wait for message and block main thread
+		size_t length = sizeof(msg);
+		squire_message_status_t status = squire_message_simple_box_receive(&msg, &length, &from, RECEIVE_BLOCKED, VFS_FSDRIVER_BOX);
+
+		switch(msg.function){
+		
+			case FSDRIVER_FUNCTION_REGFSDRIVER_R: {
+				unsigned int pid = msg.uint2;
+				unsigned int box = msg.uint1;
+				unsigned int flags = msg.uint0;
+				char * fsname = msg.string1;
+				char * fsdrivername = msg.string0;
+				vfs_register_fsdriver(pid, box, fsdrivername, fsname, flags, &msg);
+			} break;
+
+			case FSDRIVER_FUNCTION_MOUNT_R:{
+				unsigned int status = msg.uint0;
+				unsigned int pid = msg.pid;
+				unsigned int box = msg.box;
+				vfs_mount_r(status, box, pid);					   
+			} break;
+
+			default:
+				printf("VFS-FSDRIVER] Unknown function %d\r\n", msg.function);
+				break;
+		}
+
 	}
 	return 0;
 }
 
-/**
- * Mount a filesystem
- */
-void vfs_mount(vfs_submessage_mount_t * msg_mount){
-	if(vfs_mountpoints[msg_mount->mountpoint]){
-		printf("VFS] mp%d already mounted\r\n", msg_mount->mountpoint);
-		return;
-	}
-
-	// Find fsdriver
-	vfs_fsdriver_t * fsdriver = vfs_find_fsdriver(msg_mount->fsname);
-	if(!fsdriver){
-		printf("VFS] filesystem driver '%s' is not registered\r\n", msg_mount->fsname);
-		return;
-	}
-
-	vfs_mountpoints[msg_mount->mountpoint] = (vfs_mountpoint_t*)malloc(sizeof(vfs_mountpoint_t));
-	vfs_mountpoint_t * mp = &vfs_mountpoints[msg_mount->mountpoint];
-	mp->fsdriver = fsdriver;
-	mp->permissions = msg_mount->permissions;
-	mp->device_instance = msg_mount->device_instance;
-	memcpy(mp->device_id, msg_mount->device_id, 64);
-	mp->rootnode = 0;
-	mp->owner = msg_mount->owner;
-
-	// Send FSMOUNT to right fsdriver
-	size_t msglen = sizeof(vfs_message_t)+sizeof(vfs_submessage_t)+sizeof(vfs_submessage_fsmount_t);
-	vfs_message_t * msg = (vfs_message_t*)malloc(msglen);
-	msg->amount_messages = 1;
-	vfs_submessage_t * submsg_fsmount = msg->messages;
-	submsg_fsmount->type = SUBMESSAGE_TYPE_FSMOUNT;
-	submsg_fsmount->size = sizeof(vfs_submessage_fsmount_t);
-	vfs_submessage_fsmount_t * fsmount = (vfs_submessage_fsmount_t*)submsg_fsmount->content;
-	fsmount->mountpoint = msg_mount->mountpoint;
-	fsmount->device_instance = mp->device_instance;
-	strcpy(fsmount->fsname, mp->fsdriver->name);
-	memcpy(fsmount->device_id, mp->device_id, 64);
-	squire_message_simple_box_send(msg, msglen, mp->fsdriver->pid, mp->fsdriver->box);
-	free(msg);
-
-	printf("VFS] '%s' filesystem is being mounted on mp%d with permissions %04x\r\n", mp->fsdriver->name, msg_mount->mountpoint, mp->permissions);
-}
-void vfs_fsmount_r(vfs_submessage_fsmount_r_t * msg_mount){
-	vfs_mountpoint_t * mp = &vfs_mountpoints[msg_mount->mountpoint];
-	if(!mp){
-		printf("VFS] mp%d is not in mounting process\r\n", msg_mount->mountpoint);
-		return;
-	}
-	if(mp->rootnode){
-		printf("VFS] mp%d already mounted\r\n", msg_mount->mountpoint);
-		return;
-	}
-	mp->fsdriver_private = msg_mount->fsdriver_private_mount;
-
-	// Create root node
-	mp->rootnode = (vfs_node_t*)malloc(sizeof(vfs_node_t));
-	mp->rootnode->childs = 0;
-	mp->rootnode->parent = 0;
-	mp->rootnode->next = 0;
-	mp->rootnode->prev = 0;
-	mp->rootnode->fsdriver_private = msg_mount->fsdriver_private_root;
-	mp->rootnode->permissions = mp->permissions;
-	mp->rootnode->owner = mp->owner;
-
-	printf("VFS] '%s' filesystem mounted on mp%d with permissions %04x\r\n", mp->fsdriver->name, msg_mount->mountpoint, mp->permissions);
-
-	// TODO DEBUG
-	// Send FSlsdir
-	size_t msglen = sizeof(vfs_message_t)+sizeof(vfs_submessage_t)+sizeof(vfs_submessage_fslsdir_t);
-	vfs_message_t * msg = (vfs_message_t*)malloc(msglen);
-	msg->amount_messages = 1;
-	vfs_submessage_t * submsg_fsmount = msg->messages;
-	submsg_fsmount->type = SUBMESSAGE_TYPE_FSLSDIR;
-	submsg_fsmount->size = sizeof(vfs_submessage_fslsdir_t);
-	vfs_submessage_fslsdir_t * fslsdir = (vfs_submessage_fslsdir_t*)submsg_fsmount->content;
-	fslsdir->fsdriver_private_mount = mp->fsdriver_private;
-	fslsdir->fsdriver_private = mp->rootnode->fsdriver_private;
-	squire_message_simple_box_send(msg, msglen, mp->fsdriver->pid, mp->fsdriver->box);
-	free(msg);
-
-}
-
-/**
- * Register a filesystem driver
- */
-void vfs_register_fsdriver(vfs_submessage_reg_fsdriver_t * msg_fsdriver){
-	vfs_fsdriver_t * fsdriver = (vfs_fsdriver_t*)malloc(sizeof(vfs_fsdriver_t));
-	fsdriver->next = 0;
-	fsdriver->pid = msg_fsdriver->pid;
-	fsdriver->box = msg_fsdriver->box;
-	fsdriver->flags = msg_fsdriver->flags;
-	strcpy(fsdriver->name, msg_fsdriver->name);
-	if(vfs_fsdrivers){
-		vfs_fsdriver_t * f = vfs_fsdrivers;
-		while(f->next) f = f->next;
-		f->next = fsdriver;
-	}else{
-		vfs_fsdrivers = fsdriver;
-	}
-	printf("VFS] registerd filesystem driver '%s' at %d:%d with flags %02x [", fsdriver->name, fsdriver->pid, fsdriver->box, fsdriver->flags);
-	if(fsdriver->flags&VFS_FSDRIVER_FLAGS_NODEVICE)
-		printf("NODEVICE,");
-	if(fsdriver->flags&VFS_FSDRIVER_FLAGS_NOCACHE)
-		printf("NOCACHE,");
-	printf("]\r\n");
-}
-
-/**
- * List a filesystem directory
- */
-void vfs_fslsdir_r(vfs_submessage_fslsdir_r_t * msg_fslsdir, unsigned int from){
-	vfs_lsdir_node_t * shared_nodelist = (vfs_lsdir_node_t*) squire_memory_map_shared(0, from, msg_fslsdir->shared_id, MMAP_READ);
-	for(int i=0; i<msg_fslsdir->nr_nodes; i++){
-		printf("lsdir> %s\r\n", shared_nodelist[i].name);
-	}
-	squire_memory_munmap(shared_nodelist, msg_fslsdir->shared_length);
-}
-
 int vfs_main(void * p){
-	printf("Starting VFS\r\n");
+	thrd_t thrd_fsdriver;
+	thrd_fsdriver = thrd_create(&thrd_fsdriver, vfs_fsdriver_main, 0);
 
-	uint8_t * msg_buffer = (uint8_t *) squire_memory_mmap(0, 4096, MMAP_READ|MMAP_WRITE);
+	printf("Starting VFS interface\r\n");
+
+	// MESSAGE RECEIVING FOR VFS INTERFACE
+	squire_vfs_message_t msg;
 	unsigned int from;
 	for(;;){
 		// Wait for message and block main thread
-		size_t length = 4096;;
-		squire_message_status_t status = squire_message_simple_box_receive(msg_buffer, &length, &from, RECEIVE_BLOCKED, MSG_BOX_VFS_SIMPLE);
+		size_t length = sizeof(msg);
+		squire_message_status_t status = squire_message_simple_box_receive(&msg, &length, &from, RECEIVE_BLOCKED, VFS_BOX);
+		if(status) continue;
 
-		vfs_message_t * msg = (vfs_message_t*) msg_buffer;
-		vfs_submessage_t * submsg = msg->messages;
-		for(int i=0; i<msg->amount_messages; i++){
-			switch(submsg->type){
-			
-				case SUBMESSAGE_TYPE_REG_FSDRIVER:{
-					vfs_submessage_reg_fsdriver_t * content = (vfs_submessage_reg_fsdriver_t*)submsg->content;
-					vfs_register_fsdriver(content);
-				} break;
+		switch(msg.function){
+		
+			case VFS_RPC_FUNCTION_MOUNT: {
+				unsigned int mountpoint = msg.uint0;
+				unsigned int device_instance = msg.uint1;
+				unsigned int permissions = msg.uint2;
+				char * fsname = msg.string0;
+				char * device_id = msg.string1;
+				vfs_mount(from, msg.box, mountpoint, device_instance, permissions, fsname, device_id);
+			} break;
 
-				case SUBMESSAGE_TYPE_MOUNT:{
-					vfs_submessage_mount_t * content = (vfs_submessage_mount_t*)submsg->content;
-					vfs_mount(content);
-				} break;
-
-				case SUBMESSAGE_TYPE_FSMOUNT_R:{
-					vfs_submessage_fsmount_r_t * content = (vfs_submessage_fsmount_r_t*)submsg->content;
-					vfs_fsmount_r(content);
-				} break;
-
-				case SUBMESSAGE_TYPE_FSLSDIR_R:{
-					vfs_submessage_fslsdir_r_t * content = (vfs_submessage_fslsdir_r_t*)submsg->content;
-					vfs_fslsdir_r(content, from);
-				} break;
-
-				default:
-					break;
-			}
-			submsg = (vfs_submessage_t*)((void*)submsg + submsg->size + sizeof(vfs_submessage_t));
+			default:
+				printf("VFS] Unknown function %d\r\n", msg.function);
+				// Send ERROR
+				msg.uint0 = VFS_RPC_RETURN_ERR;
+				squire_message_simple_box_send(&msg, sizeof(msg), from, msg.box);
+				break;
 		}
 
 	}

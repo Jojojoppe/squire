@@ -11,7 +11,7 @@ AS					:= $(PREFIX)/bin/$(ARCH)-tcc
 CC_WARNING			:= -Wall -Wextra
 CC_LIBS				:=
 CC_FLAGS			:= -nostdlib
-CC_INCLUDES			:=
+CC_INCLUDES			:= -I $(PREFIX)/include
 
 .PHONY: all clean install uninstall crtfiles
 
@@ -34,7 +34,7 @@ $(INSTALLDIR)/%.o: $(BUILDDIR)/%.o
 
 $(BUILDDIR)/crt1.o: crt1.c
 	echo 'CC ' $@
-	$(CC) -o $@ -c $<
+	$(CC) $(CC_INCLUDES) -o $@ -c $<
 
 $(BUILDDIR)/crti.o: crti.S
 	echo 'AS ' $@

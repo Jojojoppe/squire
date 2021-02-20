@@ -28,7 +28,7 @@ AS					:= $(PREFIX)/bin/$(ARCH)-tcc
 CC_WARNING			:= -Wall -Wextra
 CC_LIBS				:=
 CC_FLAGS			:= -nostdlib
-CC_INCLUDES			:= -I include
+CC_INCLUDES			:= -I include -I $(PREFIX)/include
 
 # Add DEPFILE dependencies
 -include $(DEPFILES)

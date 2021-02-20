@@ -6,11 +6,13 @@
 #include <threads.h>
 
 #include <squire.h>
+#include <squire_vfs.h>
 
 #include "tar.h"
 #include "devman/devman.h"
-#include "fsdriver_initramfs.h"
 #include "vfs/vfs.h"
+
+extern int init_fsdrivers_start(void * p);
 
 int main(int argc, char ** argv){
 	printf("Main thread of init.bin, argc=%d\r\n", argc);
@@ -23,26 +25,12 @@ int main(int argc, char ** argv){
 	thrd_t thrd_vfs;
 	thrd_create(&thrd_vfs, vfs_main, 0);
 
-	thrd_t thrd_initramfs;
-	thrd_create(&thrd_initramfs, initramfs_fsdriver, tar_start);
+	// Start init_fsdrivers
+	thrd_t thrd_fsdriver;
+	thrd_create(&thrd_fsdriver, init_fsdrivers_start, tar_start);
 
-	for(int i=0; i<100000000; i++);
-
-	// MOUNT INITRAMFS
-	squire_vfs_mount(1, 0, PERMISSIONS_READALL|PERMISSIONS_EXECALL|PERMISSIONS_READOWN|PERMISSIONS_EXECOWN, "initramfs", "", 0);
-
-	// Start Device manager
-	thrd_t thrd_devman;
-	thrd_create(&thrd_devman, devman_main, "x86_generic");
-
-	// Start root device driver
-	unsigned int root_device_driver_size;
-	void * root_device_driver = tar_get(tar_start, "x86_generic.bin", &root_device_driver_size);
-	char ** rdd_argv[3];
-	rdd_argv[0] = "x86_generic";
-	rdd_argv[1] = "1";
-	rdd_argv[2] = "0";
-	squire_procthread_create_process(root_device_driver, root_device_driver_size, 3, rdd_argv);
+	for(unsigned int i=0; i<0x2000000; i++);
+	squire_vfs_mount(0, "initramfs", "", 0, VFS_PERMISSIONS_EXECALL|VFS_PERMISSIONS_EXECOWN|VFS_PERMISSIONS_READALL|VFS_PERMISSIONS_READOWN);
 
 	for(;;);
 	return 0;
