@@ -150,6 +150,48 @@ void vfs_unmount_r(unsigned int status, unsigned int mountpoint, unsigned int pi
 
 // -----------------------------------------------------------------------------------
 
+void vfs_open(unsigned int pid, unsigned int box, unsigned int mountpoint, char * path, char * fname, unsigned int operations){
+	// Check if valid mountpoint
+	if(mountpoint>=256){
+		squire_vfs_message_t msg;
+		msg.function = VFS_RPC_RETURN_ERR;
+		msg.uint0 = VFS_RPC_RETURN_CANNOT_UNMOUNT;
+		squire_message_simple_box_send(&msg, sizeof(msg), pid, box);
+	}
+	// Check if in use
+	if(vfs_mountpoints[mountpoint].fsdriver==NULL){
+		squire_vfs_message_t msg;
+		msg.function = VFS_RPC_RETURN_ERR;
+		msg.uint0 = VFS_RPC_RETURN_NOT_MOUNTED;
+		squire_message_simple_box_send(&msg, sizeof(msg), pid, box);
+	}
+
+	squire_fsdriver_message_t msg;
+	msg.function = FSDRIVER_FUNCTION_OPEN;
+	msg.pid = pid;
+	msg.box = box;
+	msg.uint0 = mountpoint;
+	msg.voidp0 = vfs_mountpoints[mountpoint].private_mount;
+	msg.voidp1 = vfs_mountpoints[mountpoint].private_root;
+	strcpy(msg.id, vfs_mountpoints[mountpoint].fsdriver->id);
+	strcpy(msg.string0, path);
+	strcpy(msg.string1, fname);
+	msg.uint1 = operations;
+
+	squire_message_simple_box_send(&msg, sizeof(msg), vfs_mountpoints[mountpoint].fsdriver->PID, vfs_mountpoints[mountpoint].fsdriver->simple_box);
+}
+
+void vfs_open_r(unsigned int status, unsigned int mountpoint, unsigned int FID, unsigned int pid, unsigned int box){
+	// Return NOERR
+	squire_vfs_message_t msg;
+	msg.function = VFS_RPC_RETURN_NOERR;
+	msg.uint0 = status;
+	msg.uint1 = FID;
+	squire_message_simple_box_send(&msg, sizeof(msg), pid, box);
+}
+
+// -----------------------------------------------------------------------------------
+
 int vfs_fsdriver_main(void * p){
 	printf("Starting VFS-FSDRIVER interface\r\n");
 
@@ -191,6 +233,13 @@ int vfs_fsdriver_main(void * p){
 				vfs_unmount_r(status, mountpoint, pid, box);
 			} break;
 
+			case FSDRIVER_FUNCTION_OPEN_R:{
+				unsigned int status = msg.uint0;
+				unsigned int mountpoint = msg.uint1;
+				unsigned int FID = msg.uint2;
+				vfs_open_r(status, mountpoint, FID, msg.pid, msg.box);
+			} break;
+
 			default:
 				printf("VFS-FSDRIVER] Unknown function %d\r\n", msg.function);
 				break;
@@ -229,6 +278,14 @@ int vfs_main(void * p){
 			case VFS_RPC_FUNCTION_UNMOUNT:{
 				unsigned int mountpoint = msg.uint0;
 				vfs_unmount(from, msg.box, mountpoint);
+			} break;
+
+			case VFS_RPC_FUNCTION_OPEN:{
+				unsigned int mountpoint = msg.uint0;
+				unsigned int operations = msg.uint1;
+				char * path = msg.string0;
+				char * fname = msg.string1;
+				vfs_open(from, msg.box, mountpoint, path, fname, operations);
 			} break;
 
 			default:

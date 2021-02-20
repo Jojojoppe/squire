@@ -32,6 +32,8 @@ typedef enum VFS_RPC_RETURN{
 	VFS_RPC_RETURN_CANNOT_MOUNT,
 	VFS_RPC_RETURN_NOT_MOUNTED,
 	VFS_RPC_RETURN_CANNOT_UNMOUNT,
+	VFS_RPC_RETURN_FILE_NOT_EXIST,
+	VFS_RPC_RETURN_CANNOT_OPEN
 } squire_vfs_rpc_return_t;
 
 /**
@@ -57,7 +59,14 @@ typedef struct{
 #define VFS_PERMISSIONS_WRITEOWN 16
 #define VFS_PERMISSIONS_EXECOWN 32
 
+// File operation types
+#define VFS_FILE_READ 1
+#define VFS_FILE_WRITE 2
+
 squire_vfs_rpc_return_t squire_vfs_mount(int mountpoint, char fsname[32], char device_id[64], unsigned int device_instance, int permissions);
 squire_vfs_rpc_return_t squire_vfs_unmount(int mountpoint);
+
+squire_vfs_rpc_return_t squire_vfs_open(unsigned int mountpoint, const char * path, const char * fname, unsigned int operations, unsigned int * fid);
+squire_vfs_rpc_return_t squire_vfs_close(unsigned int * fid);
 
 #endif

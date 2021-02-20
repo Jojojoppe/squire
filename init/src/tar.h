@@ -14,3 +14,4 @@ typedef struct{
 
 void tar_print_list(void * start);
 void * tar_get(void * start, char * fname, unsigned int * size);
+int tar_exists(void * start, char * fname);

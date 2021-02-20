@@ -58,7 +58,59 @@ squire_vfs_rpc_return_t squire_vfs_unmount(int mountpoint){
 		return VFS_RPC_RETURN_ERR;
 	}
 
-	// TODO check return message msg
+	return msg.uint0;
+}
 
-	return VFS_RPC_RETURN_NOERR;
+squire_vfs_rpc_return_t squire_vfs_open(unsigned int mountpoint, const char * path, const char * fname, unsigned int operations, unsigned int * fid){
+
+	squire_vfs_message_t msg;
+	msg.function = VFS_RPC_FUNCTION_OPEN;
+	msg.uint0 = mountpoint;
+	msg.uint1 = operations;
+	strcpy(msg.string0, path);
+	strcpy(msg.string1, fname);
+	msg.box = VFS_OUTBOX;
+
+	// Wait until OUTBOX is free
+	if(m_vfs_outbox==0){
+		m_vfs_outbox = squire_mutex_create();
+	}
+	squire_mutex_lock(m_vfs_outbox);
+
+	size_t msg_len = sizeof(msg);
+	int rpc_status = squire_rpc_box(VFS_OUTBOX, VFS_PID, VFS_BOX, &msg, sizeof(msg), &msg, msg_len);
+
+	squire_mutex_unlock(m_vfs_outbox);
+
+	if(rpc_status){
+		return VFS_RPC_RETURN_ERR;
+	}
+
+	*fid = msg.uint1;
+
+	return msg.uint0;
+}
+
+squire_vfs_rpc_return_t squire_vfs_close(unsigned int * fid){
+	squire_vfs_message_t msg;
+	msg.function = VFS_RPC_FUNCTION_CLOSE;
+	msg.uint0 = *fid;
+	msg.box = VFS_OUTBOX;
+
+	// Wait until OUTBOX is free
+	if(m_vfs_outbox==0){
+		m_vfs_outbox = squire_mutex_create();
+	}
+	squire_mutex_lock(m_vfs_outbox);
+
+	size_t msg_len = sizeof(msg);
+	int rpc_status = squire_rpc_box(VFS_OUTBOX, VFS_PID, VFS_BOX, &msg, sizeof(msg), &msg, msg_len);
+
+	squire_mutex_unlock(m_vfs_outbox);
+
+	if(rpc_status){
+		return VFS_RPC_RETURN_ERR;
+	}
+
+	return msg.uint0;
 }

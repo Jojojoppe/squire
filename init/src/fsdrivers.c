@@ -7,6 +7,8 @@
 #include <squire.h>
 #include <squire_fsdriver.h>
 
+#include "tar.h"
+
 void function_callback(unsigned int from, squire_fsdriver_message_t * msg){
 	if(!strcmp(msg->id, "initramfs")){
 		switch(msg->function){
@@ -16,11 +18,12 @@ void function_callback(unsigned int from, squire_fsdriver_message_t * msg){
 				printf("init_fsdrivers] mount '%s-%08x' at mp%d [%s]\r\n", msg->string0, msg->uint1, msg->uint0, msg->id);
 
 				unsigned int mountpoint = msg->uint0;
+				unsigned int devinstance = msg->uint1;
 
 				msg->function = FSDRIVER_FUNCTION_MOUNT_R;
 				msg->uint0 = VFS_RPC_RETURN_NOERR;
 				msg->uint1 = mountpoint;
-				msg->voidp0 = 0; // private_mount
+				msg->voidp0 = devinstance; // private_mount
 				msg->voidp1 = 0; // private_root
 				// msg->id = initramfs
 				squire_message_simple_box_send(msg, sizeof(squire_fsdriver_message_t), from, VFS_FSDRIVER_BOX);				
@@ -37,6 +40,49 @@ void function_callback(unsigned int from, squire_fsdriver_message_t * msg){
 				msg->uint1 = mountpoint;
 				// msg->id = initramfs
 				squire_message_simple_box_send(msg, sizeof(squire_fsdriver_message_t), from, VFS_FSDRIVER_BOX);				
+			} break;
+
+			// OPEN
+			case FSDRIVER_FUNCTION_OPEN:{
+				printf("init_fsdrivers] open mp%d:%s%s [%08x]\r\n", msg->uint0, msg->string0, msg->string1, msg->uint1);
+
+				unsigned int mountpoint = msg->uint0;
+				char * path = msg->string0;
+				char * fname = msg->string1;
+
+				// Check if file exists
+				if(!tar_exists(msg->voidp0, fname)){
+					msg->function = FSDRIVER_FUNCTION_OPEN_R;
+					msg->uint0 = VFS_RPC_RETURN_FILE_NOT_EXIST;
+					msg->uint1 = mountpoint;
+					//msg->voidp0 private_mount
+					//msg->voidp1 private_root
+					//msg->id = initramfs
+					squire_message_simple_box_send(msg, sizeof(squire_fsdriver_message_t), from, VFS_FSDRIVER_BOX);		
+					break;
+				}
+
+				size_t fsize;
+				void * fdata = tar_get(msg->voidp0, fname, &fsize);
+
+				msg->function = FSDRIVER_FUNCTION_OPEN_R;
+				msg->uint0 = VFS_RPC_RETURN_NOERR;
+				msg->uint1 = mountpoint;
+				//msg->voidp0 private_mount
+				//msg->voidp1 private_root
+				//msg->id = initramfs
+				msg->uint2 = fdata;	// File ID
+				squire_message_simple_box_send(msg, sizeof(squire_fsdriver_message_t), from, VFS_FSDRIVER_BOX);				
+			} break;
+
+			// CLOSE
+			case FSDRIVER_FUNCTION_CLOSE: {
+				printf("init_fsdrivers] close %08x\r\n", msg->uint0);
+
+				msg->function = FSDRIVER_FUNCTION_CLOSE_R;
+				msg->uint0 = VFS_RPC_RETURN_NOERR;
+				// msg->id = initramfs
+				squire_message_simple_box_send(msg, sizeof(squire_fsdriver_message_t), from, VFS_FSDRIVER_BOX);		
 			} break;
 
 			default:
