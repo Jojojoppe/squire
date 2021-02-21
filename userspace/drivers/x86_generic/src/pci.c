@@ -71,7 +71,7 @@ void pci_check_function(uint32_t bus, uint32_t slot, uint32_t func){
 	uint16_t deviceid = pci_config_read_w(bus, slot, func, PCI_HEADER_DEVICE);
 	uint16_t subclass_class = pci_config_read_w(bus, slot, func, PCI_HEADER_SUBCLASS);
     uint16_t rev_prog = pci_config_read_w(bus, slot, func, PCI_HEADER_REVISION);
-//	printf("PCI: %d.%d [%d] -> %04x:%04x [%04x]\r\n", bus, slot, func, vendorid, deviceid, class);
+	// printf("PCI: %d.%d [%d] -> %04x:%04x\r\n", bus, slot, func, vendorid, deviceid);
 
 	pci_function_t * f = (pci_function_t*)malloc(sizeof(pci_function_t));
 	f->next = 0;
@@ -91,7 +91,6 @@ void pci_check_function(uint32_t bus, uint32_t slot, uint32_t func){
 		pci_functions = f;
 	}
 	nr_pci_functions++;
-
 }
 
 void pci_check_device(uint32_t bus, uint32_t device){

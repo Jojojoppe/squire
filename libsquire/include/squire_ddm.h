@@ -17,9 +17,11 @@ typedef struct{
     uint16_t version_major, version_minor;                  // Version of driver
     char parent_name[64];                                   // Type of parent driver
     uint16_t parent_version_major, parent_version_minor;    // Minimal parent driver version (same major, minimal minor)
+    unsigned int pid;
     unsigned int box;                                       // Public box for communication
     unsigned int child_box;                                 // Box for driver-driver communication
     // Function callbacks
+    void (*interdriver)(void * msg, size_t len, unsigned int from);
     void (*enum)(char * device, char * type);               // Enumerate device(bus) for sub devices
     void (*init)(char * device, char * type);               // Bind driver to device and initialize device
     void (*deinit)(char * device);                          // Deinitialize device and unbind driver
@@ -62,6 +64,8 @@ typedef enum{
     SQUIRE_DDM_SUBMESSAGE_INIT,                     // DDM-DRIVER: DDM->DRIVER
     SQUIRE_DDM_SUBMESSAGE_ENUM,                     // DDM-DRIVER: DDM->DRIVER
     SQUIRE_DDM_SUBMESSAGE_REGISTER_DEVICE,          // DDM-DRIVER: DRIVER->DDM
+    SQUIRE_DDM_SUBMESSAGE_REQUEST_PARENT,           // DDM-DRIVER: DRIVER->DDM
+    SQUIRE_DDM_SUBMESSAGE_PARENT,                   // DDM-DRIVER: DDM->DRIVER
     SQUIRE_DDM_SUBMESSAGE_NONE                      // ALL: ALL
 } squire_ddm_submessage_type_t;
 
@@ -89,27 +93,37 @@ typedef struct{
  *      contains squire_ddm_submessage_enum_t
  * + SQUIRE_DDM_SUBMESSAGE_REGISTER_DEVICE
  *      contains squire_ddm_submessage_register_device_t
+ * + SQUIRE_DDM_SUBMESSAGE_REQUEST_PARENT
+ *      contains squire_ddm_submessage_request_parent_t
+ * + SQUIRE_DDM_SUBMESSAGE_PARENT
+ *      contains the driver_info structure of the parent if there is one, if not all zeroed out
  */
 
 typedef struct{
-    char * device[64];
-    char * type[64];
+    char device[64];
+    char type[64];
     unsigned int parent_pid, parent_box;
 } squire_ddm_submessage_init_t;
 
 typedef struct{
-    char * device[64];
-    char * type[64];
+    char device[64];
+    char type[64];
 } squire_ddm_submessage_enum_t;
 
 typedef struct{
-    char * device[64];
-    char * type[64];
-    char * parent[64];
+    char device[64];
+    char type[64];
+    char parent[64];
     squire_ddm_device_type_t device_type;
 } squire_ddm_submessage_register_device_t;
 
+typedef struct{
+    char driver[64];
+    unsigned int box;
+} squire_ddm_submessage_request_parent_t;
+
 void squire_ddm_driver_register_device(char * device, char * type, squire_ddm_device_type_t device_type, char * parent);
+void squire_ddm_driver_request_parent(squire_ddm_driver_t * parent);
 
 /*
  * ------

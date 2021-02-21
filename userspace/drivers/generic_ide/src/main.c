@@ -7,16 +7,24 @@
 #include <squire.h>
 #include <squire_ddm.h>
 
+squire_ddm_driver_t pci_driver;
+
 void enumerate(char * device, char * type){
 }
 
 void init(char * device, char * type){
+	if(!pci_driver.pid){
+		// If the IDE driver does not know the PCI driver yet, ask for it
+		squire_ddm_driver_request_parent(&pci_driver);
+		printf("IDE] parent driver '%s' on %d:%d\r\n", pci_driver.name, pci_driver.pid, pci_driver.child_box);
+	}
 }
 
 squire_ddm_driver_t driver_info = {
 	"generic_ide", 1, 0,
 	"PCI", 1, 0,		// Need a PCI bus driver of at least version 1.0
-	1, 2,
+	0, 1, 2,
+	NULL,
 	enumerate,
 	init,
 	NULL,

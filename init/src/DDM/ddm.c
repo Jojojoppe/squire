@@ -95,6 +95,30 @@ void init_uninitialized(ddm_driver_t * driver, ddm_device_t * device){
     }
 }
 
+// DDM-DRIVER request parent driver
+void ddm_driver_request_parent(void * msg, unsigned int from){
+    squire_ddm_submessage_request_parent_t * m = (squire_ddm_submessage_request_parent_t*)msg;
+    ddm_driver_t * d = ddm_registerd_drivers;
+    while(d){
+        if(!strcmp(d->driver_info.name, m->driver)){
+            size_t contentsize = sizeof(squire_ddm_submessage_header_t)+sizeof(squire_ddm_driver_t);
+            size_t retmsgsize = sizeof(squire_ddm_message_header_t) + contentsize;
+            squire_ddm_message_header_t * retmsg = (squire_ddm_message_header_t*)malloc(retmsgsize);
+            retmsg->length = retmsgsize;
+            retmsg->messages = 1;
+            squire_ddm_submessage_header_t * smsg_hdr = (squire_ddm_submessage_header_t*)(retmsg+1);
+            smsg_hdr->length = contentsize;
+            smsg_hdr->submessage_type = SQUIRE_DDM_SUBMESSAGE_PARENT;
+            memcpy(smsg_hdr+1, &d->driver_info, sizeof(squire_ddm_driver_t));
+            squire_message_simple_box_send(retmsg, retmsgsize, from, m->box);
+            free(retmsg);
+            return;
+        };
+        d = d->next;
+    }
+    // ERROR
+}
+
 // DDM-DRIVER register a device
 void ddm_driver_register_device(void * msg, unsigned int from){
     squire_ddm_submessage_register_device_t * m = (squire_ddm_submessage_register_device_t*) msg;
@@ -236,6 +260,10 @@ int ddm_main(void * p){
 
                 case SQUIRE_DDM_SUBMESSAGE_REGISTER_DEVICE:
                     ddm_driver_register_device(smsg_hdr+1, from);
+                    break;
+
+                case SQUIRE_DDM_SUBMESSAGE_REQUEST_PARENT:
+                    ddm_driver_request_parent(smsg_hdr+1, from);
                     break;
 
                 default:

@@ -17,6 +17,10 @@ void INTRhandler(int sig){
 	}
 }
 
+void interdriver(squire_ddm_submessage_header_t * smsg_hdr, size_t length, unsigned int from){
+	printf("message from %d of type %d\r\n", from, smsg_hdr->submessage_type);
+}
+
 void enumerate(char * device, char * type){
 	if(!strcmp(type, "ROOT")){
 		// Enumerate motherboard -> register directly connected devices
@@ -40,7 +44,8 @@ void init(char * device, char * type){
 squire_ddm_driver_t driver_info = {
 	"x86_generic", 1, 0,
 	"\0", 0, 0,
-	1, 2,
+	0, 1, 2,
+	interdriver,
 	enumerate,
 	init,
 	NULL,
