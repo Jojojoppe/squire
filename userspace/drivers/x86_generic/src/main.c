@@ -5,35 +5,53 @@
 #include <signal.h>
 
 #include <squire.h>
-#include <squire_driver.h>
+#include <squire_ddm.h>
 
-#include <x86_generic.h>
-#include <x86_generic_PCI.h>
-#include <x86_generic_RTC.h>
+#include "cmos.h"
+#include "pci.h"
 
-void function_callback(unsigned int from, squire_driver_submessage_function_t * func){
-	if(!strcmp(func->id, "x86_generic")){
-		x86_generic_function_callback(from, func);
-	}else if(!strcmp(func->id, "x86_generic_PCI")){
-		x86_generic_PCI_function_callback(from, func);
-	}else if(!strcmp(func->id, "x86_generic_RTC")){
-		x86_generic_RTC_function_callback(from, func);
+void INTRhandler(int sig){
+	unsigned int intr_id = squire_extraval0;
+	if(intr_id==RTC_INTR){
+		x86_generic_CMOS_INTR();
 	}
 }
 
-squire_driver_t driver_x86_generic = {
-	"x86_generic",																	// Name of the driver
-	1,0,																			// Version of the driver
-	0,																				// Simple message box the driver listens to
+void enumerate(char * device, char * type){
+	if(!strcmp(type, "ROOT")){
+		// Enumerate motherboard -> register directly connected devices
+		squire_ddm_driver_register_device("PCI_ROOT", "PCI", SQUIRE_DDM_DEVICE_TYPE_NONE, "_");
+		squire_ddm_driver_register_device("CMOS", "CMOS", SQUIRE_DDM_DEVICE_TYPE_NONE, "_");
+	}else if(!strcmp(device, "PCI_ROOT")){
+		x86_generic_PCI_enum(device);
+	}
+}
+
+void init(char * device, char * type){
+	if(!strcmp(type, "ROOT")){
+		signal(SIGINTR, INTRhandler);
+	}else if(!strcmp(type, "CMOS")){
+		x86_generic_CMOS_init();
+	}else if(!strcmp(device, "PCI_ROOT")){
+		x86_generic_PCI_init(device);
+	}
+}
+
+squire_ddm_driver_t driver_info = {
+	"x86_generic", 1, 0,
+	"\0", 0, 0,
+	1, 2,
+	enumerate,
+	init,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
 	{
-		{"x86_generic", DRIVER_FUNCTIONS_INIT|DRIVER_FUNCTIONS_ENUM},
-		{"x86_generic_PCI", DRIVER_FUNCTIONS_INIT|DRIVER_FUNCTIONS_ENUM|DRIVER_FUNCTIONS_DEINIT},
-		{"x86_generic_RTC", DRIVER_FUNCTIONS_INIT},
-		{0},
-	}																				// Supported device ID's
+		{"ROOT"},
+		{"PCI"},
+		{"CMOS"}
+	}
 };
-SQUIRE_DRIVER_INFO driver_info = {
-	&driver_x86_generic,
-	function_callback,
-};
-DRIVER(driver_info)
+SQUIRE_DDM_DRIVER(driver_info);

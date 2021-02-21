@@ -1,13 +1,11 @@
-#include <x86_generic_PCI.h>
+#include "pci.h"
 
 #include <stdint.h>
 #include <string.h>
 #include <stdio.h>
 
 #include <squire.h>
-
-#define DEVICE_ID "x86_generic_PCI"
-#define DEVICE_INSTANCE 0
+#include <squire_ddm.h>
 
 #define PCI_CONFIG_ADDRESS 0xcf8
 #define PCI_CONFIG_DATA 0xcfc
@@ -46,6 +44,7 @@ typedef struct pci_function_s{
 	struct pci_function_s * next;
 	uint16_t vendor, device;
 	uint8_t bus, slot, func;
+    uint8_t class, subclass, prog;
 } pci_function_t;
 
 unsigned int nr_pci_functions = 0;
@@ -70,7 +69,8 @@ uint16_t pci_config_read_w(uint32_t bus, uint32_t slot, uint32_t func, uint32_t 
 void pci_check_function(uint32_t bus, uint32_t slot, uint32_t func){
 	uint16_t vendorid = pci_config_read_w(bus, slot, func, PCI_HEADER_VENDOR);
 	uint16_t deviceid = pci_config_read_w(bus, slot, func, PCI_HEADER_DEVICE);
-	uint16_t class = pci_config_read_w(bus, slot, func, PCI_HEADER_SUBCLASS);
+	uint16_t subclass_class = pci_config_read_w(bus, slot, func, PCI_HEADER_SUBCLASS);
+    uint16_t rev_prog = pci_config_read_w(bus, slot, func, PCI_HEADER_REVISION);
 //	printf("PCI: %d.%d [%d] -> %04x:%04x [%04x]\r\n", bus, slot, func, vendorid, deviceid, class);
 
 	pci_function_t * f = (pci_function_t*)malloc(sizeof(pci_function_t));
@@ -80,6 +80,9 @@ void pci_check_function(uint32_t bus, uint32_t slot, uint32_t func){
 	f->bus = bus;
 	f->slot = slot;
 	f->func = func;
+    f->class = subclass_class>>8;
+    f->subclass = subclass_class&0xff;
+    f->prog = rev_prog>>8;
 	if(pci_functions){
 		pci_function_t * t = pci_functions;
 		while(t->next) t = t->next;
@@ -107,56 +110,34 @@ void pci_check_device(uint32_t bus, uint32_t device){
 	}
 }
 
-void x86_generic_PCI_function_callback(unsigned int from, squire_driver_submessage_function_t * func){
-	switch(func->function){
-	
-		case DRIVER_FUNCTIONS_INIT:{
-			printf("x86_generic_PCI %08x] Initialize device\r\n", func->instance);
-			// Regiger IO ports
-			int regstatus = 0;
-			regstatus |= squire_io_register_port(PCI_CONFIG_ADDRESS, 4, IO_PORT_READ | IO_PORT_WRITE);
-			if(regstatus) printf("Registering PCI_CONFIG_ADDRESS not succeeded: %d\r\n", regstatus);
-			regstatus |= squire_io_register_port(PCI_CONFIG_DATA, 4, IO_PORT_READ | IO_PORT_WRITE);
-			if(regstatus) printf("Registering PCI_CONFIG_DATA not succeeded: %d\r\n", regstatus);
-		} break;
+void x86_generic_PCI_init(char * device){
+    printf("%s] Initialize device\r\n", device);
+    // Regiger IO ports
+    int regstatus = 0;
+    regstatus |= squire_io_register_port(PCI_CONFIG_ADDRESS, 4, IO_PORT_READ | IO_PORT_WRITE);
+    if(regstatus) printf("Registering PCI_CONFIG_ADDRESS not succeeded: %d\r\n", regstatus);
+    regstatus |= squire_io_register_port(PCI_CONFIG_DATA, 4, IO_PORT_READ | IO_PORT_WRITE);
+    if(regstatus) printf("Registering PCI_CONFIG_DATA not succeeded: %d\r\n", regstatus);
+}
 
-		case DRIVER_FUNCTIONS_ENUM:{
-			printf("x86_generic_PCI %08x] Enumerate device\r\n", func->instance);
-			for(int b=0; b<256; b++){
-				for(int d=0; d<32; d++){
-					pci_check_device(b, d);
-				}
-			}
-			// pci_functions contains all the devices
+void x86_generic_PCI_enum(char * device){
+    printf("%s] Enumerate device\r\n", device);
+    for(int b=0; b<256; b++){
+        for(int d=0; d<32; d++){
+            pci_check_device(b, d);
+        }
+    }
+    // pci_functions contains all the devices
 
-			// Register pci devices at device manager
-			unsigned int nr_devices = nr_pci_functions;
-			// Message size
-			size_t msg_size = sizeof(squire_driver_message_t) + nr_devices*(sizeof(squire_driver_submessage_t)+sizeof(squire_driver_submessage_device_t));
-			squire_driver_message_t * msg = (squire_driver_message_t*)alloca(msg_size);
-			msg->amount_messages = nr_devices;
-			squire_driver_submessage_t * submsg = msg->messages;
-			pci_function_t * func = pci_functions;
-			for(int i=0; i<nr_devices; i++){
-				strcpy(submsg->name, "");
-				submsg->type = SUBMESSAGE_TYPE_O_REGDEVICE;
-				submsg->size = sizeof(squire_driver_submessage_device_t);
-				squire_driver_submessage_device_t * dev = (squire_driver_submessage_device_t*)submsg->content;
-				strcpy(dev->parent, DEVICE_ID);
-				dev->parent_instance = DEVICE_INSTANCE;
-				sprintf(dev->id, "PCI_%04x:%04x", func->vendor, func->device);
-				dev->instance = 0;
-				dev->instance = ((func->bus<<16)&0xff0000) | ((func->slot<<8)&0xff00) | (func->func&0xff);
-				submsg = (squire_driver_submessage_t*)((void*)&submsg->content + submsg->size);
-				func = func->next;
-			}
-			squire_message_simple_box_send(msg, msg_size, device_manager_pid, device_manager_box);
-
-
-		} break;
-
-		default:
-			printf("x86_generic_PCI %08x] Unknown function requested\r\n", func->instance);
-			break;
-	}
+    // Register pci devices at device manager
+    unsigned int nr_devices = nr_pci_functions;
+    pci_function_t * func = pci_functions;
+    for(int i=0; i<nr_devices; i++){
+        char dname[64];
+        char dtype[64];
+        sprintf(dname, "%04x:%04x %02x/%02x/%02x", func->vendor, func->device, func->bus, func->slot, func->func);
+        sprintf(dtype, "PCI:%02x-%02x-%02x", func->class, func->subclass, func->prog);
+        squire_ddm_driver_register_device(dname, dtype, SQUIRE_DDM_DEVICE_TYPE_NONE, "PCI_ROOT");
+        func = func->next;
+    }
 }
