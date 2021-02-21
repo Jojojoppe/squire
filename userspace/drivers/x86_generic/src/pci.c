@@ -135,8 +135,8 @@ void x86_generic_PCI_enum(char * device){
     for(int i=0; i<nr_devices; i++){
         char dname[64];
         char dtype[64];
-        sprintf(dname, "%04x:%04x %02x/%02x/%02x", func->vendor, func->device, func->bus, func->slot, func->func);
-        sprintf(dtype, "PCI:%02x-%02x-%02x", func->class, func->subclass, func->prog);
+        sprintf(dname, "%s/%02x/%02x/%02x", device, func->bus, func->slot, func->func);
+        sprintf(dtype, "PCI:%02x-%02x-%02x|PCI:%04x-%04x", func->class, func->subclass, func->prog, func->vendor, func->device);
         squire_ddm_driver_register_device(dname, dtype, SQUIRE_DDM_DEVICE_TYPE_NONE, "PCI_ROOT");
         func = func->next;
     }

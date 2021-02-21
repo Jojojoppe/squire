@@ -8,6 +8,7 @@ typedef struct ddm_driver_s{
     struct ddm_driver_s * next;
     squire_ddm_driver_t driver_info;
     unsigned int pid;
+    struct ddm_driver_s * parent;
 } ddm_driver_t;
 
 typedef struct ddm_device_s{

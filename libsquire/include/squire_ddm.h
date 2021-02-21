@@ -15,8 +15,8 @@ typedef struct{
     // Basic driver info
     char name[64];                                          // Name of driver
     uint16_t version_major, version_minor;                  // Version of driver
-    char parent_name[64];                                   // Name of parent driver (0 if none)
-    uint16_t parent_version_major, parent_version_minor;    // Minimal parent driver version
+    char parent_name[64];                                   // Type of parent driver
+    uint16_t parent_version_major, parent_version_minor;    // Minimal parent driver version (same major, minimal minor)
     unsigned int box;                                       // Public box for communication
     unsigned int child_box;                                 // Box for driver-driver communication
     // Function callbacks

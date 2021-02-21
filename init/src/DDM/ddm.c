@@ -22,6 +22,20 @@ ddm_device_t * find_device(char * device, ddm_device_t * node){
     return 0;
 }
 
+// Find a driver supporting a type
+ddm_driver_t * find_driver(char * type, unsigned int major, unsigned int minor, ddm_driver_t * driver){
+    while(driver){
+        for(int i=0; i<32; i++){
+            if(driver->driver_info.supported[i].type==0) break;
+            if(strcmp(driver->driver_info.supported[i].type, type)==0 && major==driver->driver_info.version_major && minor<=driver->driver_info.version_minor){
+                return driver;
+            }
+        }
+        driver = driver->next;
+    }
+    return 0;
+}
+
 // Traverse device tree to initialize devices which can be controlled by a driver
 void init_uninitialized(ddm_driver_t * driver, ddm_device_t * device){
     while(device){
@@ -30,9 +44,21 @@ void init_uninitialized(ddm_driver_t * driver, ddm_device_t * device){
 
         // Check if device needs to be initialized and it can be done by this driver
         if(device->driver==0){
+            char * split = strchr(device->type, '|');
             for(int i=0; i<32; i++){
                 if(driver->driver_info.supported[i].type==0) break;
-                if(!strcmp(device->type, driver->driver_info.supported[i].type)){
+
+                // Split is used to allow for generic drivers or device specific drivers
+                int suitable = 0;
+                if(split){
+                    char type1[64] = {0};
+                    memcpy(type1, device->type, split-device->type);
+                    suitable = (strcmp(type1, driver->driver_info.supported[i].type)==0) || (strcmp(split+1, driver->driver_info.supported[i].type)==0);
+                }else{
+                    suitable = (strcmp(device->type, driver->driver_info.supported[i].type)==0);
+                }
+
+                if(suitable){
                     // Send init and enum request
                     size_t smsg_init_length = sizeof(squire_ddm_submessage_header_t) + sizeof(squire_ddm_submessage_init_t);
                     size_t smsg_enum_length = sizeof(squire_ddm_submessage_header_t) + sizeof(squire_ddm_submessage_enum_t);
@@ -102,9 +128,9 @@ void ddm_driver_register_device(void * msg, unsigned int from){
         driver = driver->next;
     }
     if(!dev->driver){
-        printf("No driver found for device\r\n");
+        printf("  No driver found for device\r\n");
     }else{
-        printf("Driver '%s' v%d.%d found for device\r\n", dev->driver->driver_info.name, dev->driver->driver_info.version_major, dev->driver->driver_info.version_minor);
+        printf("  Driver '%s' v%d.%d found for device\r\n", dev->driver->driver_info.name, dev->driver->driver_info.version_major, dev->driver->driver_info.version_minor);
     }
 }
 
@@ -114,6 +140,7 @@ void ddm_driver_register_driver(void * msg, unsigned int from){
     ddm_driver_t * d = (ddm_driver_t*) malloc(sizeof(ddm_driver_t));
     d->next = 0;
     d->pid = from;
+    d->parent = 0;
     memcpy(&d->driver_info, driver_info, sizeof(squire_ddm_driver_t));
 
     if(ddm_registerd_drivers){
@@ -128,6 +155,18 @@ void ddm_driver_register_driver(void * msg, unsigned int from){
     for(int i=0; i<32; i++){
         if(d->driver_info.supported[i].type[0]==0) break;
         printf("    * %s\r\n", d->driver_info.supported[i].type);
+    }
+
+    // Find parent driver if needed
+    if(d->driver_info.parent_name[0]){
+        printf("    Needs a driver supporting %s with version > v%d.%d\r\n", d->driver_info.parent_name, d->driver_info.parent_version_major, d->driver_info.parent_version_minor);
+        ddm_driver_t * p = find_driver(d->driver_info.parent_name, d->driver_info.parent_version_major, d->driver_info.parent_version_minor, ddm_registerd_drivers);
+        if(p){
+            d->parent = p;
+            printf("    found driver '%s' v%d.%d\r\n", p->driver_info.name, p->driver_info.version_major, p->driver_info.version_minor);
+        }else{
+            printf("    no parent driver found\r\n");
+        }
     }
 
     init_uninitialized(d, ddm_registerd_devices);
