@@ -21,7 +21,7 @@ typedef struct{
     unsigned int box;                                       // Public box for communication
     unsigned int child_box;                                 // Box for driver-driver communication
     // Function callbacks
-    void (*interdriver)(void * msg, size_t len, unsigned int from);
+    void (*interdriver)(char * type, unsigned int function, void * data, size_t length, unsigned int from, unsigned int box);
     void (*enum)(char * device, char * type);               // Enumerate device(bus) for sub devices
     void (*init)(char * device, char * type);               // Bind driver to device and initialize device
     void (*deinit)(char * device);                          // Deinitialize device and unbind driver
@@ -66,6 +66,8 @@ typedef enum{
     SQUIRE_DDM_SUBMESSAGE_REGISTER_DEVICE,          // DDM-DRIVER: DRIVER->DDM
     SQUIRE_DDM_SUBMESSAGE_REQUEST_PARENT,           // DDM-DRIVER: DRIVER->DDM
     SQUIRE_DDM_SUBMESSAGE_PARENT,                   // DDM-DRIVER: DDM->DRIVER
+    SQUIRE_DDM_SUBMESSAGE_IDM,                      // DRIVER-DRIVER: CHILD->PARENT
+    SQUIRE_DDM_SUBMESSAGE_IDMR,                     // DRIVER-DRIVER: PARENT->CHILD
     SQUIRE_DDM_SUBMESSAGE_NONE                      // ALL: ALL
 } squire_ddm_submessage_type_t;
 
@@ -97,6 +99,8 @@ typedef struct{
  *      contains squire_ddm_submessage_request_parent_t
  * + SQUIRE_DDM_SUBMESSAGE_PARENT
  *      contains the driver_info structure of the parent if there is one, if not all zeroed out
+ * + SQUIRE_DDM_SUBMESSAGE_IDM(R)
+ *      contains an extra header: squire_ddm_submessage_idm_t
  */
 
 typedef struct{
@@ -122,8 +126,16 @@ typedef struct{
     unsigned int box;
 } squire_ddm_submessage_request_parent_t;
 
+typedef struct{
+    char type[64];              // Subsystem of driver to address
+    unsigned int function;      // Function to run on parent driver
+    uint32_t length;            // Length of upcomming data
+    unsigned int box;
+} squire_ddm_submessage_idm_t;
+
 void squire_ddm_driver_register_device(char * device, char * type, squire_ddm_device_type_t device_type, char * parent);
 void squire_ddm_driver_request_parent(squire_ddm_driver_t * parent);
+void squire_ddm_driver_idm(char * type, unsigned int pid, unsigned int box, unsigned int function, void * data, size_t length, void * buffer, size_t bufferlength);
 
 /*
  * ------

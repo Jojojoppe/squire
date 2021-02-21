@@ -109,7 +109,7 @@ void ddm_driver_request_parent(void * msg, unsigned int from){
             squire_ddm_submessage_header_t * smsg_hdr = (squire_ddm_submessage_header_t*)(retmsg+1);
             smsg_hdr->length = contentsize;
             smsg_hdr->submessage_type = SQUIRE_DDM_SUBMESSAGE_PARENT;
-            memcpy(smsg_hdr+1, &d->driver_info, sizeof(squire_ddm_driver_t));
+            memcpy(smsg_hdr+1, &d->parent->driver_info, sizeof(squire_ddm_driver_t));
             squire_message_simple_box_send(retmsg, retmsgsize, from, m->box);
             free(retmsg);
             return;

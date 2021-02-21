@@ -17,8 +17,10 @@ void INTRhandler(int sig){
 	}
 }
 
-void interdriver(squire_ddm_submessage_header_t * smsg_hdr, size_t length, unsigned int from){
-	printf("message from %d of type %d\r\n", from, smsg_hdr->submessage_type);
+void interdriver(char * type, unsigned int function, void * data, size_t length, unsigned int from, unsigned int box){
+	if(!strcmp(type, "PCI")){
+		x86_generic_PCI_idm(function, data, length, from, box);
+	}
 }
 
 void enumerate(char * device, char * type){

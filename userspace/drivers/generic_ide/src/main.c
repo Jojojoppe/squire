@@ -7,6 +7,9 @@
 #include <squire.h>
 #include <squire_ddm.h>
 
+#define DRIVER_IMPLEMENTATION
+#include <drivers/pci.h>
+
 squire_ddm_driver_t pci_driver;
 
 void enumerate(char * device, char * type){
@@ -18,6 +21,11 @@ void init(char * device, char * type){
 		squire_ddm_driver_request_parent(&pci_driver);
 		printf("IDE] parent driver '%s' on %d:%d\r\n", pci_driver.name, pci_driver.pid, pci_driver.child_box);
 	}
+
+	// Initialize IDE device
+	pci_config_t config;
+	pci_get_config(&pci_driver, &config);
+	printf("Config read\r\n");
 }
 
 squire_ddm_driver_t driver_info = {

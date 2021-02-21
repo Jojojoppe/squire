@@ -7,6 +7,8 @@
 #include <squire.h>
 #include <squire_ddm.h>
 
+#include "../include/pci.h"
+
 #define PCI_CONFIG_ADDRESS 0xcf8
 #define PCI_CONFIG_DATA 0xcfc
 
@@ -139,4 +141,32 @@ void x86_generic_PCI_enum(char * device){
         squire_ddm_driver_register_device(dname, dtype, SQUIRE_DDM_DEVICE_TYPE_NONE, "PCI_ROOT");
         func = func->next;
     }
+}
+
+void x86_generic_PCI_idm(unsigned int function, void * data, size_t length, unsigned int from, unsigned int box){
+	switch(function){
+		case PCI_FUNCTIONS_GET_CONFIG:{
+			printf("PCI get config\r\n");
+
+			pci_config_t config;  // TODO fill structure
+
+			size_t smsg_size = sizeof(squire_ddm_submessage_header_t)+sizeof(squire_ddm_submessage_idm_t)+sizeof(pci_config_t);
+			size_t msg_size = sizeof(squire_ddm_message_header_t)+smsg_size;
+			squire_ddm_message_header_t * msg_hdr = (squire_ddm_message_header_t*) malloc(msg_size);
+			memset(msg_hdr, 0, msg_size);
+			msg_hdr->length = msg_size;
+			msg_hdr->messages = 1;
+			squire_ddm_submessage_header_t * smsg_hdr = (squire_ddm_submessage_header_t*)(msg_hdr+1);
+			smsg_hdr->length = smsg_size;
+			smsg_hdr->submessage_type = SQUIRE_DDM_SUBMESSAGE_IDMR;
+			squire_ddm_submessage_idm_t * idm_hdr = (squire_ddm_submessage_idm_t*)(smsg_hdr+1);
+			strcpy(idm_hdr->type, "PCI");
+			idm_hdr->length = length;
+			idm_hdr->function = PCI_FUNCTIONS_GET_CONFIG;
+			memcpy(idm_hdr+1, &config, sizeof(pci_config_t));
+			squire_message_simple_box_send(msg_hdr, msg_size, from, box);
+			free(msg_hdr);
+
+		} break;
+	}
 }

@@ -31,7 +31,7 @@ int thrd_create(thrd_t * thr, thrd_start_t func, void * arg){
     return thrd_success;
 }
 
-void strcpy(char * dst, char * src){
+void strcpy2(char * dst, char * src){
     while(*src){
         *dst = *src;
         dst++; src++;
@@ -51,8 +51,9 @@ int squire_ddm_driver_child_main(void * p){
         squire_ddm_message_header_t * hdr = (squire_ddm_message_header_t*) msg_buffer;
         squire_ddm_submessage_header_t * smsg_hdr = (squire_ddm_submessage_header_t*)(hdr+1);
         for(int i=0; i<hdr->messages; i++){
-            if(__ddm_driver_info->interdriver){
-                __ddm_driver_info->interdriver(smsg_hdr, smsg_hdr->length, from);
+            if(__ddm_driver_info->interdriver){// && smsg_hdr->submessage_type==SQUIRE_DDM_SUBMESSAGE_IDM){
+                squire_ddm_submessage_idm_t * idm = (squire_ddm_submessage_idm_t*)(smsg_hdr+1);
+                __ddm_driver_info->interdriver(idm->type, idm->function, idm+1, idm->length, from, idm->box);
             }
             smsg_hdr = (squire_ddm_submessage_header_t*)((void*)smsg_hdr + smsg_hdr->length);
         };
@@ -133,9 +134,9 @@ void squire_ddm_driver_register_device(char * device, char * type, squire_ddm_de
     squire_ddm_submessage_register_device_t * smsg_content = (squire_ddm_submessage_register_device_t*)(smsg_hdr+1);
 
     smsg_content->device_type = device_type;
-    strcpy(smsg_content->device, device);
-    strcpy(smsg_content->type, type);
-    strcpy(smsg_content->parent, parent);
+    strcpy2(smsg_content->device, device);
+    strcpy2(smsg_content->type, type);
+    strcpy2(smsg_content->parent, parent);
 
     squire_message_simple_box_send(msg, message_size, SQUIRE_DDM_PID, SQUIRE_DDM_DRIVER_BOX);
     free(msg);
@@ -151,7 +152,7 @@ void squire_ddm_driver_request_parent(squire_ddm_driver_t * parent){
     smsg_header->submessage_type = SQUIRE_DDM_SUBMESSAGE_REQUEST_PARENT;
     squire_ddm_submessage_request_parent_t * rprnt = (squire_ddm_submessage_request_parent_t*)(smsg_header+1);
     rprnt->box = 255;
-    strcpy(rprnt->driver, __ddm_driver_info->name);
+    strcpy2(rprnt->driver, __ddm_driver_info->name);
 
     uint8_t buf[sizeof(squire_ddm_driver_t)+sizeof(squire_ddm_message_header_t)+sizeof(squire_ddm_submessage_header_t)];
     squire_rpc_box(255, SQUIRE_DDM_PID, SQUIRE_DDM_DRIVER_BOX, msg, message_size, buf, sizeof(squire_ddm_driver_t)+sizeof(squire_ddm_submessage_header_t)+sizeof(squire_ddm_message_header_t));
@@ -159,4 +160,29 @@ void squire_ddm_driver_request_parent(squire_ddm_driver_t * parent){
     memcpy(parent, buf+sizeof(squire_ddm_message_header_t)+sizeof(squire_ddm_submessage_header_t), sizeof(squire_ddm_driver_t));
 
     free(msg);
+}
+
+void squire_ddm_driver_idm(char * type, unsigned int pid, unsigned int box, unsigned int function, void * data, size_t length, void * buffer, size_t bufferlength){
+    size_t smsg_size = sizeof(squire_ddm_submessage_header_t)+sizeof(squire_ddm_submessage_idm_t)+length;
+    size_t msg_size = sizeof(squire_ddm_message_header_t)+smsg_size;
+    squire_ddm_message_header_t * msg_hdr = (squire_ddm_message_header_t*) malloc(msg_size);
+    memset(msg_hdr, 0, msg_size);
+    msg_hdr->length = msg_size;
+    msg_hdr->messages = 1;
+    squire_ddm_submessage_header_t * smsg_hdr = (squire_ddm_submessage_header_t*)(msg_hdr+1);
+    smsg_hdr->length = smsg_size;
+    smsg_hdr->submessage_type = SQUIRE_DDM_SUBMESSAGE_IDM;
+    squire_ddm_submessage_idm_t * idm_hdr = (squire_ddm_submessage_idm_t*)(smsg_hdr+1);
+    strcpy2(idm_hdr->type, type);
+    idm_hdr->length = length;
+    idm_hdr->function = function;
+    idm_hdr->box = 255;
+    if(data!=NULL && length>0)
+        memcpy(idm_hdr+1, data, length);
+    else
+        idm_hdr->length = 0;
+
+    squire_rpc_box(255, pid, box, msg_hdr, msg_size, buffer, bufferlength);
+
+    free(msg_hdr);
 }
