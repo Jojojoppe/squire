@@ -63,7 +63,7 @@ void * kmalloc(size_t length){
         // return 0;
         // Block not usable, goto next
         if(block->next){
-            block = block;
+            block = block->next;
             continue;
         }
         // No next block! Create a new one

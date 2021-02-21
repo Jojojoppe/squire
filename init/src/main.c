@@ -34,19 +34,29 @@ int main(int argc, char ** argv){
 	thrd_create(&thrd_fsdriver, init_fsdrivers_start, 0);
 
 	// Wait some time to let VFS and init_fsdrivers start up
-	for(unsigned int i=0; i<0x1000000; i++);
+	for(unsigned int i=0; i<0x2000000; i++);
 	// Mount initramfs
 	squire_vfs_mount(0, "initramfs", "", tar_start, VFS_PERMISSIONS_EXECALL|VFS_PERMISSIONS_EXECOWN|VFS_PERMISSIONS_READALL|VFS_PERMISSIONS_READOWN);
 
 	// Read driver list from initramfs starting with root driver
 	// Start root device driver
 	unsigned int root_device_driver_size;
-	void * root_device_driver = tar_get(tar_start, "x86_generic.bin", &root_device_driver_size);
+	void * root_device_driver = tar_get(tar_start, "testbin.bin", &root_device_driver_size);
 	char ** rdd_argv[3];
 	rdd_argv[0] = "x86_generic";
 	rdd_argv[1] = "1";
 	rdd_argv[2] = "0";
 	squire_procthread_create_process(root_device_driver, root_device_driver_size, 3, rdd_argv);
+
+	for(unsigned int i=0; i<0x2000000; i++);
+	// Start IDE device driver
+	unsigned int ide_device_driver_size;
+	void * ide_device_driver = tar_get(tar_start, "testbin.bin", &ide_device_driver_size);
+	printf("ide.bin at %08x\r\n", ide_device_driver);
+	rdd_argv[0] = "ide";
+	rdd_argv[1] = "1";
+	rdd_argv[2] = "0";
+	squire_procthread_create_process(ide_device_driver, ide_device_driver_size, 3, rdd_argv);
 
 	unsigned int fid_LICENCE;
 	int ret = squire_vfs_open(0, "/", "LICENCE", VFS_FILE_READ, &fid_LICENCE);

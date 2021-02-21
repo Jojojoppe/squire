@@ -26,6 +26,8 @@ int driver_main(int argc, char ** argv){
 	device_manager_pid = param_devman_pid;
 	device_manager_box = param_devman_box;
 
+	printf("Starting driver %s\r\n", param_name);
+
 	// The driver must send the driver information to the device manager
 	// Calculate driver info structure size
 	size_t driver_info_size = sizeof(squire_driver_t) + sizeof(squire_driver_supported_t);
