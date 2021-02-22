@@ -36,6 +36,12 @@ int main(int argc, char ** argv){
 	idd_argv[0] = "generic_ide";
 	squire_procthread_create_process(ide_device_driver, ide_device_driver_size, 1, idd_argv);
 
+	unsigned int vga_device_driver_size;
+	void * vga_device_driver = tar_get(tar_start, "generic_vga.bin", &vga_device_driver_size);
+	char ** vdd_argv[1];
+	vdd_argv[0] = "generic_vga";
+	squire_procthread_create_process(vga_device_driver, vga_device_driver_size, 1, vdd_argv);
+
 	for(;;);
 	return 0;
 } 

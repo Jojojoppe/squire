@@ -136,6 +136,7 @@ typedef struct{
 void squire_ddm_driver_register_device(char * device, char * type, squire_ddm_device_type_t device_type, char * parent);
 void squire_ddm_driver_request_parent(squire_ddm_driver_t * parent);
 void squire_ddm_driver_idm(char * type, unsigned int pid, unsigned int box, unsigned int function, void * data, size_t length, void * buffer, size_t bufferlength);
+void squire_ddm_driver_idmr(char * type, unsigned int pid, unsigned int box, unsigned int function, void * data, size_t length);
 
 /*
  * ------

@@ -186,3 +186,22 @@ void squire_ddm_driver_idm(char * type, unsigned int pid, unsigned int box, unsi
 
     free(msg_hdr);
 }
+
+void squire_ddm_driver_idmr(char * type, unsigned int pid, unsigned int box, unsigned int function, void * data, size_t length){
+    size_t smsg_size = sizeof(squire_ddm_submessage_header_t)+sizeof(squire_ddm_submessage_idm_t)+length;
+    size_t msg_size = sizeof(squire_ddm_message_header_t)+smsg_size;
+    squire_ddm_message_header_t * msg_hdr = (squire_ddm_message_header_t*) malloc(msg_size);
+    memset(msg_hdr, 0, msg_size);
+    msg_hdr->length = msg_size;
+    msg_hdr->messages = 1;
+    squire_ddm_submessage_header_t * smsg_hdr = (squire_ddm_submessage_header_t*)(msg_hdr+1);
+    smsg_hdr->length = smsg_size;
+    smsg_hdr->submessage_type = SQUIRE_DDM_SUBMESSAGE_IDMR;
+    squire_ddm_submessage_idm_t * idm_hdr = (squire_ddm_submessage_idm_t*)(smsg_hdr+1);
+    strcpy2(idm_hdr->type, type);
+    idm_hdr->length = length;
+    idm_hdr->function = function;
+    memcpy(idm_hdr+1, data, length);
+    squire_message_simple_box_send(msg_hdr, msg_size, pid, box);
+    free(msg_hdr);
+}

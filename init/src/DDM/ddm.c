@@ -152,9 +152,9 @@ void ddm_driver_register_device(void * msg, unsigned int from){
         driver = driver->next;
     }
     if(!dev->driver){
-        printf("  No driver found for device\r\n");
+        // printf("  No driver found for device\r\n");
     }else{
-        printf("  Driver '%s' v%d.%d found for device\r\n", dev->driver->driver_info.name, dev->driver->driver_info.version_major, dev->driver->driver_info.version_minor);
+        // printf("  Driver '%s' v%d.%d found for device\r\n", dev->driver->driver_info.name, dev->driver->driver_info.version_major, dev->driver->driver_info.version_minor);
     }
 }
 

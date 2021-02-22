@@ -47,11 +47,27 @@ typedef struct pci_function_s{
 	uint16_t vendor, device;
 	uint8_t bus, slot, func;
     uint8_t class, subclass, prog;
+
+	// Device management
+	unsigned int driver_pid;
 } pci_function_t;
 
 unsigned int nr_pci_functions = 0;
 pci_function_t * pci_functions;
 
+pci_function_t * pci_get_function(char * device){
+	char dname[64];
+	pci_function_t * f = pci_functions;
+	while(f){
+		memset(dname, 0, 64);
+		sprintf(dname, "PCI_ROOT/%02x/%02x/%02x", f->bus, f->slot, f->func);
+		if(!strcmp(dname, device)){
+			return f;
+		}
+		f = f->next;
+	}
+	return 0;
+}
 
 uint32_t pci_config_read_d(uint32_t bus, uint32_t slot, uint32_t func, uint32_t offset){
 	uint32_t address = (bus<<16) | (slot<<11) | (func<<8) | (offset&0xfc) | 0x80000000;
@@ -76,6 +92,7 @@ void pci_check_function(uint32_t bus, uint32_t slot, uint32_t func){
 	// printf("PCI: %d.%d [%d] -> %04x:%04x\r\n", bus, slot, func, vendorid, deviceid);
 
 	pci_function_t * f = (pci_function_t*)malloc(sizeof(pci_function_t));
+	memset(f, 0, sizeof(pci_function_t));
 	f->next = 0;
 	f->vendor = vendorid;
 	f->device = deviceid;
@@ -144,29 +161,39 @@ void x86_generic_PCI_enum(char * device){
 }
 
 void x86_generic_PCI_idm(unsigned int function, void * data, size_t length, unsigned int from, unsigned int box){
+	pci_function_header_t * fhdr = (pci_function_header_t*)data;
 	switch(function){
+
+		case PCI_FUNCTIONS_REGISTER_DRIVER:{
+			pci_function_header_t rethdr;
+			rethdr.status = 1;	// ERROR
+
+			pci_function_t * f = pci_get_function(fhdr->name);
+			if(f && f->driver_pid==0){
+				rethdr.status = 0;	// NO ERROR
+				f->driver_pid = from;
+			}
+
+			squire_ddm_driver_idmr("PCI", from, box, PCI_FUNCTIONS_REGISTER_DRIVER, &rethdr, sizeof(pci_function_header_t));
+		} break;
+
 		case PCI_FUNCTIONS_GET_CONFIG:{
-			printf("PCI get config\r\n");
+			pci_function_header_t * rethdr = (pci_function_header_t*)malloc(sizeof(rethdr)+sizeof(pci_config_t));
+			pci_config_t * config = (pci_config_t*)(rethdr+1);
+			rethdr->status = 1;	// ERROR
 
-			pci_config_t config;  // TODO fill structure
+			pci_function_t * f = pci_get_function(fhdr->name);
+			if(f && f->driver_pid==from){
+				rethdr->status = 0;	// NO ERROR
 
-			size_t smsg_size = sizeof(squire_ddm_submessage_header_t)+sizeof(squire_ddm_submessage_idm_t)+sizeof(pci_config_t);
-			size_t msg_size = sizeof(squire_ddm_message_header_t)+smsg_size;
-			squire_ddm_message_header_t * msg_hdr = (squire_ddm_message_header_t*) malloc(msg_size);
-			memset(msg_hdr, 0, msg_size);
-			msg_hdr->length = msg_size;
-			msg_hdr->messages = 1;
-			squire_ddm_submessage_header_t * smsg_hdr = (squire_ddm_submessage_header_t*)(msg_hdr+1);
-			smsg_hdr->length = smsg_size;
-			smsg_hdr->submessage_type = SQUIRE_DDM_SUBMESSAGE_IDMR;
-			squire_ddm_submessage_idm_t * idm_hdr = (squire_ddm_submessage_idm_t*)(smsg_hdr+1);
-			strcpy(idm_hdr->type, "PCI");
-			idm_hdr->length = length;
-			idm_hdr->function = PCI_FUNCTIONS_GET_CONFIG;
-			memcpy(idm_hdr+1, &config, sizeof(pci_config_t));
-			squire_message_simple_box_send(msg_hdr, msg_size, from, box);
-			free(msg_hdr);
+				// Read config space
+				for(int i=0; i<=0x11; i++){
+					config->d[i] = pci_config_read_d(f->bus, f->slot, f->func, i*4);
+				}
 
+			}
+
+			squire_ddm_driver_idmr("PCI", from, box, PCI_FUNCTIONS_GET_CONFIG, rethdr, sizeof(pci_function_header_t)+sizeof(pci_config_t));
 		} break;
 	}
 }
