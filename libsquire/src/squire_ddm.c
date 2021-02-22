@@ -201,7 +201,10 @@ void squire_ddm_driver_idmr(char * type, unsigned int pid, unsigned int box, uns
     strcpy2(idm_hdr->type, type);
     idm_hdr->length = length;
     idm_hdr->function = function;
-    memcpy(idm_hdr+1, data, length);
+    if(data!=NULL && length>0)
+        memcpy(idm_hdr+1, data, length);
+    else
+        idm_hdr->length = 0;
     squire_message_simple_box_send(msg_hdr, msg_size, pid, box);
     free(msg_hdr);
 }

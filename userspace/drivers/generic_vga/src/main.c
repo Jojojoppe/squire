@@ -22,7 +22,7 @@ void init(char * device, char * type){
 		printf("VGA] parent driver '%s' on %d:%d\r\n", pci_driver.name, pci_driver.pid, pci_driver.child_box);
 	}
 
-	// Initialize VGA device
+	// Initialize VGAmake  device
 
 	// Register driver at pci driver
 	if(pci_register_driver(device, &pci_driver)){
@@ -36,6 +36,15 @@ void init(char * device, char * type){
 		return;
 	}
 	printf("VGA] configuration space of %s read: device %04x:%04x\r\n", device, config.w[0], config.w[1]);
+	// Read MMIO regions
+	pci_regions_t regions;
+	if(pci_get_regions(device, &pci_driver, &regions)){
+		printf("VGA] error reading MMIO regions of %s\r\n", device);
+		return;
+	}
+	for(int i=0; i<6; i++){
+		printf("VGA] BAR%d %08x[%08x] %08x\r\n", i, regions.base[i], regions.length[i], regions.flags[i]);
+	}
 }
 
 squire_ddm_driver_t driver_info = {

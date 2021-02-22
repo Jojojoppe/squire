@@ -69,6 +69,12 @@ pci_function_t * pci_get_function(char * device){
 	return 0;
 }
 
+void pci_config_write_d(uint32_t bus, uint32_t slot, uint32_t func, uint32_t offset, uint32_t value){
+	uint32_t address = (bus<<16) | (slot<<11) | (func<<8) | (offset&0xfc) | 0x80000000;
+	squire_io_port_outd(PCI_CONFIG_ADDRESS, address);
+	squire_io_port_outd(PCI_CONFIG_DATA, value);
+}
+
 uint32_t pci_config_read_d(uint32_t bus, uint32_t slot, uint32_t func, uint32_t offset){
 	uint32_t address = (bus<<16) | (slot<<11) | (func<<8) | (offset&0xfc) | 0x80000000;
 	squire_io_port_outd(PCI_CONFIG_ADDRESS, address);
@@ -190,10 +196,48 @@ void x86_generic_PCI_idm(unsigned int function, void * data, size_t length, unsi
 				for(int i=0; i<=0x11; i++){
 					config->d[i] = pci_config_read_d(f->bus, f->slot, f->func, i*4);
 				}
-
 			}
-
 			squire_ddm_driver_idmr("PCI", from, box, PCI_FUNCTIONS_GET_CONFIG, rethdr, sizeof(pci_function_header_t)+sizeof(pci_config_t));
+		} break;
+
+		case PCI_FUNCTIONS_GET_REGIONS:{
+			pci_function_header_t * rethdr = (pci_function_header_t*)malloc(sizeof(pci_function_header_t)+sizeof(pci_regions_t));
+			pci_regions_t * regions = (pci_regions_t*)(rethdr+1);
+			memset(regions, 0, sizeof(pci_regions_t));
+			rethdr->status = 1;	// ERROR
+
+			pci_function_t * f = pci_get_function(fhdr->name);
+			if(f && f->driver_pid==from){
+				rethdr->status = 0;	// NO ERROR
+				for(int i=0; i<6; i++){
+					regions->base[i] = pci_config_read_d(f->bus, f->slot, f->func, PCI_HEADER_00_BAR0+i*4);
+					if((regions->base[i]&1)==0){
+						// M BAR
+						regions->flags[i] = regions->base[i]&0x0000000f;
+						regions->base[i] &= 0xfffffff0;
+						// Get length
+						pci_config_write_d(f->bus, f->slot, f->func, PCI_HEADER_00_BAR0+i*4, 0xffffffff);
+						regions->length[i] = pci_config_read_d(f->bus, f->slot, f->func, PCI_HEADER_00_BAR0+i*4)&0xfffffff0;
+						pci_config_write_d(f->bus, f->slot, f->func, PCI_HEADER_00_BAR0+i*4, regions->base[i] | regions->flags[i]);
+					}else{
+						// IO BAR
+						regions->flags[i] = regions->base[i]&0x00000003;
+						regions->base[i] &= 0xfffffffc;
+						// Get length
+						pci_config_write_d(f->bus, f->slot, f->func, PCI_HEADER_00_BAR0+i*4, 0xffffffff);
+						regions->length[i] = pci_config_read_d(f->bus, f->slot, f->func, PCI_HEADER_00_BAR0+i*4)&0xfffffffc;
+						pci_config_write_d(f->bus, f->slot, f->func, PCI_HEADER_00_BAR0+i*4, regions->base[i] | regions->flags[i]);
+					}
+					regions->length[i] = (~regions->length[i])+1;
+				}
+			}
+			squire_ddm_driver_idmr("PCI", from, box, PCI_FUNCTIONS_GET_REGIONS, rethdr, sizeof(pci_function_header_t)+sizeof(pci_regions_t));
+		} break;
+
+		default:{
+			pci_function_header_t rethdr;
+			rethdr.status = 1;
+			squire_ddm_driver_idmr("PCI", from, box, function, &rethdr, sizeof(pci_function_header_t));
 		} break;
 	}
 }
