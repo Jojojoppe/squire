@@ -174,6 +174,27 @@ int user_io_port_outb(unsigned int port, unsigned char val){
 	}
 	return 1;
 }
+int user_io_port_outw(unsigned int port, unsigned short val){
+	// Get current pid
+	unsigned int pid = proc_proc_get_current()->id;
+
+	// Check if permission
+	if(user_io_port_registrations){
+		user_io_port_registration_t * reg = user_io_port_registrations;
+		while(reg){
+			if(port>=reg->port && port<reg->port+reg->range){
+				// Found registration
+				if(reg->PID==pid){ // TODO flags
+					user_io_arch_outw(port, val);
+					return 0;
+				}
+				return 1;
+			}
+			reg = reg->next;
+		}
+	}
+	return 1;
+}
 int user_io_port_outd(unsigned int port, unsigned int val){
 	// Get current pid
 	unsigned int pid = proc_proc_get_current()->id;
@@ -207,6 +228,26 @@ int user_io_port_inb(unsigned int port, unsigned char * val){
 				// Found registration
 				if(reg->PID==pid){ // TODO flags
 					*val = user_io_arch_inb(port);
+					return 0;
+				}
+				return 1;
+			}
+			reg = reg->next;
+		}
+	}
+	return 1;
+}
+int user_io_port_inw(unsigned int port, unsigned short * val){
+	// Get current pid
+	unsigned int pid = proc_proc_get_current()->id;
+	// Check if permission
+	if(user_io_port_registrations){
+		user_io_port_registration_t * reg = user_io_port_registrations;
+		while(reg){
+			if(port>=reg->port && port<reg->port+reg->range){
+				// Found registration
+				if(reg->PID==pid){ // TODO flags
+					*val = user_io_arch_inw(port);
 					return 0;
 				}
 				return 1;

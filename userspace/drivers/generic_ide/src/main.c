@@ -10,7 +10,22 @@
 #define DRIVER_IMPLEMENTATION
 #include <drivers/pci.h>
 
+#include "ide.h"
+
 squire_ddm_driver_t pci_driver;
+
+void INTRhandler(int sig){
+	unsigned int intr_id = squire_extraval0;
+	if(ATA_PRIMARY_INTR==ATA_SECONDARY_INTR){
+		// COMBINED IDE IRQ
+	}else{
+		if(intr_id==ATA_PRIMARY_INTR){
+			// IDE PRIMARY IRQ
+		}else if(intr_id==ATA_SECONDARY_INTR){
+			// IDE SECONDARY IRQ
+		}
+	}
+}
 
 void enumerate(char * device, char * type){
 }
@@ -20,6 +35,9 @@ void init(char * device, char * type){
 		// If the IDE driver does not know the PCI driver yet, ask for it
 		squire_ddm_driver_request_parent(&pci_driver);
 		printf("IDE] parent driver '%s' on %d:%d\r\n", pci_driver.name, pci_driver.pid, pci_driver.child_box);
+	}else{
+		printf("IDE] driver can only control one IDE controller\r\n");
+		return;
 	}
 
 	// Initialize IDE device
@@ -42,9 +60,38 @@ void init(char * device, char * type){
 		printf("IDE] error reading MMIO regions of %s\r\n", device);
 		return;
 	}
-	for(int i=0; i<6; i++){
-		printf("IDE] BAR%d %08x[%08x] %08x\r\n", i, regions.base[i], regions.length[i], regions.flags[i]);
+
+	// Get IDE PCI settings
+	uint8_t prog = config.b[9];
+	if((prog&0x01)==1){
+		// ATA_PRIMARY in PCI native mode
+		ATA_PRIMARY_IO = regions.base[0];
+		ATA_PRIMARY_DCR_AS  = regions.base[1];
+		ATA_PRIMARY_INTR = config.b[0x3c];
+		printf("IDE] ATA_PRIMARY in native PCI mode\r\n");
 	}
+	if((prog&0x04)==4){
+		// ATA_SECONDARY in PCI native mode
+		ATA_SECONDARY_IO = regions.base[0];
+		ATA_SECONDARY_DCR_AS  = regions.base[1];
+		ATA_SECONDARY_INTR = config.b[0x3c];
+		printf("IDE] ATA_SECONDARY in native PCI mode\r\n");
+	}
+
+	// Register IO ports
+	squire_io_register_port(ATA_PRIMARY_IO, 8, IO_PORT_READ|IO_PORT_WRITE);
+	squire_io_register_port(ATA_SECONDARY_IO, 8, IO_PORT_READ|IO_PORT_WRITE);
+	squire_io_register_port(ATA_PRIMARY_DCR_AS, 8, IO_PORT_READ|IO_PORT_WRITE);
+	squire_io_register_port(ATA_SECONDARY_DCR_AS, 8, IO_PORT_READ|IO_PORT_WRITE);
+
+	// Register interrupt
+	signal(SIGINTR, INTRhandler);
+	squire_io_register_isr(ATA_PRIMARY_INTR);
+	if(ATA_PRIMARY_INTR!=ATA_SECONDARY_INTR){
+		squire_io_register_isr(ATA_SECONDARY_INTR);
+	}
+
+	ide_initialize(ATA_PRIMARY_IO, ATA_PRIMARY_DCR_AS, ATA_SECONDARY_IO, ATA_SECONDARY_DCR_AS, regions.base[4]);
 }
 
 squire_ddm_driver_t driver_info = {

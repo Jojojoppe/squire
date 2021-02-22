@@ -21,11 +21,17 @@ int syscall_io(squire_syscall_io_t * params){
 		case SQUIRE_SYSCALL_IO_OPERATION_PORT_OUTB:{
 			params->return0 = user_io_port_outb(params->value0, params->value1);
 	    } break;
+		case SQUIRE_SYSCALL_IO_OPERATION_PORT_OUTW:{
+			params->return0 = user_io_port_outw(params->value0, params->value1);
+	    } break;
 		case SQUIRE_SYSCALL_IO_OPERATION_PORT_OUTD:{
 			params->return0 = user_io_port_outd(params->value0, params->value1);
 	    } break;
 
 		case SQUIRE_SYSCALL_IO_OPERATION_PORT_INB:{
+			params->return0 = user_io_port_inb(params->value0, &params->value1);
+	    } break;
+		case SQUIRE_SYSCALL_IO_OPERATION_PORT_INW:{
 			params->return0 = user_io_port_inb(params->value0, &params->value1);
 	    } break;
 		case SQUIRE_SYSCALL_IO_OPERATION_PORT_IND:{

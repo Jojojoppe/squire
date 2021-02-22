@@ -13,7 +13,7 @@
 squire_ddm_driver_t pci_driver;
 
 typedef struct vga_device_s{
-	struct vga_drvice_s * next;
+	struct vga_device_s * next;
 	char device[64];
 	uint8_t * vga_memory;
 	unsigned int vga_memory_size;
@@ -48,9 +48,9 @@ void init(char * device, char * type){
 		printf("VGA] error reading MMIO regions of %s\r\n", device);
 		return;
 	}
-	for(int i=0; i<6; i++){
-		printf("VGA] BAR%d %08x[%08x] %08x\r\n", i, regions.base[i], regions.length[i], regions.flags[i]);
-	}
+	// for(int i=0; i<6; i++){
+		// printf("VGA] BAR%d %08x[%08x] %08x\r\n", i, regions.base[i], regions.length[i], regions.flags[i]);
+	// }
 
 	// Map VGA memory
 	uint8_t * vga_mem = squire_memory_mmap_phys(0, regions.base[0], regions.length[0], MMAP_READ|MMAP_WRITE);
