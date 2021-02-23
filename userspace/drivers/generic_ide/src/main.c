@@ -28,9 +28,39 @@ void INTRhandler(int sig){
 }
 
 void enumerate(char * device, char * type){
+	// ONLY ENUMERATE IDE BUS CONTROLLER, NOT DRIVES ITSELF
+	if(!memcmp("IDE", type, 3)){
+		return;
+	}
+
+	ide_initialize(ATA_PRIMARY_IO, ATA_PRIMARY_DCR_AS, ATA_SECONDARY_IO, ATA_SECONDARY_DCR_AS, 0);
+
+	// Register devices
+    for(int i=0; i<4; i++){
+        if(ide_devices[i].available){
+			char dname[64];
+			char dtype[64];
+			memset(dname, 0, 64);
+			memset(dtype, 0, 64);
+			sprintf(dname, "IDE-%d/%d", ide_devices[i].channel, ide_devices[i].drive);
+			switch(ide_devices[i].type){
+				case ATA_TYPE_PATA: strcpy(dtype, "IDE-PATA"); break;
+				case ATA_TYPE_PATAPI: strcpy(dtype, "IDE-PATAPI"); break;
+				case ATA_TYPE_SATA: strcpy(dtype, "IDE-SATA"); break;
+				case ATA_TYPE_SATAPI: strcpy(dtype, "IDE-SATAPI"); break;
+				default: continue;
+			}
+			squire_ddm_driver_register_device(dname, dtype, SQUIRE_DDM_DEVICE_TYPE_BLOCK, device);
+        }
+    }
 }
 
 void init(char * device, char * type){
+	// ONLY INITIALIZE IDE HOST CONTROLLER, NOT DRIVE ITSELF
+	if(!memcmp("IDE", type, 3)){
+		return;
+	}
+
 	if(!pci_driver.pid){
 		// If the IDE driver does not know the PCI driver yet, ask for it
 		squire_ddm_driver_request_parent(&pci_driver);
@@ -39,8 +69,6 @@ void init(char * device, char * type){
 		printf("IDE] driver can only control one IDE controller\r\n");
 		return;
 	}
-
-	// Initialize IDE device
 
 	// Register driver at pci driver
 	if(pci_register_driver(device, &pci_driver)){
@@ -90,8 +118,6 @@ void init(char * device, char * type){
 	if(ATA_PRIMARY_INTR!=ATA_SECONDARY_INTR){
 		squire_io_register_isr(ATA_SECONDARY_INTR);
 	}
-
-	ide_initialize(ATA_PRIMARY_IO, ATA_PRIMARY_DCR_AS, ATA_SECONDARY_IO, ATA_SECONDARY_DCR_AS, regions.base[4]);
 }
 
 squire_ddm_driver_t driver_info = {
@@ -114,7 +140,11 @@ squire_ddm_driver_t driver_info = {
 		{"PCI:01-01-80"},
 		{"PCI:01-01-85"},
 		{"PCI:01-01-8a"},
-		{"PCI:01-01-8f"}
+		{"PCI:01-01-8f"},
+		{"IDE-PATA"},
+		{"IDE-PATAPI"},
+		{"IDE-SATA"},
+		{"IDE-SATAPI"}
 	}
 };
 SQUIRE_DDM_DRIVER(driver_info);

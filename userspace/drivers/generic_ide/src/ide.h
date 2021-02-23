@@ -83,12 +83,32 @@
 #define      ATA_READ      0x00
 #define      ATA_WRITE     0x013
 
+#define ATA_TYPE_UNKNOWN 0x00
+#define ATA_TYPE_PATA 0x01
+#define ATA_TYPE_PATAPI 0x02
+#define ATA_TYPE_SATA 0x03
+#define ATA_TYPE_SATAPI 0x04
+
 extern unsigned int ATA_PRIMARY_IO;
 extern unsigned int ATA_PRIMARY_DCR_AS;
 extern unsigned int ATA_SECONDARY_IO;
 extern unsigned int ATA_SECONDARY_DCR_AS;
 extern unsigned int ATA_PRIMARY_INTR;
 extern unsigned int ATA_SECONDARY_INTR;
+
+typedef struct{
+    unsigned char available;
+    unsigned char channel;
+    unsigned char drive;
+    unsigned char type;
+    unsigned short signature;
+    unsigned short capabilities;
+    unsigned int commandsets;
+    unsigned int size;
+    char model[41];
+} ide_device_t;
+
+extern ide_device_t ide_devices[];
 
 void ide_initialize(unsigned int pio, unsigned int pdcr, unsigned int sio, unsigned int sdcr, unsigned int bm);
 

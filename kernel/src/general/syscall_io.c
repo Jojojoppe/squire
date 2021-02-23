@@ -32,7 +32,7 @@ int syscall_io(squire_syscall_io_t * params){
 			params->return0 = user_io_port_inb(params->value0, &params->value1);
 	    } break;
 		case SQUIRE_SYSCALL_IO_OPERATION_PORT_INW:{
-			params->return0 = user_io_port_inb(params->value0, &params->value1);
+			params->return0 = user_io_port_inw(params->value0, &params->value1);
 	    } break;
 		case SQUIRE_SYSCALL_IO_OPERATION_PORT_IND:{
 			params->return0 = user_io_port_ind(params->value0, &params->value1);
