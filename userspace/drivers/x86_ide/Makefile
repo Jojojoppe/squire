@@ -1,6 +1,6 @@
 include ../../../makefiles/env.mk
 
-TARGET				:= generic_ide.bin
+TARGET				:= x86_ide.bin
 
 BUILDDIR			:= build
 

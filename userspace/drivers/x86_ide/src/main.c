@@ -121,7 +121,7 @@ void init(char * device, char * type){
 }
 
 squire_ddm_driver_t driver_info = {
-	"generic_ide", 1, 0,
+	"x86_ide", 1, 0,
 	"PCI", 1, 0,		// Need a PCI bus driver of at least version 1.0
 	0, 1, 2,
 	NULL,

@@ -31,9 +31,9 @@ int main(int argc, char ** argv){
 	squire_procthread_create_process(root_device_driver, root_device_driver_size, 1, rdd_argv);
 
 	unsigned int ide_device_driver_size;
-	void * ide_device_driver = tar_get(tar_start, "generic_ide.bin", &ide_device_driver_size);
+	void * ide_device_driver = tar_get(tar_start, "x86_ide.bin", &ide_device_driver_size);
 	char ** idd_argv[1];
-	idd_argv[0] = "generic_ide";
+	idd_argv[0] = "x86_ide";
 	squire_procthread_create_process(ide_device_driver, ide_device_driver_size, 1, idd_argv);
 
 	unsigned int vga_device_driver_size;
