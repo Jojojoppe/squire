@@ -109,8 +109,8 @@ void init(char * device, char * type){
 	// Register IO ports
 	squire_io_register_port(ATA_PRIMARY_IO, 8, IO_PORT_READ|IO_PORT_WRITE);
 	squire_io_register_port(ATA_SECONDARY_IO, 8, IO_PORT_READ|IO_PORT_WRITE);
-	squire_io_register_port(ATA_PRIMARY_DCR_AS, 8, IO_PORT_READ|IO_PORT_WRITE);
-	squire_io_register_port(ATA_SECONDARY_DCR_AS, 8, IO_PORT_READ|IO_PORT_WRITE);
+	squire_io_register_port(ATA_PRIMARY_DCR_AS, 1, IO_PORT_READ|IO_PORT_WRITE);
+	squire_io_register_port(ATA_SECONDARY_DCR_AS, 1, IO_PORT_READ|IO_PORT_WRITE);
 
 	// Register interrupt
 	signal(SIGINTR, INTRhandler);

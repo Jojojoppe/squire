@@ -2,6 +2,8 @@
 
 Squire is a simple hobby OS with a microkernel currently only written for x86. Some notes on the implementation and usage of certain features can be found in the wiki (mostly written for  myself but feel free to take a look).
 
+![Screenshot of serial terminal at squire boot](doc/img/screenshot_serial_0.png)
+
 #### Building squire
 Squire can be build with a simple `make all` command after cloning the repository. Things required for building
 * a compiler capable of compiling TCC (any modern version of gcc should do the job). 
