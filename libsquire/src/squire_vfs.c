@@ -62,6 +62,54 @@ int squire_vfs_driver_main(int argc, char ** argv){
 					}
 				} break;
 
+				case SQUIRE_VFS_SUBMESSAGE_OPENDIR:{
+					squire_vfs_submessage_dir_t * dir = (squire_vfs_submessage_dir_t*)(smsg_hdr+1);
+					if(__vfs_driver_info->opendir){
+						struct dirent dirent;
+						int r = __vfs_driver_info->opendir(dir->path, &dirent);
+						// Send return message
+						size_t smsg_size = sizeof(squire_vfs_submessage_header_t) + sizeof(squire_vfs_submessage_dir_t);
+						size_t rmsg_size = sizeof(squire_vfs_message_header_t) + smsg_size;
+						squire_vfs_message_header_t * rmsg = (squire_vfs_message_header_t*)malloc(rmsg_size);
+						memset(rmsg, 0, rmsg_size);
+						rmsg->length = rmsg_size;
+						rmsg->messages = 1;
+						squire_vfs_submessage_header_t * smsg_header = (squire_vfs_submessage_header_t*)(rmsg+1);
+						smsg_header->length = smsg_size;
+						smsg_header->submessage_type = SQUIRE_VFS_SUBMESSAGE_OPENDIR_R;
+						squire_vfs_submessage_dir_t * dr = (squire_vfs_submessage_dir_t*)(smsg_header+1);
+						memcpy(dr, dir, sizeof(squire_vfs_submessage_dir_t));
+						memcpy(&dr->dirent, &dirent, sizeof(struct dirent));
+						dr->status = r;
+						squire_message_simple_box_send(rmsg, rmsg_size, dr->pid, dr->box);
+						free(rmsg);
+					}
+				} break;
+
+				case SQUIRE_VFS_SUBMESSAGE_READDIR:{
+					squire_vfs_submessage_dir_t * dir = (squire_vfs_submessage_dir_t*)(smsg_hdr+1);
+					if(__vfs_driver_info->opendir){
+						struct dirent dirent;
+						int r = __vfs_driver_info->readdir(dir->dirent.d_fileno, &dirent);
+						// Send return message
+						size_t smsg_size = sizeof(squire_vfs_submessage_header_t) + sizeof(squire_vfs_submessage_dir_t);
+						size_t rmsg_size = sizeof(squire_vfs_message_header_t) + smsg_size;
+						squire_vfs_message_header_t * rmsg = (squire_vfs_message_header_t*)malloc(rmsg_size);
+						memset(rmsg, 0, rmsg_size);
+						rmsg->length = rmsg_size;
+						rmsg->messages = 1;
+						squire_vfs_submessage_header_t * smsg_header = (squire_vfs_submessage_header_t*)(rmsg+1);
+						smsg_header->length = smsg_size;
+						smsg_header->submessage_type = SQUIRE_VFS_SUBMESSAGE_READDIR_R;
+						squire_vfs_submessage_dir_t * dr = (squire_vfs_submessage_dir_t*)(smsg_header+1);
+						memcpy(dr, dir, sizeof(squire_vfs_submessage_dir_t));
+						memcpy(&dr->dirent, &dirent, sizeof(struct dirent));
+						dr->status = r;
+						squire_message_simple_box_send(rmsg, rmsg_size, dr->pid, dr->box);
+						free(rmsg);
+					}
+				} break;
+
                 default:
                     break;
             }

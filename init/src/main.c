@@ -4,6 +4,7 @@
 #include <string.h>
 #include <signal.h>
 #include <threads.h>
+#include <dirent.h>
 
 #include <squire.h>
 #include <squire_vfs.h>
@@ -12,6 +13,18 @@
 #include "DDM/ddm.h"
 #include "VFS/vfs.h"
 
+void tree(char * path){
+	DIR * d = opendir(path);
+	if(!d) return;
+
+	struct dirent * dire = readdir(d);
+	while(dire){
+		printf("> %s\r\n", dire->d_name);
+		dire = readdir(d);
+	}
+
+	closedir(d);
+}
 
 int main(int argc, char ** argv){
 	printf("Main thread of init.bin, argc=%d\r\n", argc);
@@ -47,8 +60,9 @@ int main(int argc, char ** argv){
 	squire_procthread_create_process(vga_device_driver, vga_device_driver_size, 1, vdd_argv);
 
 	for(int i=0; i<0x8000000; i++); 
-	int ret = squire_vfs_user_mount("DDM_FS", "", 0);
-	printf("Mounted with return: %d\r\n", ret);
+	squire_vfs_user_mount("DDM_FS", "", 0);
+	// Print tree of DDM_FS
+	tree("0:/");
 
 	for(;;);
 	return 0;

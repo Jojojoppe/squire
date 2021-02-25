@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include <dirent.h>
 
 /*
  * Driver interface
@@ -21,6 +22,8 @@ typedef struct{
 	// Function callbacks
 	int (*mount)(char * type, char * device, unsigned int mountpoint, unsigned int flags);
 	void (*umount)(unsigned int mountpoint);
+	int (*opendir)(char * path, struct dirent * dirent);
+	int (*readdir)(unsigned int current_entry, struct dirent * dirent);
 	squire_vfs_driver_supported_t supported[32];	
 } squire_vfs_driver_t;
 
@@ -49,6 +52,10 @@ typedef enum{
 	SQUIRE_VFS_SUBMESSAGE_REGISTER_DRIVER,		// VFS-DRIVER: DRIVER->VFS
 	SQUIRE_VFS_SUBMESSAGE_MOUNT,				// VSF-DRIVER and USER-VFS: VFS->DRIVER and USER->VFS
 	SQUIRE_VFS_SUBMESSAGE_MOUNT_R,				// VSF-DRIVER and USER-VFS: DRIVER->VFS and VFS->USER
+	SQUIRE_VFS_SUBMESSAGE_OPENDIR,				// VFS-DRIVER and USER-VFS: VFS-DRIVER and USER->VFS
+	SQUIRE_VFS_SUBMESSAGE_OPENDIR_R,			// DRIVER-USER: DRIVER->USER
+	SQUIRE_VFS_SUBMESSAGE_READDIR,
+	SQUIRE_VFS_SUBMESSAGE_READDIR_R,
 } squire_vfs_submessage_type_t;
 
 // Main message header
@@ -70,6 +77,8 @@ typedef struct{
  * 		contains directly after the header a copy of the driver_info structure
  * + SQUIRE_VFS_SUBMESSAGE_MOUNT_(R)
  * 		contains squire_vfs_submessage_mount_t
+ * + SQUIRE_VFS_SUBMESSAGE_OPENDIR_(R)
+ * 		contains squire_vfs_submessage_dir_t structure
  */
 
 typedef struct{
@@ -79,6 +88,15 @@ typedef struct{
 	unsigned int pid, box;
 	int status;
 } squire_vfs_submessage_mount_t;
+
+typedef struct{
+	unsigned int mountpoint;
+	unsigned int pid, box;
+	unsigned int dpid, dbox;
+	int status;
+	char path[MAXNAMLEN+1];
+	struct dirent dirent;
+} squire_vfs_submessage_dir_t;
 
 int squire_vfs_user_mount(char * type, char * device, unsigned int mountpoint);
 

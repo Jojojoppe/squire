@@ -19,6 +19,7 @@ build/src/main.c.o: \
  /media/hdd2/Documents/Projects/squire/toolchain/include/squire_syscall_misc.h \
  /media/hdd2/Documents/Projects/squire/toolchain/include/squire_syscall_io.h \
  /media/hdd2/Documents/Projects/squire/toolchain/include/squire_vfs.h \
+ /media/hdd2/Documents/Projects/squire/toolchain/include/dirent.h \
  /media/hdd2/Documents/Projects/squire/toolchain/include/squire_rpc.h \
  /media/hdd2/Documents/Projects/squire/toolchain/include/squire_driver.h \
 

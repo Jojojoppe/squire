@@ -204,11 +204,43 @@ void ddm_driver_register_driver(void * msg, unsigned int from){
 int ddm_fs_mount(char * type, char * device, unsigned int mountpoint, unsigned int flags){
     return 0;
 }
+int ddm_fs_opendir(char * path, struct dirent * dirent){
+    dirent->d_fileno = 0;
+    return 0;
+}
+ddm_device_t * _traverse_ddm_devices_int(ddm_device_t * d, unsigned int current_entry, unsigned int i, char * np){
+    char * n = np;
+    while(d){
+        strcpy(n, d->id);
+        char * nn = n + strlen(d->id);
+        if(i==current_entry){
+            return d;
+        }
+        *(nn++) = '/';
+        i++;
+        ddm_device_t * r = _traverse_ddm_devices_int(d->children, current_entry, i, nn);
+        if(r) return r;
+
+        d = d->next;
+    }
+    return NULL;
+}
+int ddm_fs_readdir(unsigned int current_entry, struct dirent * dirent){
+    dirent->d_fileno = current_entry;
+
+    unsigned int i=0;
+    char * n = dirent->d_name;
+    ddm_device_t * d = _traverse_ddm_devices_int(ddm_registerd_devices, current_entry, 0, n);
+    if(d) return 0;
+    return -1;
+}
 squire_vfs_driver_t driver_info = {
     "DDM_FS", 1, 0,
     0, SQUIRE_DDM_USER_BOX,
     ddm_fs_mount,
     NULL,
+    ddm_fs_opendir,
+    ddm_fs_readdir,
     {
         {"DDM_FS"}
     }

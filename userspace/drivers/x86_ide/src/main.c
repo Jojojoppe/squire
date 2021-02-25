@@ -42,7 +42,7 @@ void enumerate(char * device, char * type){
 			char dtype[64];
 			memset(dname, 0, 64);
 			memset(dtype, 0, 64);
-			sprintf(dname, "IDE-%d/%d", ide_devices[i].channel, ide_devices[i].drive);
+			sprintf(dname, "IDE-%d_%d", ide_devices[i].channel, ide_devices[i].drive);
 			switch(ide_devices[i].type){
 				case ATA_TYPE_PATA: strcpy(dtype, "IDE-PATA"); break;
 				case ATA_TYPE_PATAPI: strcpy(dtype, "IDE-PATAPI"); break;
