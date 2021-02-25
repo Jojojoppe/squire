@@ -10,6 +10,11 @@ typedef struct vfs_driver_s{
     unsigned int pid;
 } vfs_driver_t;
 
+typedef struct{
+    vfs_driver_t * driver;
+    char device[64];
+} vfs_mountpoint_t;
+
 int vfs_main(void * p);
 
 #endif;

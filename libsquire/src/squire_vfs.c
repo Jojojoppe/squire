@@ -40,6 +40,28 @@ int squire_vfs_driver_main(int argc, char ** argv){
         for(int i=0; i<hdr->messages; i++){
             switch(smsg_hdr->submessage_type){
 
+				case SQUIRE_VFS_SUBMESSAGE_MOUNT:{
+					squire_vfs_submessage_mount_t * mnt = (squire_vfs_submessage_mount_t*)(smsg_hdr+1);
+					if(__vfs_driver_info->mount){
+						int r = __vfs_driver_info->mount(mnt->type, mnt->device, mnt->mountpoint, 0);
+						// Send return message
+						size_t smsg_size = sizeof(squire_vfs_submessage_header_t) + sizeof(squire_vfs_submessage_mount_t);
+						size_t rmsg_size = sizeof(squire_vfs_message_header_t) + smsg_size;
+						squire_vfs_message_header_t * rmsg = (squire_vfs_message_header_t*)malloc(rmsg_size);
+						memset(rmsg, 0, rmsg_size);
+						rmsg->length = rmsg_size;
+						rmsg->messages = 1;
+						squire_vfs_submessage_header_t * smsg_header = (squire_vfs_submessage_header_t*)(rmsg+1);
+						smsg_header->length = smsg_size;
+						smsg_header->submessage_type = SQUIRE_VFS_SUBMESSAGE_MOUNT_R;
+						squire_vfs_submessage_mount_t * mount = (squire_vfs_submessage_mount_t*)(smsg_header+1);
+						memcpy(mount, mnt, sizeof(squire_vfs_submessage_mount_t));
+						mount->status = r;
+						squire_message_simple_box_send(rmsg, rmsg_size, from, SQUIRE_VFS_DRIVER_BOX);
+						free(rmsg);
+					}
+				} break;
+
                 default:
                     break;
             }
@@ -47,4 +69,28 @@ int squire_vfs_driver_main(int argc, char ** argv){
         };
 	}
 	return EXIT_SUCCESS;
+}
+
+int squire_vfs_user_mount(char * type, char * device, unsigned int mountpoint){
+	size_t smsg_size = sizeof(squire_vfs_submessage_header_t) + sizeof(squire_vfs_submessage_mount_t);
+	size_t msg_size = sizeof(squire_vfs_message_header_t) + smsg_size;
+	squire_vfs_message_header_t * msg = (squire_vfs_message_header_t*)malloc(msg_size);
+	memset(msg, 0, msg_size);
+	msg->length = msg_size;
+	msg->messages = 1;
+	squire_vfs_submessage_header_t * smsg_header = (squire_vfs_submessage_header_t*)(msg+1);
+	smsg_header->length = smsg_size;
+	smsg_header->submessage_type = SQUIRE_VFS_SUBMESSAGE_MOUNT;
+	squire_vfs_submessage_mount_t * mount = (squire_vfs_submessage_mount_t*)(smsg_header+1);
+	mount->mountpoint = mountpoint;
+	strcpy(mount->device, device);
+	strcpy(mount->type, type);
+	mount->box = 255;
+	mount->pid = squire_procthread_getpid();
+
+	squire_rpc_box(255, SQUIRE_VFS_PID, SQUIRE_VFS_USER_BOX, msg, msg_size, msg, msg_size);
+
+	int status = mount->status;
+	free(msg);
+	return status;
 }

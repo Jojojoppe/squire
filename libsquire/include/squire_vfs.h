@@ -19,7 +19,7 @@ typedef struct{
 	unsigned int pid;							// PID of driver, filled in by fsdriver_main
 	unsigned int box;							// Public box for communication
 	// Function callbacks
-	void (*mount)(char * type, char * device, unsigned int mountpoint, unsigned int flags);
+	int (*mount)(char * type, char * device, unsigned int mountpoint, unsigned int flags);
 	void (*umount)(unsigned int mountpoint);
 	squire_vfs_driver_supported_t supported[32];	
 } squire_vfs_driver_t;
@@ -47,6 +47,8 @@ typedef struct{
 // Submessage type								// box: message direction
 typedef enum{
 	SQUIRE_VFS_SUBMESSAGE_REGISTER_DRIVER,		// VFS-DRIVER: DRIVER->VFS
+	SQUIRE_VFS_SUBMESSAGE_MOUNT,				// VSF-DRIVER and USER-VFS: VFS->DRIVER and USER->VFS
+	SQUIRE_VFS_SUBMESSAGE_MOUNT_R,				// VSF-DRIVER and USER-VFS: DRIVER->VFS and VFS->USER
 } squire_vfs_submessage_type_t;
 
 // Main message header
@@ -64,6 +66,20 @@ typedef struct{
  * Content of submessages
  * ----------------------
  * 
+ * + SQUIRE_VFS_SUBMESSAGE_REGISTER_DRIVER
+ * 		contains directly after the header a copy of the driver_info structure
+ * + SQUIRE_VFS_SUBMESSAGE_MOUNT_(R)
+ * 		contains squire_vfs_submessage_mount_t
  */
+
+typedef struct{
+	char device[64];
+	char type[64];
+	unsigned int mountpoint;
+	unsigned int pid, box;
+	int status;
+} squire_vfs_submessage_mount_t;
+
+int squire_vfs_user_mount(char * type, char * device, unsigned int mountpoint);
 
 #endif

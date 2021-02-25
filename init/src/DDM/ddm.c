@@ -201,10 +201,13 @@ void ddm_driver_register_driver(void * msg, unsigned int from){
  * Public DDM interface
  * user interface is a file structure inside the VFS (mp0)
  */
+int ddm_fs_mount(char * type, char * device, unsigned int mountpoint, unsigned int flags){
+    return 0;
+}
 squire_vfs_driver_t driver_info = {
     "DDM_FS", 1, 0,
     0, SQUIRE_DDM_USER_BOX,
-    NULL,
+    ddm_fs_mount,
     NULL,
     {
         {"DDM_FS"}

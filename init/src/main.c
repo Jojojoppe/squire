@@ -6,12 +6,12 @@
 #include <threads.h>
 
 #include <squire.h>
+#include <squire_vfs.h>
 
 #include "tar.h"
 #include "DDM/ddm.h"
 #include "VFS/vfs.h"
 
-extern int init_fsdrivers_start(void * p);
 
 int main(int argc, char ** argv){
 	printf("Main thread of init.bin, argc=%d\r\n", argc);
@@ -27,7 +27,7 @@ int main(int argc, char ** argv){
 	// Start DDM
 	thrd_t thrd_ddm;
 	thrd_create(&thrd_ddm, ddm_main, 0);
-	
+
 	unsigned int root_device_driver_size;
 	void * root_device_driver = tar_get(tar_start, "x86_generic.bin", &root_device_driver_size);
 	char ** rdd_argv[1];
@@ -45,6 +45,10 @@ int main(int argc, char ** argv){
 	char ** vdd_argv[1];
 	vdd_argv[0] = "generic_vga";
 	squire_procthread_create_process(vga_device_driver, vga_device_driver_size, 1, vdd_argv);
+
+	for(int i=0; i<0x8000000; i++); 
+	int ret = squire_vfs_user_mount("DDM_FS", "", 0);
+	printf("Mounted with return: %d\r\n", ret);
 
 	for(;;);
 	return 0;
