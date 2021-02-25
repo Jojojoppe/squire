@@ -1,117 +1,50 @@
-#include <squire_vfs.h>
-#include <squire_rpc.h>
 #include <squire.h>
+#include <squire_rpc.h>
+#include <squire_vfs.h>
 
-#include <string.h>
+#include <stdint.h>
+#include <stdlib.h>
+#include <stddef.h>
+#include <threads.h>
 
-// Create VFS_OUTBOX mutex
-squire_mutex_t m_vfs_outbox = 0;
+extern squire_vfs_driver_t * __vfs_driver_info;
 
-squire_vfs_rpc_return_t squire_vfs_mount(int mountpoint, char fsname[32], char device_id[64], unsigned int device_instance, int permissions){
+int squire_vfs_driver_main(int argc, char ** argv){
 
-	squire_vfs_message_t msg;
-	msg.function = VFS_RPC_FUNCTION_MOUNT;
-	msg.uint0 = mountpoint;
-	msg.uint1 = device_instance;
-	msg.uint2 = permissions;
-	strcpy(msg.string0, fsname);
-	memcpy(msg.string1, device_id, 64);
-	msg.box = VFS_OUTBOX;
+    // Register driver
+    size_t message_size = sizeof(squire_vfs_message_header_t) + sizeof(squire_vfs_submessage_header_t) + sizeof(squire_vfs_driver_t);
+    size_t submessage_size = sizeof(squire_vfs_submessage_header_t) + sizeof(squire_vfs_driver_t);
+    uint8_t * msg = (uint8_t *) malloc(message_size);
+    // Fill message content
+    squire_vfs_message_header_t * hdr = (squire_vfs_message_header_t*) msg;
+    hdr->messages = 1;
+    hdr->length = message_size;
+    squire_vfs_submessage_header_t * smsg_hdr = (squire_vfs_submessage_header_t*)(hdr+1);
+    smsg_hdr->submessage_type = SQUIRE_VFS_SUBMESSAGE_REGISTER_DRIVER;
+    smsg_hdr->length = submessage_size;
+    squire_vfs_driver_t * smsg_content = (squire_vfs_driver_t*)(smsg_hdr+1);
+    __vfs_driver_info->pid = squire_procthread_getpid();
+    memcpy(smsg_content, __vfs_driver_info, sizeof(squire_vfs_driver_t));
+    squire_message_simple_box_send(msg, message_size, SQUIRE_VFS_PID, SQUIRE_VFS_DRIVER_BOX);
+    free(msg);
 
-	// Wait until OUTBOX is free
-	if(m_vfs_outbox==0){
-		m_vfs_outbox = squire_mutex_create();
+	uint8_t * msg_buffer = (uint8_t *) squire_memory_mmap(0, 4096, MMAP_READ|MMAP_WRITE);
+	unsigned int from;
+	for(;;){
+		// Wait for message and block main thread
+		size_t length = 4096;;
+		squire_message_status_t status = squire_message_simple_box_receive(msg_buffer, &length, &from, RECEIVE_BLOCKED, __vfs_driver_info->box);
+
+        squire_vfs_message_header_t * hdr = (squire_vfs_message_header_t*) msg_buffer;
+        squire_vfs_submessage_header_t * smsg_hdr = (squire_vfs_submessage_header_t*)(hdr+1);
+        for(int i=0; i<hdr->messages; i++){
+            switch(smsg_hdr->submessage_type){
+
+                default:
+                    break;
+            }
+            smsg_hdr = (squire_vfs_submessage_header_t*)((void*)smsg_hdr + smsg_hdr->length);
+        };
 	}
-	squire_mutex_lock(m_vfs_outbox);
-
-	size_t msg_len = sizeof(msg);
-	int rpc_status = squire_rpc_box(VFS_OUTBOX, VFS_PID, VFS_BOX, &msg, sizeof(msg), &msg, msg_len);
-
-	squire_mutex_unlock(m_vfs_outbox);
-
-	if(rpc_status){
-		return VFS_RPC_RETURN_ERR;
-	}
-
-	return msg.uint0;
-}
-
-squire_vfs_rpc_return_t squire_vfs_unmount(int mountpoint){
-
-	squire_vfs_message_t msg;
-	msg.function = VFS_RPC_FUNCTION_UNMOUNT;
-	msg.uint0 = mountpoint;
-	msg.box = VFS_OUTBOX;
-
-	// Wait until OUTBOX is free
-	if(m_vfs_outbox==0){
-		m_vfs_outbox = squire_mutex_create();
-	}
-	squire_mutex_lock(m_vfs_outbox);
-
-	size_t msg_len = sizeof(msg);
-	int rpc_status = squire_rpc_box(VFS_OUTBOX, VFS_PID, VFS_BOX, &msg, sizeof(msg), &msg, msg_len);
-
-	squire_mutex_unlock(m_vfs_outbox);
-
-	if(rpc_status){
-		return VFS_RPC_RETURN_ERR;
-	}
-
-	return msg.uint0;
-}
-
-squire_vfs_rpc_return_t squire_vfs_open(unsigned int mountpoint, const char * path, const char * fname, unsigned int operations, unsigned int * fid){
-
-	squire_vfs_message_t msg;
-	msg.function = VFS_RPC_FUNCTION_OPEN;
-	msg.uint0 = mountpoint;
-	msg.uint1 = operations;
-	strcpy(msg.string0, path);
-	strcpy(msg.string1, fname);
-	msg.box = VFS_OUTBOX;
-
-	// Wait until OUTBOX is free
-	if(m_vfs_outbox==0){
-		m_vfs_outbox = squire_mutex_create();
-	}
-	squire_mutex_lock(m_vfs_outbox);
-
-	size_t msg_len = sizeof(msg);
-	int rpc_status = squire_rpc_box(VFS_OUTBOX, VFS_PID, VFS_BOX, &msg, sizeof(msg), &msg, msg_len);
-
-	squire_mutex_unlock(m_vfs_outbox);
-
-	if(rpc_status){
-		return VFS_RPC_RETURN_ERR;
-	}
-
-	*fid = msg.uint1;
-
-	return msg.uint0;
-}
-
-squire_vfs_rpc_return_t squire_vfs_close(unsigned int mountpoint, unsigned int fid){
-	squire_vfs_message_t msg;
-	msg.function = VFS_RPC_FUNCTION_CLOSE;
-	msg.uint0 = mountpoint;
-	msg.uint1 = fid;
-	msg.box = VFS_OUTBOX;
-
-	// Wait until OUTBOX is free
-	if(m_vfs_outbox==0){
-		m_vfs_outbox = squire_mutex_create();
-	}
-	squire_mutex_lock(m_vfs_outbox);
-
-	size_t msg_len = sizeof(msg);
-	int rpc_status = squire_rpc_box(VFS_OUTBOX, VFS_PID, VFS_BOX, &msg, sizeof(msg), &msg, msg_len);
-
-	squire_mutex_unlock(m_vfs_outbox);
-
-	if(rpc_status){
-		return VFS_RPC_RETURN_ERR;
-	}
-
-	return msg.uint0;
+	return EXIT_SUCCESS;
 }

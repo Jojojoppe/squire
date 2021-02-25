@@ -6,10 +6,10 @@
 #include <threads.h>
 
 #include <squire.h>
-#include <squire_vfs.h>
 
 #include "tar.h"
 #include "DDM/ddm.h"
+#include "VFS/vfs.h"
 
 extern int init_fsdrivers_start(void * p);
 
@@ -19,6 +19,10 @@ int main(int argc, char ** argv){
 	// Get current process information
 	unsigned int PID = squire_procthread_getpid();
 	void * tar_start = (void*)(*((unsigned int*)argv[1]));
+
+	// Start VFS
+	thrd_t thrd_vfs;
+	thrd_create(&thrd_vfs, vfs_main, 0);
 
 	// Start DDM
 	thrd_t thrd_ddm;

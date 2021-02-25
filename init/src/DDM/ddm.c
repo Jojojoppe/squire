@@ -5,6 +5,7 @@
 #include <threads.h>
 
 #include <squire.h>
+#include <squire_vfs.h>
 
 #include "ddm.h"
 
@@ -144,7 +145,7 @@ void ddm_driver_register_device(void * msg, unsigned int from){
         parent->children = dev;
     }
 
-    printf("Registered device '%s' of type %s\r\n", dev->id, dev->type);
+    printf("DDM] Registered device '%s' of type %s\r\n", dev->id, dev->type);
     // Check if there is a driver loaded suited for this device
     ddm_driver_t * driver = ddm_registerd_drivers;
     while(driver){
@@ -175,21 +176,21 @@ void ddm_driver_register_driver(void * msg, unsigned int from){
         ddm_registerd_drivers = d;
     }
 
-    printf("Registered driver '%s' v%d.%d on %d:%d[:%d]\r\n", d->driver_info.name, d->driver_info.version_major, d->driver_info.version_minor, d->pid, d->driver_info.box, d->driver_info.child_box);
+    printf("DDM] Registered driver '%s' v%d.%d on %d:%d[:%d]\r\n", d->driver_info.name, d->driver_info.version_major, d->driver_info.version_minor, d->pid, d->driver_info.box, d->driver_info.child_box);
     for(int i=0; i<32; i++){
         if(d->driver_info.supported[i].type[0]==0) break;
-        printf("    * %s\r\n", d->driver_info.supported[i].type);
+        printf("         * %s\r\n", d->driver_info.supported[i].type);
     }
 
     // Find parent driver if needed
     if(d->driver_info.parent_name[0]){
-        printf("    Needs a driver supporting %s with version > v%d.%d\r\n", d->driver_info.parent_name, d->driver_info.parent_version_major, d->driver_info.parent_version_minor);
+        printf("         Needs a driver supporting %s with version > v%d.%d\r\n", d->driver_info.parent_name, d->driver_info.parent_version_major, d->driver_info.parent_version_minor);
         ddm_driver_t * p = find_driver(d->driver_info.parent_name, d->driver_info.parent_version_major, d->driver_info.parent_version_minor, ddm_registerd_drivers);
         if(p){
             d->parent = p;
-            printf("    found driver '%s' v%d.%d\r\n", p->driver_info.name, p->driver_info.version_major, p->driver_info.version_minor);
+            printf("         found driver '%s' v%d.%d\r\n", p->driver_info.name, p->driver_info.version_major, p->driver_info.version_minor);
         }else{
-            printf("    no parent driver found\r\n");
+            printf("         no parent driver found\r\n");
         }
     }
 
@@ -198,29 +199,21 @@ void ddm_driver_register_driver(void * msg, unsigned int from){
 
 /*
  * Public DDM interface
+ * user interface is a file structure inside the VFS (mp0)
  */
+squire_vfs_driver_t driver_info = {
+    "DDM_FS", 1, 0,
+    0, SQUIRE_DDM_USER_BOX,
+    NULL,
+    NULL,
+    {
+        {"DDM_FS"}
+    }
+};
+squire_vfs_driver_t * __vfs_driver_info = &driver_info;
 int ddm_user_main(void * p){
-	uint8_t * msg_buffer = (uint8_t *) squire_memory_mmap(0, 4096, MMAP_READ|MMAP_WRITE);
-	unsigned int from;
-	for(;;){
-		// Wait for message and block main thread
-		size_t length = 4096;;
-		squire_message_status_t status = squire_message_simple_box_receive(msg_buffer, &length, &from, RECEIVE_BLOCKED, SQUIRE_DDM_USER_BOX);
-
-        squire_ddm_message_header_t * hdr = (squire_ddm_message_header_t*) msg_buffer;
-        squire_ddm_submessage_header_t * smsg_hdr = (squire_ddm_submessage_header_t*)(hdr+1);
-        for(int i=0; i<hdr->messages; i++){
-            switch(smsg_hdr->submessage_type){
-
-                default:
-                    printf("DDS-USER] Unknown submessage type %08x\r\n", smsg_hdr->submessage_type);
-                    break;
-            }
-            smsg_hdr = (squire_ddm_submessage_header_t*)((void*)smsg_hdr + smsg_hdr->length);
-        };
-        memset(msg_buffer, 0, length);
-	}
-	return EXIT_SUCCESS;
+    squire_vfs_driver_main(0, 0);
+    for(;;);
 }
 
 /*
