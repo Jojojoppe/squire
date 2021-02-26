@@ -26,6 +26,49 @@ vfs_driver_t * vfs_find_driver(char * type){
     return 0;
 }
 
+// USER-VFS open
+void vfs_user_open(squire_vfs_submessage_file_t * file, unsigned int from){
+    // Check if mountpoint is mounted
+    if(vfs_mountpoints[file->mountpoint].driver){
+        vfs_driver_t * d = vfs_mountpoints[file->mountpoint].driver;
+        if(d){
+            // Send to driver
+            size_t smsg_size = sizeof(squire_vfs_submessage_header_t) + sizeof(squire_vfs_submessage_file_t);
+            size_t mmsg_size = sizeof(squire_vfs_message_header_t) + smsg_size;
+            squire_vfs_message_header_t * mmsg = (squire_vfs_message_header_t*)malloc(mmsg_size);
+            memset(mmsg, 0, mmsg_size);
+            mmsg->length = mmsg_size;
+            mmsg->messages = 1;
+            squire_vfs_submessage_header_t * smsg_header = (squire_vfs_submessage_header_t*)(mmsg+1);
+            smsg_header->length = smsg_size;
+            smsg_header->submessage_type = SQUIRE_VFS_SUBMESSAGE_OPEN;
+            squire_vfs_submessage_file_t * fl = (squire_vfs_submessage_file_t*)(smsg_header+1);
+            memcpy(fl, file, sizeof(squire_vfs_submessage_file_t));
+            fl->dpid = d->pid;
+            fl->dbox = d->driver_info.box;
+            squire_message_simple_box_send(mmsg, mmsg_size, d->pid, d->driver_info.box);
+            free(mmsg);
+            return;
+        }
+    }
+
+    // Send error return
+	size_t smsg_size = sizeof(squire_vfs_submessage_header_t) + sizeof(squire_vfs_submessage_file_t);
+	size_t rmsg_size = sizeof(squire_vfs_message_header_t) + smsg_size;
+	squire_vfs_message_header_t * rmsg = (squire_vfs_message_header_t*)malloc(rmsg_size);
+	memset(rmsg, 0, rmsg_size);
+	rmsg->length = rmsg_size;
+	rmsg->messages = 1;
+	squire_vfs_submessage_header_t * smsg_header = (squire_vfs_submessage_header_t*)(rmsg+1);
+	smsg_header->length = smsg_size;
+	smsg_header->submessage_type = SQUIRE_VFS_SUBMESSAGE_OPENDIR_R;
+	squire_vfs_submessage_file_t * d = (squire_vfs_submessage_file_t*)(smsg_header+1);
+    memcpy(d, file, sizeof(squire_vfs_submessage_file_t));
+    d->status = -1;
+    squire_message_simple_box_send(rmsg, rmsg_size, from, d->box);
+    free(rmsg);
+}
+
 // USER-VFS opendir
 void vfs_user_opendir(squire_vfs_submessage_dir_t * dir, unsigned int from){
     // Check if mountpoint is mounted
@@ -43,7 +86,7 @@ void vfs_user_opendir(squire_vfs_submessage_dir_t * dir, unsigned int from){
             smsg_header->length = smsg_size;
             smsg_header->submessage_type = SQUIRE_VFS_SUBMESSAGE_OPENDIR;
             squire_vfs_submessage_dir_t * dr = (squire_vfs_submessage_dir_t*)(smsg_header+1);
-            memcpy(dr, dir, sizeof(squire_vfs_submessage_mount_t));
+            memcpy(dr, dir, sizeof(squire_vfs_submessage_dir_t));
             dr->dpid = d->pid;
             dr->dbox = d->driver_info.box;
             squire_message_simple_box_send(mmsg, mmsg_size, d->pid, d->driver_info.box);
@@ -186,6 +229,10 @@ int vfs_user_main(void * p){
 
                 case SQUIRE_VFS_SUBMESSAGE_OPENDIR:
                     vfs_user_opendir(smsg_hdr+1, from);
+                    break;
+
+                case SQUIRE_VFS_SUBMESSAGE_OPEN:
+                    vfs_user_open(smsg_hdr+1, from);
                     break;
 
                 default:

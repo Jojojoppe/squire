@@ -11,4 +11,11 @@
  */
 #define SQUIRE_HZ 100
 
+/*
+ * Squire basic mountpoints
+ */
+#define SQUIRE_MP_DDM 0
+#define SQUIRE_MP_INITRAMFS 1
+#define SQUIRE_MP_PROCFS 2
+
 #endif

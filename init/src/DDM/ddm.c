@@ -234,21 +234,23 @@ int ddm_fs_readdir(unsigned int current_entry, struct dirent * dirent){
     if(d) return 0;
     return -1;
 }
-squire_vfs_driver_t driver_info = {
+squire_vfs_driver_t ddmfs_driver_info = {
     "DDM_FS", 1, 0,
     0, SQUIRE_DDM_USER_BOX,
     ddm_fs_mount,
     NULL,
     ddm_fs_opendir,
     ddm_fs_readdir,
+    NULL,
     {
         {"DDM_FS"}
     }
 };
-squire_vfs_driver_t * __vfs_driver_info = &driver_info;
+squire_vfs_driver_t * __vfs_driver_info = &ddmfs_driver_info;   // Must exists or else linking wouldnt work
 int ddm_user_main(void * p){
-    squire_vfs_driver_main(0, 0);
+    squire_vfs_driver_main_direct(0, 0, &ddmfs_driver_info);
     for(;;);
+    return 0;
 }
 
 /*

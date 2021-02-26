@@ -83,3 +83,50 @@ int tar_exists(void * start, char * fname){
 	}
 	return exists;
 }
+
+int tar_count(void * start){
+	tar_header_t * hdr = (tar_header_t *) start;
+	int cnt = 0;
+	while(hdr->filename[0]){
+		cnt++;
+
+		// get size
+		unsigned int count = 1;
+		unsigned int size = 0;
+		for(int j=11; j>0; j--, count*=8)
+			size += ((hdr->size[j-1]-'0')*count);
+
+		// Next header
+		unsigned int nxt = (unsigned int)hdr + ((size/512)+1)*512;
+		if(size%512) nxt += 512;
+		hdr = (tar_header_t*)nxt;
+	}
+	return cnt;
+}
+
+void * tar_get_info(void * start, int n, char * fname, size_t * fsize){
+	tar_header_t * hdr = (tar_header_t *) start;
+	int i = 0;
+	while(hdr->filename[0]){
+
+		// get size
+		unsigned int count = 1;
+		unsigned int size = 0;
+		for(int j=11; j>0; j--, count*=8)
+			size += ((hdr->size[j-1]-'0')*count);
+
+		if(i==n){
+			strcpy(fname, hdr->filename);
+			*fsize = 0;
+			*fsize = size;
+
+			return (void*)&hdr[1];
+		}
+
+		// Next header
+		i++;
+		unsigned int nxt = (unsigned int)hdr + ((size/512)+1)*512;
+		if(size%512) nxt += 512;
+		hdr = (tar_header_t*)nxt;
+	}
+}
