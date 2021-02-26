@@ -40,7 +40,22 @@ int fs_readdir(unsigned int current_entry, struct dirent * dirent){
 }
 
 int fs_open(char * path, unsigned int * fd){
-    printf("OPEN %s\r\n", path);
+    for(int i=0; i<initramfs_count; i++){
+        if(!strcmp(path+1, files[i].name)){
+            *fd = i;
+            return 0;
+        }
+    }
+    return -1;
+}
+
+int fs_read(unsigned int fd, size_t offset, size_t * length, char * buf){
+    if(fd>=initramfs_count) return ;
+    if(offset>=files[fd].length) return -1;
+    if(offset+*length>=files[fd].length){
+        *length = files[fd].length-offset;
+    }
+    memcpy(buf, files[fd].base+offset, *length);
     return 0;
 }
 
@@ -52,6 +67,7 @@ squire_vfs_driver_t initramfs_driver_info = {
     fs_opendir,
     fs_readdir,
     fs_open,
+    fs_read,
     {
         {"INITRAMFS"}
     }

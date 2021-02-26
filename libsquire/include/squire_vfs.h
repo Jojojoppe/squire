@@ -22,9 +22,13 @@ typedef struct{
 	// Function callbacks
 	int (*mount)(char * type, char * device, unsigned int mountpoint, unsigned int flags);
 	int (*umount)(unsigned int mountpoint);
+
 	int (*opendir)(char * path, struct dirent * dirent);
 	int (*readdir)(unsigned int current_entry, struct dirent * dirent);
+
 	int (*open)(char * path, unsigned int * fd);
+	int (*read)(unsigned int fd, size_t offset, size_t * length, char * buf);
+
 	squire_vfs_driver_supported_t supported[32];	
 } squire_vfs_driver_t;
 
@@ -58,7 +62,9 @@ typedef enum{
 	SQUIRE_VFS_SUBMESSAGE_READDIR,
 	SQUIRE_VFS_SUBMESSAGE_READDIR_R,
 	SQUIRE_VFS_SUBMESSAGE_OPEN,
-	SQUIRE_VFS_SUBMESSAGE_OPEN_R
+	SQUIRE_VFS_SUBMESSAGE_OPEN_R,
+	SQUIRE_VFS_SUBMESSAGE_READ,
+	SQUIRE_VFS_SUBMESSAGE_READ_R,
 } squire_vfs_submessage_type_t;
 
 // Main message header
@@ -108,6 +114,8 @@ typedef struct{
 	int status;
 	char path[MAXNAMLEN+1];
 	int fdesc;
+	size_t length;
+	size_t offset;
 } squire_vfs_submessage_file_t;
 
 int squire_vfs_driver_main_direct(int argc, char ** argv, squire_vfs_driver_t * driver_info);

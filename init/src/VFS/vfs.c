@@ -61,7 +61,7 @@ void vfs_user_open(squire_vfs_submessage_file_t * file, unsigned int from){
 	rmsg->messages = 1;
 	squire_vfs_submessage_header_t * smsg_header = (squire_vfs_submessage_header_t*)(rmsg+1);
 	smsg_header->length = smsg_size;
-	smsg_header->submessage_type = SQUIRE_VFS_SUBMESSAGE_OPENDIR_R;
+	smsg_header->submessage_type = SQUIRE_VFS_SUBMESSAGE_OPEN_R;
 	squire_vfs_submessage_file_t * d = (squire_vfs_submessage_file_t*)(smsg_header+1);
     memcpy(d, file, sizeof(squire_vfs_submessage_file_t));
     d->status = -1;

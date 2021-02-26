@@ -5,6 +5,7 @@
 #include <signal.h>
 #include <threads.h>
 #include <dirent.h>
+#include <errno.h>
 
 #include <squire.h>
 #include <squire_vfs.h>
@@ -52,11 +53,20 @@ int main(int argc, char ** argv){
 	printf("INITRAMFS:\r\n");
 	tree("1:/");
 
+
 	FILE * f_licence = fopen("1:/LICENCE", "r");
 	if(!f_licence){
 		printf("ERROR: could not open 1:/LICENCE\r\n");
 		for(;;);
 	}
+	char buf[1024+1];
+	size_t r;
+	do{
+		r = fread(buf, 1, 1024, f_licence);
+		buf[r] = 0;
+		printf("%s\r\n", buf);
+	} while(r>0);
+	fclose(f_licence);
 
 	// unsigned int root_device_driver_size;
 	// void * root_device_driver = tar_get(tar_start, "x86_generic.bin", &root_device_driver_size);

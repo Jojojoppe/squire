@@ -13,6 +13,7 @@
 int _PDCLIB_fillbuffer( FILE * stream )
 {
     size_t bytesRead;
+
     bool ok = stream->ops->read( stream->handle, stream->buffer, stream->bufsize,
                         &bytesRead);
 
@@ -22,6 +23,7 @@ int _PDCLIB_fillbuffer( FILE * stream )
             return EOF;
         }
         stream->pos.offset += bytesRead;
+        stream->handle.offset += bytesRead;
         stream->bufend = bytesRead;
         stream->bufidx = 0;
         return 0;

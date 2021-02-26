@@ -111,7 +111,7 @@ int squire_vfs_driver_main_direct(int argc, char ** argv, squire_vfs_driver_t * 
 
 				case SQUIRE_VFS_SUBMESSAGE_OPEN:{
 					squire_vfs_submessage_file_t * file = (squire_vfs_submessage_file_t*)(smsg_hdr+1);
-					if(driver_info->opendir){
+					if(driver_info->open){
 						unsigned int fd;
 						int r = driver_info->open(file->path, &fd);
 						// Send return message
@@ -123,11 +123,42 @@ int squire_vfs_driver_main_direct(int argc, char ** argv, squire_vfs_driver_t * 
 						rmsg->messages = 1;
 						squire_vfs_submessage_header_t * smsg_header = (squire_vfs_submessage_header_t*)(rmsg+1);
 						smsg_header->length = smsg_size;
-						smsg_header->submessage_type = SQUIRE_VFS_SUBMESSAGE_OPENDIR_R;
+						smsg_header->submessage_type = SQUIRE_VFS_SUBMESSAGE_OPEN_R;
 						squire_vfs_submessage_file_t * fl = (squire_vfs_submessage_file_t*)(smsg_header+1);
 						memcpy(fl, file, sizeof(squire_vfs_submessage_file_t));
 						fl->fdesc = fd;
 						fl->status = r;
+						squire_message_simple_box_send(rmsg, rmsg_size, fl->pid, fl->box);
+						free(rmsg);
+					}
+				} break;
+
+				case SQUIRE_VFS_SUBMESSAGE_READ:{
+					squire_vfs_submessage_file_t * file = (squire_vfs_submessage_file_t*)(smsg_hdr+1);
+					if(driver_info->read){
+						unsigned int fd = file->fdesc;
+						size_t length = file->length;
+
+						size_t smsg_size = sizeof(squire_vfs_submessage_header_t) + sizeof(squire_vfs_submessage_file_t)+length;
+						size_t rmsg_size = sizeof(squire_vfs_message_header_t) + smsg_size;
+						squire_vfs_message_header_t * rmsg = (squire_vfs_message_header_t*)malloc(rmsg_size);
+						squire_vfs_submessage_header_t * smsg_header = (squire_vfs_submessage_header_t*)(rmsg+1);
+						squire_vfs_submessage_file_t * fl = (squire_vfs_submessage_file_t*)(smsg_header+1);
+						char * buf = (char*)(fl+1);
+						memset(rmsg, 0, rmsg_size, buf);
+
+						int r = driver_info->read(fd, file->offset, &length, buf);
+						if(r) length=0;
+
+						// Send return message
+						rmsg->length = rmsg_size;
+						rmsg->messages = 1;
+						smsg_header->length = smsg_size;
+						smsg_header->submessage_type = SQUIRE_VFS_SUBMESSAGE_READ_R;
+						memcpy(fl, file, sizeof(squire_vfs_submessage_file_t));
+						fl->fdesc = fd;
+						fl->status = r;
+						fl->length = length;
 						squire_message_simple_box_send(rmsg, rmsg_size, fl->pid, fl->box);
 						free(rmsg);
 					}

@@ -35,7 +35,7 @@
 /* stream handle should not be free()d on close (stdin, stdout, stderr) */
 #define _PDCLIB_STATIC     32768u
 
-union _PDCLIB_fd
+struct _PDCLIB_fd
 {
 #if defined(_PDCLIB_OSFD_T)
     _PDCLIB_OSFD_T      osfd;
@@ -43,6 +43,8 @@ union _PDCLIB_fd
     void *              pointer;
     _PDCLIB_uintptr_t   uval;
     _PDCLIB_intptr_t    sval;
+    unsigned int fdesc, mountpoint, dpid, dbox;
+    size_t offset;
 };
 
 /******************************************************************************/

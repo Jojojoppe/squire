@@ -13,6 +13,8 @@
 #include <squire.h>
 #include <squire_vfs.h>
 
+extern const _PDCLIB_fileops_t _PDCLIB_fileops;
+
 bool _PDCLIB_open( _PDCLIB_fd_t * pFd, const _PDCLIB_fileops_t ** pOps,
                    char const * const filename, unsigned int mode ){
 
@@ -50,7 +52,13 @@ bool _PDCLIB_open( _PDCLIB_fd_t * pFd, const _PDCLIB_fileops_t ** pOps,
         return false;
     }
 
+    *pOps = &_PDCLIB_fileops;
+
+    pFd->fdesc = f->fdesc;
+    pFd->mountpoint = f->mountpoint;
+    pFd->dpid = f->dpid;
+    pFd->dbox = f->dbox;
+    pFd->offset = 0;
     free(msg);
-    pFd->pointer = 0x123456;
     return true;
 }

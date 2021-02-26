@@ -383,7 +383,7 @@ typedef struct _PDCLIB_fpos
 } _PDCLIB_fpos_t;
 
 typedef struct _PDCLIB_fileops  _PDCLIB_fileops_t;
-typedef union  _PDCLIB_fd       _PDCLIB_fd_t;
+typedef struct  _PDCLIB_fd       _PDCLIB_fd_t;
 typedef struct _PDCLIB_file     _PDCLIB_file_t; // Rename to _PDCLIB_FILE?
 
 /* Status structure required by _PDCLIB_print(). */
