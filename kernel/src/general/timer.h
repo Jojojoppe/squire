@@ -15,5 +15,6 @@ void timer_add_callback(unsigned int PID, unsigned long long time, unsigned int 
 void timer_interrupt();
 void timer_update();
 unsigned int timer_get();
+unsigned long long timer_get_long();
 
 #endif

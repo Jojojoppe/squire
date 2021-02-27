@@ -7,6 +7,9 @@
 
 extern int main(int argc, char ** argv);
 
+// Random signature for process communication
+char _signature[33];
+
 void _start(){
     unsigned int from;
     unsigned int length = sizeof(unsigned int)*2;
@@ -33,6 +36,15 @@ void _start(){
 
     // Initialize signal handlers
     signal(0, SIG_DFL);
+
+    // Create random signature
+    unsigned long long ticks = squire_misc_get_ticks() + rand();
+    srand(ticks);
+    char * characters = "qwertyuiopasdfghjklzxcvbnm1234567890QWERTYUIOPASDFGHJKLZXCVBNM";
+    for(int i=0; i<32; i++){
+        _signature[i] = characters[rand()%63];
+    }
+    _signature[32] = 0;
 
     int retval = main(argc, argv);
 

@@ -15,6 +15,8 @@
 #include "VFS/vfs.h"
 #include "initramfs.h"
 
+#include <squire_crypt.h>
+
 void tree(char * path){
 	DIR * d = opendir(path);
 	if(!d) return;
@@ -49,9 +51,11 @@ int main(int argc, char ** argv){
 
 	// Mount initramfs
 	for(int i=0; i<0x2000000; i++); 
-	squire_vfs_user_mount("INITRAMFS", "", SQUIRE_MP_INITRAMFS);
-	printf("INITRAMFS:\r\n");
-	tree("1:/");
+	if(squire_vfs_user_mount("INITRAMFS", "", SQUIRE_MP_INITRAMFS)){
+		printf("Could not mount initramfs\r\n");
+		for(;;);
+	}
+	printf("Mounted initramfs\r\n");
 
 
 	FILE * f_licence = fopen("1:/LICENCE", "r");
@@ -59,12 +63,13 @@ int main(int argc, char ** argv){
 		printf("ERROR: could not open 1:/LICENCE\r\n");
 		for(;;);
 	}
+	printf("1:/LICENCE opened\r\n");
 	char buf[1024+1];
 	size_t r;
 	do{
 		r = fread(buf, 1, 1024, f_licence);
 		buf[r] = 0;
-		printf("%s\r\n", buf);
+		// printf("%s\r\n", buf);
 	} while(r>0);
 	fclose(f_licence);
 

@@ -49,6 +49,10 @@ int fs_open(char * path, unsigned int * fd){
     return -1;
 }
 
+int fs_close(unsigned int fd){
+    return 0;
+}
+
 int fs_read(unsigned int fd, size_t offset, size_t * length, char * buf){
     if(fd>=initramfs_count) return ;
     if(offset>=files[fd].length) return -1;
@@ -67,6 +71,7 @@ squire_vfs_driver_t initramfs_driver_info = {
     fs_opendir,
     fs_readdir,
     fs_open,
+    fs_close,
     fs_read,
     {
         {"INITRAMFS"}

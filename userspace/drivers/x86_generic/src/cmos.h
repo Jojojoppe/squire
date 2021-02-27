@@ -2,7 +2,6 @@
 #define __H_X86_GENERIC_CMOS 1
 
 #include <squire.h>
-#include <squire_driver.h>
 
 #define RTC_INTR 0x28
 #define RTC_IO_PORT_INDEX 0x70

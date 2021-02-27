@@ -24,6 +24,7 @@ int _PDCLIB_fillbuffer( FILE * stream )
         }
         stream->pos.offset += bytesRead;
         stream->handle.offset += bytesRead;
+        stream->handle.nonce++;
         stream->bufend = bytesRead;
         stream->bufidx = 0;
         return 0;

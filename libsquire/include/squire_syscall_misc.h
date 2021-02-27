@@ -24,7 +24,12 @@ typedef enum SQUIRE_SYSCALL_MISC_OPERATION{
 	 *
 	 * Can only be issued by init (PID1), otherwise SIGILL will be raised
 	 */
-	SQUIRE_SYSCALL_MISC_OPERATION_FINALIZE
+	SQUIRE_SYSCALL_MISC_OPERATION_FINALIZE,
+    /**
+     * @brief Get amount of timer ticks
+     * 
+     */
+	SQUIRE_SYSCALL_MISC_OPERATION_GET_TICKS
 } squire_syscall_misc_operation_t;
 
 /**
@@ -63,6 +68,12 @@ extern void squire_misc_timer_add(unsigned long long time, unsigned int id);
  * 
  */
 #define squire_misc_timer_get_id() (squire_extraval2)
+
+/**
+ * @brief Get amount of timer ticks
+ * 
+ */
+extern unsigned long long squire_misc_get_ticks();
 
 
 extern void squire_misc_finalize();

@@ -9,6 +9,7 @@
 
 #include "_PDCLIB_int.h"
 #include "_PDCLIB_threadconfig.h"
+#include <stdint.h>
 
 /* Flags for representing mode (see fopen()). Note these must fit the same
    status field as the _IO?BF flags in <stdio.h> and the internal flags below.
@@ -44,6 +45,8 @@ struct _PDCLIB_fd
     _PDCLIB_uintptr_t   uval;
     _PDCLIB_intptr_t    sval;
     unsigned int fdesc, mountpoint, dpid, dbox;
+    uint64_t nonce;
+    char signature[32];
     size_t offset;
 };
 

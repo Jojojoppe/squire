@@ -18,6 +18,10 @@ int syscall_misc(squire_syscall_misc_t * params){
 				finalize();
 		} break;
 
+        case SQUIRE_SYSCALL_MISC_OPERATION_GET_TICKS:{
+            params->longvalue0 = timer_get_long();
+        } break;
+
         default:
             return SYSCALL_ERROR_OPERATION;
     }

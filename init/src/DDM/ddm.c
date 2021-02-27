@@ -243,6 +243,7 @@ squire_vfs_driver_t ddmfs_driver_info = {
     ddm_fs_readdir,
     NULL,
     NULL,
+    NULL,
     {
         {"DDM_FS"}
     }

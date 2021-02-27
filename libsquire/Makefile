@@ -33,7 +33,7 @@ CC_INCLUDES			:= -I include -I $(PREFIX)/include
 # Add DEPFILE dependencies
 -include $(DEPFILES)
 
-.PHONY: $(TARGET) all clean install uninstall
+.PHONY: $(TARGET) all clean install uninstall preinstall
 all: $(TARGET) install
 
 # PHONY RULES
@@ -50,6 +50,9 @@ install: $(INSTALLTARGET)/$(TARGET) $(INSFILES)
 uninstall:
 	echo UNISTALL FILES FOR $(TARGET)
 	-rm $(FILESTOUNINSTALL)
+
+preinstall: $(INSFILES)
+	# Copy important headers
 
 # SPECIFIC BUILD RULES
 # --------------------

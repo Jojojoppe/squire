@@ -1,10 +1,10 @@
 include makefiles/env.mk
 
-.PHONY: all libcpreinstal libsquire libc libm kernel init userspace initramfs install clean
+.PHONY: all preinstal libsquire libc libm kernel init userspace initramfs install clean
 .SILENT:
 
 # Complete make
-all: toolchain drive libcpreinstall libsquire libc libm kernel init userspace initramfs mount install umount
+all: toolchain drive preinstall libsquire libc libm kernel init userspace initramfs mount install umount
 
 # Makefile scripts
 include makefiles/drive.mk
@@ -15,8 +15,9 @@ include makefiles/toolchain.mk
 libsquire:
 	cd libsquire && ${MAKE} ${MFLAGS} all
 
-libcpreinstall:
+preinstall:
 	cd libc && ${MAKE} ${MFLAGS} preinstall
+	cd libsquire && ${MAKE} ${MFLAGS} preinstall
 
 libc:
 	cd libc && ${MAKE} ${MFLAGS} all

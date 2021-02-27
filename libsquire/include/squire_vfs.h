@@ -27,13 +27,19 @@ typedef struct{
 	int (*readdir)(unsigned int current_entry, struct dirent * dirent);
 
 	int (*open)(char * path, unsigned int * fd);
+	int (*close)(unsigned int fd);
 	int (*read)(unsigned int fd, size_t offset, size_t * length, char * buf);
 
 	squire_vfs_driver_supported_t supported[32];	
+
+	// Internal stuff
+	char rand_key[33];
+	char vfs_signature[33]; // Signature of the VFS
+	void * openfiles;
 } squire_vfs_driver_t;
 
 #define SQUIRE_VFS_DRIVER(DRIVER_INFO) \
-	squire_vfs_driver_t * __vfs_driver_info = &driver_info; \
+	extern squire_vfs_driver_t * __vfs_driver_info = &driver_info; \
 	extern int squire_vfs_driver_main(int, char**); \
 	int main(int argcm char ** argv){ \
 		return squire_vfs_driver_main(argc, argv); \
@@ -55,6 +61,7 @@ typedef struct{
 // Submessage type								// box: message direction
 typedef enum{
 	SQUIRE_VFS_SUBMESSAGE_REGISTER_DRIVER,		// VFS-DRIVER: DRIVER->VFS
+	SQUIRE_VFS_SUBMESSAGE_REGISTER_DRIVER_R,	// VFS-DRIVER: VFS->DRIVER
 	SQUIRE_VFS_SUBMESSAGE_MOUNT,				// VSF-DRIVER and USER-VFS: VFS->DRIVER and USER->VFS
 	SQUIRE_VFS_SUBMESSAGE_MOUNT_R,				// VSF-DRIVER and USER-VFS: DRIVER->VFS and VFS->USER
 	SQUIRE_VFS_SUBMESSAGE_OPENDIR,				// VFS-DRIVER and USER-VFS: VFS-DRIVER and USER->VFS
@@ -63,6 +70,8 @@ typedef enum{
 	SQUIRE_VFS_SUBMESSAGE_READDIR_R,
 	SQUIRE_VFS_SUBMESSAGE_OPEN,
 	SQUIRE_VFS_SUBMESSAGE_OPEN_R,
+	SQUIRE_VFS_SUBMESSAGE_CLOSE,
+	SQUIRE_VFS_SUBMESSAGE_CLOSE_R,
 	SQUIRE_VFS_SUBMESSAGE_READ,
 	SQUIRE_VFS_SUBMESSAGE_READ_R,
 } squire_vfs_submessage_type_t;
@@ -71,6 +80,7 @@ typedef enum{
 typedef struct{
 	uint32_t messages;
 	uint32_t length;
+	char signature[32+1];
 } squire_vfs_message_header_t;
 
 typedef struct{
@@ -96,6 +106,7 @@ typedef struct{
 	unsigned int mountpoint;
 	unsigned int pid, box;
 	int status;
+	char signature[33];	// Signature of calling user process
 } squire_vfs_submessage_mount_t;
 
 typedef struct{
@@ -105,6 +116,7 @@ typedef struct{
 	int status;
 	char path[MAXNAMLEN+1];
 	struct dirent dirent;
+	char signature[33];	// Signature of calling user process
 } squire_vfs_submessage_dir_t;
 
 typedef struct{
@@ -116,7 +128,13 @@ typedef struct{
 	int fdesc;
 	size_t length;
 	size_t offset;
+	uint64_t nonce;
+	char signature[33];	// Signature of calling user process
 } squire_vfs_submessage_file_t;
+
+
+#define VFS_MSG_LEN(x) (sizeof(squire_vfs_submessage_header_t) + sizeof(squire_vfs_message_header_t) + x)
+void * squire_vfs_create_message(void ** msg, size_t length, char * signature, int type);
 
 int squire_vfs_driver_main_direct(int argc, char ** argv, squire_vfs_driver_t * driver_info);
 int squire_vfs_user_mount(char * type, char * device, unsigned int mountpoint);

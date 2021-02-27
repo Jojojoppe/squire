@@ -54,6 +54,10 @@ unsigned int timer_get(){
     return (unsigned int) timer_value;
 }
 
+unsigned long long timer_get_long(){
+    return timer_value;
+}
+
 void timer_add_callback(unsigned int PID, unsigned long long time, unsigned int id){
     unsigned long long tendval = timer_value + time;
     timer_callback_t * t = (timer_callback_t*)kmalloc(sizeof(timer_callback_t));
