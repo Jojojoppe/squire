@@ -1,1 +1,0 @@
-AS_FLAGS		:= -f elf64 -isrc/$(ARCH)

@@ -1,14 +1,16 @@
-*.sym
-*.bin
-*.tar
+prefix
+build
+
+# COMPILE STUFF
+*.o
+*.d
+*.elf
 *.so
 *.a
-.vscode
-.envrc
-*.ycm_extra_conf.py
 
-toolchain
-
-drive
-mnt
-initramfs
+# AUTOTOOLS STUFF
+*~
+**/Makefile
+**/config.status
+**/config.log
+**/autom4te.cache

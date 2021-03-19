@@ -1,0 +1,8 @@
+{
+    "files.exclude": {
+        "**/aclocal.m4": true,
+        "**/build": true,
+        "**/configure": true,
+        "**/Makefile.in": true
+    }
+}

@@ -1,6 +1,0 @@
-#ifndef __H_STDINT
-#define __H_STDINT 1
-
-#include <__IN_ARCH_IN__/stdint.h>
-
-#endif
