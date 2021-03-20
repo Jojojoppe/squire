@@ -14,14 +14,15 @@ stack_b:
 
 // ------------
 // SECTION TEXT
-.section .text
+.section .mboot
 .align 0x04
 // ------------
 
 // MBOOT
 // -----
 .set MBOOT_MAGIC,       0x1badb002
-.set MBOOT_FLAGS,       0x7
+//.set MBOOT_FLAGS,       0x7 with VBE
+.set MBOOT_FLAGS,       0x3
 .set MBOOT_CHECKSUM,    -(MBOOT_MAGIC+MBOOT_FLAGS)
 
 .long MBOOT_MAGIC
@@ -32,10 +33,16 @@ stack_b:
 .long 0
 .long 0
 .long 0
-.long 0
-.long 640
-.long 480
-.long 32
+//.long 1
+//.long 80
+//.long 25
+//.long 0
+
+// ------------
+// SECTION TEXT
+.section .text
+.align 0x04
+// ------------
 
 // ENTRY
 // -----

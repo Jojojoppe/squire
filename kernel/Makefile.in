@@ -381,8 +381,7 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 SUBDIRS = $(ARCH_DIR)
 DIST_SUBDIRS = src/arch/arm \
-			   src/arch/i386 \
-			   src/arch/x86_64
+			   src/arch/i386
 
 squire_LDADD = $(ARCH_DIR)/libarch.a
 squire_LDFLAGS = -Tlinker.ld

@@ -7,6 +7,7 @@ SECTIONS {
 
 	.text : {
 		__stext = .;
+		*(.mboot)
 		*(.text .text.*)
 		*(.rodata .rodata.*)
 		__etext = .;

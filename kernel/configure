@@ -2976,10 +2976,6 @@ case "$host_cpu" in
 		hostarch=i386
 		hostplatform=
 		;;
-	x86_64)
-		hostarch=x86_64
-		hostplatform=
-		;;
 	arm | armv7arm)
 		hostarch=arm
 		case "$platform" in
@@ -4701,7 +4697,7 @@ fi
 printf "%s\n" "#define KERNEL_LOG_PRINT_ENABLE $kernel_log_print" >>confdefs.h
 
 
-ac_config_files="$ac_config_files Makefile src/arch/arm/Makefile src/arch/i386/Makefile src/arch/x86_64/Makefile"
+ac_config_files="$ac_config_files Makefile src/arch/arm/Makefile src/arch/i386/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -5433,7 +5429,6 @@ do
     "Makefile") CONFIG_FILES="$CONFIG_FILES Makefile" ;;
     "src/arch/arm/Makefile") CONFIG_FILES="$CONFIG_FILES src/arch/arm/Makefile" ;;
     "src/arch/i386/Makefile") CONFIG_FILES="$CONFIG_FILES src/arch/i386/Makefile" ;;
-    "src/arch/x86_64/Makefile") CONFIG_FILES="$CONFIG_FILES src/arch/x86_64/Makefile" ;;
 
   *) as_fn_error $? "invalid argument: \`$ac_config_target'" "$LINENO" 5;;
   esac

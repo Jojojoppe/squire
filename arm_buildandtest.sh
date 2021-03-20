@@ -5,7 +5,7 @@ export PATH=$PREFIX/bin:$PATH
 
 mkdir build >/dev/null 2>/dev/null
 cd build
-mkdir arm i386 >/dev/null 2>/dev/null
+mkdir arm >/dev/null 2>/dev/null
 
 cd arm
 #../../configure --prefix=$PREFIX --exec-prefix=$(pwd)/output --host=arm-none-eabi platform=ebaz4205
@@ -17,14 +17,7 @@ if test "X$?" != "X0" ; then
 fi
 cd ..
 
-cd i386
-#../../configure --prefix=$PREFIX --exec-prefix=$(pwd)/output --host=i386-elf
-make && make install
-if test "X$?" != "X0" ; then
-	echo "BUILD ERROR i386"
-	cd ../..
-	exit 1
-fi
 cd ..
 
-cd ..
+echo STARTING QEMU
+qemu-system-arm -machine xilinx-zynq-a9 -kernel build/arm/output/boot/squire -serial /dev/null -serial mon:stdio -nographic -m 256M

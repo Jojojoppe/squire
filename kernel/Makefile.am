@@ -1,7 +1,6 @@
 SUBDIRS = $(ARCH_DIR)
 DIST_SUBDIRS = src/arch/arm \
-			   src/arch/i386 \
-			   src/arch/x86_64
+			   src/arch/i386
 
 bootdir = @bootdir@
 boot_PROGRAMS = squire

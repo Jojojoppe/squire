@@ -16,10 +16,6 @@ case "$host_cpu" in
 		hostarch=i386
 		hostplatform=
 		;;
-	x86_64)
-		hostarch=x86_64
-		hostplatform=
-		;;
 	arm | armv7[arm])
 		hostarch=arm
 		case "$platform" in
@@ -78,7 +74,6 @@ AC_CONFIG_FILES([
 	Makefile
 	src/arch/arm/Makefile
 	src/arch/i386/Makefile
-	src/arch/x86_64/Makefile
 ])
 
 AC_OUTPUT
