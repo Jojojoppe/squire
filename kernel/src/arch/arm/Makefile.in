@@ -109,7 +109,8 @@ libarch_a_AR = $(AR) $(ARFLAGS)
 libarch_a_LIBADD =
 am__dirstamp = $(am__leading_dot)dirstamp
 am_libarch_a_OBJECTS = boot.$(OBJEXT) spinlock.$(OBJEXT) \
-	archmain.$(OBJEXT) $(PLATFORM_DIR)/debugprint.$(OBJEXT)
+	archmain.$(OBJEXT) $(PLATFORM_DIR)/debugprint.$(OBJEXT) \
+	pmm.$(OBJEXT) $(PLATFORM_DIR)/memory_layout.$(OBJEXT)
 libarch_a_OBJECTS = $(am_libarch_a_OBJECTS)
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
@@ -127,7 +128,8 @@ DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/build-aux/depcomp
 am__maybe_remake_depfiles = depfiles
 am__depfiles_remade = $(PLATFORM_DIR)/$(DEPDIR)/debugprint.Po \
-	./$(DEPDIR)/archmain.Po ./$(DEPDIR)/boot.Po \
+	$(PLATFORM_DIR)/$(DEPDIR)/memory_layout.Po \
+	./$(DEPDIR)/archmain.Po ./$(DEPDIR)/boot.Po ./$(DEPDIR)/pmm.Po \
 	./$(DEPDIR)/spinlock.Po
 am__mv = mv -f
 CPPASCOMPILE = $(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
@@ -292,7 +294,8 @@ libarch_a_SOURCES = \
 	boot.S \
 	spinlock.S \
 	archmain.c \
-	$(PLATFORM_DIR)/debugprint.c
+	$(PLATFORM_DIR)/debugprint.c \
+	pmm.h pmm.c $(PLATFORM_DIR)/memory_layout.c
 
 all: all-am
 
@@ -338,6 +341,9 @@ $(PLATFORM_DIR)/$(DEPDIR)/$(am__dirstamp):
 	@: > $(PLATFORM_DIR)/$(DEPDIR)/$(am__dirstamp)
 $(PLATFORM_DIR)/debugprint.$(OBJEXT): $(PLATFORM_DIR)/$(am__dirstamp) \
 	$(PLATFORM_DIR)/$(DEPDIR)/$(am__dirstamp)
+$(PLATFORM_DIR)/memory_layout.$(OBJEXT):  \
+	$(PLATFORM_DIR)/$(am__dirstamp) \
+	$(PLATFORM_DIR)/$(DEPDIR)/$(am__dirstamp)
 
 libarch.a: $(libarch_a_OBJECTS) $(libarch_a_DEPENDENCIES) $(EXTRA_libarch_a_DEPENDENCIES) 
 	$(AM_V_at)-rm -f libarch.a
@@ -352,8 +358,10 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@$(PLATFORM_DIR)/$(DEPDIR)/debugprint.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@$(PLATFORM_DIR)/$(DEPDIR)/memory_layout.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/archmain.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/boot.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pmm.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spinlock.Po@am__quote@ # am--include-marker
 
 $(am__depfiles_remade):
@@ -521,8 +529,10 @@ clean-am: clean-generic clean-noinstLIBRARIES mostlyclean-am
 
 distclean: distclean-am
 		-rm -f $(PLATFORM_DIR)/$(DEPDIR)/debugprint.Po
+	-rm -f $(PLATFORM_DIR)/$(DEPDIR)/memory_layout.Po
 	-rm -f ./$(DEPDIR)/archmain.Po
 	-rm -f ./$(DEPDIR)/boot.Po
+	-rm -f ./$(DEPDIR)/pmm.Po
 	-rm -f ./$(DEPDIR)/spinlock.Po
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
@@ -570,8 +580,10 @@ installcheck-am:
 
 maintainer-clean: maintainer-clean-am
 		-rm -f $(PLATFORM_DIR)/$(DEPDIR)/debugprint.Po
+	-rm -f $(PLATFORM_DIR)/$(DEPDIR)/memory_layout.Po
 	-rm -f ./$(DEPDIR)/archmain.Po
 	-rm -f ./$(DEPDIR)/boot.Po
+	-rm -f ./$(DEPDIR)/pmm.Po
 	-rm -f ./$(DEPDIR)/spinlock.Po
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic

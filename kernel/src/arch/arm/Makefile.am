@@ -5,7 +5,8 @@ libarch_a_SOURCES = \
 	boot.S \
 	spinlock.S \
 	archmain.c \
-	$(PLATFORM_DIR)/debugprint.c
+	$(PLATFORM_DIR)/debugprint.c \
+	pmm.h pmm.c $(PLATFORM_DIR)/memory_layout.c
 
 linker.ld: $(PLATFORM_DIR)/linker.ld
 	$(AM_V_at)rm -f $@
