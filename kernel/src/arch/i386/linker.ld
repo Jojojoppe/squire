@@ -3,9 +3,10 @@ ENTRY(_start);
 
 SECTIONS {
 
-	. = 0x100000;
+	. = 0x100000 + 0xc0000000;
+	__phys_start = . - 0xc0000000;
 
-	.text : {
+	.text : AT(ADDR(.text)-0xc0000000){
 		__stext = .;
 		*(.mboot)
 		*(.text .text.*)
@@ -13,14 +14,14 @@ SECTIONS {
 		__etext = .;
 	}
 
-	.data : {
+	.data : AT(ADDR(.data)-0xc0000000){
 		. = ALIGN(0x1000);
 		__sdata = .;
 		*(.data .data.*)
 		__edata = .;
 	}
 
-	.bss : {
+	.bss : AT(ADDR(.bss)-0xc0000000){
 		. = ALIGN(0x1000);
 		__bss_start__ = .;
 		*(.bss .bss.*)
@@ -34,6 +35,7 @@ SECTIONS {
 	}
 
 	. = ALIGN(0x1000);
-	end = .;
+	__end = .;
+	__phys_end = . - 0xc0000000;
  
 }

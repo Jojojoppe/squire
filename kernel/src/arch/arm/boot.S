@@ -1,3 +1,5 @@
+#include "../../config.h"
+
 .syntax unified
 .arm
 
@@ -21,34 +23,40 @@
 // ----------------
 .global stack_IRQ_0_t
 .global stack_IRQ_0_b
-stack_IRQ_0_t:
-.skip 0x1000
 stack_IRQ_0_b:
+.skip 0x1000
+stack_IRQ_0_t:
 .global stack_FIQ_0_t
 .global stack_FIQ_0_b
-stack_FIQ_0_t:
-.skip 0x1000
 stack_FIQ_0_b:
+.skip 0x1000
+stack_FIQ_0_t:
 .global stack_ABT_0_t
 .global stack_ABT_0_b
-stack_ABT_0_t:
-.skip 0x1000
 stack_ABT_0_b:
+.skip 0x1000
+stack_ABT_0_t:
 .global stack_UND_0_t
 .global stack_UND_0_b
-stack_UND_0_t:
-.skip 0x1000
 stack_UND_0_b:
+.skip 0x1000
+stack_UND_0_t:
 .global stack_SYS_0_t
 .global stack_SYS_0_b
-stack_SYS_0_t:
-.skip 0x1000
 stack_SYS_0_b:
+.skip 0x1000
+stack_SYS_0_t:
 .global stack_SVC_0_t
 .global stack_SVC_0_b
-stack_SVC_0_t:
-.skip 0x1000
 stack_SVC_0_b:
+.skip 0x1000
+stack_SVC_0_t:
+
+// Boot time heap
+// --------------
+.global boot_heap_start
+boot_heap_start:
+.skip BOOT_HEAP_LENGTH*0x1000
 
 // ------------
 // SECTION VTAB

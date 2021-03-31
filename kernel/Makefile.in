@@ -108,7 +108,8 @@ am__installdirs = "$(DESTDIR)$(bootdir)" "$(DESTDIR)$(includedir)"
 PROGRAMS = $(boot_PROGRAMS)
 am__dirstamp = $(am__leading_dot)dirstamp
 am_squire_OBJECTS = src/common/squire-main.$(OBJEXT) \
-	src/common/squire-kprintf.$(OBJEXT)
+	src/common/squire-kprintf.$(OBJEXT) \
+	src/common/squire-kmalloc.$(OBJEXT)
 squire_OBJECTS = $(am_squire_OBJECTS)
 squire_DEPENDENCIES = $(ARCH_DIR)/libarch.a
 squire_LINK = $(CCLD) $(squire_CFLAGS) $(CFLAGS) $(squire_LDFLAGS) \
@@ -128,7 +129,8 @@ am__v_at_1 =
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/build-aux/depcomp
 am__maybe_remake_depfiles = depfiles
-am__depfiles_remade = src/common/$(DEPDIR)/squire-kprintf.Po \
+am__depfiles_remade = src/common/$(DEPDIR)/squire-kmalloc.Po \
+	src/common/$(DEPDIR)/squire-kprintf.Po \
 	src/common/$(DEPDIR)/squire-main.Po
 am__mv = mv -f
 AM_V_lt = $(am__v_lt_@AM_V@)
@@ -334,6 +336,7 @@ am__quote = @am__quote@
 am__tar = @am__tar@
 am__untar = @am__untar@
 bindir = @bindir@
+boot_heap_length = @boot_heap_length@
 bootdir = @bootdir@
 build = @build@
 build_alias = @build_alias@
@@ -390,9 +393,12 @@ noinst_DATA = linker.ld
 EXTRA_squire_DEPENDENCIES = linker.ld
 squire_SOURCES = \
 	src/common/main.c \
-	src/common/kprintf.c \
-	src/common/kprintf.h \
-	src/common/arch/spinlock.h
+	src/common/kprintf.c src/common/kprintf.h \
+	src/common/arch/spinlock.h \
+	src/common/arch/debugprint.h \
+	src/common/arch/pmm.h \
+	src/common/kmalloc.c src/common/kmalloc.h \
+	src/common/arch/vas.h
 
 include_HEADERS = include/squire.h
 all: all-recursive
@@ -499,6 +505,8 @@ src/common/squire-main.$(OBJEXT): src/common/$(am__dirstamp) \
 	src/common/$(DEPDIR)/$(am__dirstamp)
 src/common/squire-kprintf.$(OBJEXT): src/common/$(am__dirstamp) \
 	src/common/$(DEPDIR)/$(am__dirstamp)
+src/common/squire-kmalloc.$(OBJEXT): src/common/$(am__dirstamp) \
+	src/common/$(DEPDIR)/$(am__dirstamp)
 
 squire$(EXEEXT): $(squire_OBJECTS) $(squire_DEPENDENCIES) $(EXTRA_squire_DEPENDENCIES) 
 	@rm -f squire$(EXEEXT)
@@ -511,6 +519,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@src/common/$(DEPDIR)/squire-kmalloc.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/common/$(DEPDIR)/squire-kprintf.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/common/$(DEPDIR)/squire-main.Po@am__quote@ # am--include-marker
 
@@ -563,6 +572,20 @@ src/common/squire-kprintf.obj: src/common/kprintf.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/common/kprintf.c' object='src/common/squire-kprintf.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(squire_CFLAGS) $(CFLAGS) -c -o src/common/squire-kprintf.obj `if test -f 'src/common/kprintf.c'; then $(CYGPATH_W) 'src/common/kprintf.c'; else $(CYGPATH_W) '$(srcdir)/src/common/kprintf.c'; fi`
+
+src/common/squire-kmalloc.o: src/common/kmalloc.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(squire_CFLAGS) $(CFLAGS) -MT src/common/squire-kmalloc.o -MD -MP -MF src/common/$(DEPDIR)/squire-kmalloc.Tpo -c -o src/common/squire-kmalloc.o `test -f 'src/common/kmalloc.c' || echo '$(srcdir)/'`src/common/kmalloc.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/common/$(DEPDIR)/squire-kmalloc.Tpo src/common/$(DEPDIR)/squire-kmalloc.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/common/kmalloc.c' object='src/common/squire-kmalloc.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(squire_CFLAGS) $(CFLAGS) -c -o src/common/squire-kmalloc.o `test -f 'src/common/kmalloc.c' || echo '$(srcdir)/'`src/common/kmalloc.c
+
+src/common/squire-kmalloc.obj: src/common/kmalloc.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(squire_CFLAGS) $(CFLAGS) -MT src/common/squire-kmalloc.obj -MD -MP -MF src/common/$(DEPDIR)/squire-kmalloc.Tpo -c -o src/common/squire-kmalloc.obj `if test -f 'src/common/kmalloc.c'; then $(CYGPATH_W) 'src/common/kmalloc.c'; else $(CYGPATH_W) '$(srcdir)/src/common/kmalloc.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/common/$(DEPDIR)/squire-kmalloc.Tpo src/common/$(DEPDIR)/squire-kmalloc.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/common/kmalloc.c' object='src/common/squire-kmalloc.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(squire_CFLAGS) $(CFLAGS) -c -o src/common/squire-kmalloc.obj `if test -f 'src/common/kmalloc.c'; then $(CYGPATH_W) 'src/common/kmalloc.c'; else $(CYGPATH_W) '$(srcdir)/src/common/kmalloc.c'; fi`
 install-includeHEADERS: $(include_HEADERS)
 	@$(NORMAL_INSTALL)
 	@list='$(include_HEADERS)'; test -n "$(includedir)" || list=; \
@@ -934,7 +957,8 @@ clean-am: clean-bootPROGRAMS clean-generic mostlyclean-am
 
 distclean: distclean-recursive
 	-rm -f $(am__CONFIG_DISTCLEAN_FILES)
-		-rm -f src/common/$(DEPDIR)/squire-kprintf.Po
+		-rm -f src/common/$(DEPDIR)/squire-kmalloc.Po
+	-rm -f src/common/$(DEPDIR)/squire-kprintf.Po
 	-rm -f src/common/$(DEPDIR)/squire-main.Po
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
@@ -983,7 +1007,8 @@ installcheck-am:
 maintainer-clean: maintainer-clean-recursive
 	-rm -f $(am__CONFIG_DISTCLEAN_FILES)
 	-rm -rf $(top_srcdir)/autom4te.cache
-		-rm -f src/common/$(DEPDIR)/squire-kprintf.Po
+		-rm -f src/common/$(DEPDIR)/squire-kmalloc.Po
+	-rm -f src/common/$(DEPDIR)/squire-kprintf.Po
 	-rm -f src/common/$(DEPDIR)/squire-main.Po
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic

@@ -239,6 +239,7 @@ am__quote = @am__quote@
 am__tar = @am__tar@
 am__untar = @am__untar@
 bindir = @bindir@
+boot_heap_length = @boot_heap_length@
 bootdir = @bootdir@
 build = @build@
 build_alias = @build_alias@

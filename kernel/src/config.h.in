@@ -1,5 +1,8 @@
 /* src/config.h.in.  Generated from configure.ac by autoheader.  */
 
+/* Length of kernel heap at boot time */
+#undef BOOT_HEAP_LENGTH
+
 /* Length of kernel log */
 #undef KERNEL_LOG_LENGTH
 

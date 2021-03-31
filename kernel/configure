@@ -616,6 +616,7 @@ ac_subst_vars='am__EXEEXT_FALSE
 am__EXEEXT_TRUE
 LTLIBOBJS
 LIBOBJS
+boot_heap_length
 kernel_log_print
 kernel_log_lenght
 bootdir
@@ -741,7 +742,8 @@ CCASFLAGS
 platform
 bootdir
 kernel_log_lenght
-kernel_log_print'
+kernel_log_print
+boot_heap_length'
 
 
 # Initialize some variables set by options.
@@ -1393,6 +1395,8 @@ Some influential environment variables:
   kernel_log_print
               Enable or disable the kernel log debug print, defaults to true
               (1)
+  boot_heap_length
+              Length of kernel heap at boot time in kB, defaults to 4kB (4)
 
 Use these variables to override the choices made by `configure' or to help
 it to find libraries and programs with nonstandard names/locations.
@@ -4695,6 +4699,13 @@ if test "X$kernel_log_print" = "X" ; then
 fi
 
 printf "%s\n" "#define KERNEL_LOG_PRINT_ENABLE $kernel_log_print" >>confdefs.h
+
+
+if test "X$boot_heap_length" = "X" ; then
+	boot_heap_length=4
+fi
+
+printf "%s\n" "#define BOOT_HEAP_LENGTH $boot_heap_length" >>confdefs.h
 
 
 ac_config_files="$ac_config_files Makefile src/arch/arm/Makefile src/arch/i386/Makefile"

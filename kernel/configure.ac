@@ -68,6 +68,11 @@ if test "X$kernel_log_print" = "X" ; then
 	kernel_log_print=1
 fi
 AC_DEFINE_UNQUOTED([KERNEL_LOG_PRINT_ENABLE], [$kernel_log_print], [Enable kernel log debug print])
+AC_ARG_VAR(boot_heap_length, [Length of kernel heap at boot time in kB, defaults to 4kB (4)])
+if test "X$boot_heap_length" = "X" ; then
+	boot_heap_length=4
+fi
+AC_DEFINE_UNQUOTED([BOOT_HEAP_LENGTH], [$boot_heap_length], [Length of kernel heap at boot time])
 dnl -------------------
 
 AC_CONFIG_FILES([

@@ -11,9 +11,13 @@ noinst_DATA = linker.ld
 EXTRA_squire_DEPENDENCIES = linker.ld
 squire_SOURCES = \
 	src/common/main.c \
-	src/common/kprintf.c \
-	src/common/kprintf.h \
-	src/common/arch/spinlock.h
+	src/common/kprintf.c src/common/kprintf.h \
+	src/common/arch/spinlock.h \
+	src/common/arch/debugprint.h \
+	src/common/arch/pmm.h \
+	src/common/kmalloc.c src/common/kmalloc.h \
+	src/common/arch/vas.h
+
 include_HEADERS = include/squire.h
 
 linker.ld : $(ARCH_DIR)/linker.ld

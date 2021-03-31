@@ -19,5 +19,7 @@ cd ..
 
 cd ..
 
+i386-elf-objdump -d build/i386/output/boot/squire > DISASS_I386
+
 echo STARTING QEMU
-qemu-system-i386 -kernel build/i386/output/boot/squire -serial mon:stdio -nographic -m 256M
+qemu-system-i386 -kernel build/i386/output/boot/squire -serial mon:stdio -nographic -m 256M -no-reboot -d cpu_reset

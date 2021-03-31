@@ -4,5 +4,7 @@ libarch_a_SOURCES = \
 	spinlock.S \
 	debugprint.c \
 	archmain.c \
-	io.c \
-	io.h
+	io.c io.h \
+	pmm.c pmm.h \
+	mboot.c mboot.h \
+	vas.c vas.h
