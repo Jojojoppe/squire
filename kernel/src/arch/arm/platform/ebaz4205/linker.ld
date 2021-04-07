@@ -11,7 +11,10 @@ ENTRY(_start);
 
 SECTIONS {
 
-	.text : {
+	. = 0x00100000 + 0xc0000000;
+	__phys_start = . - 0xc0000000;
+
+	.text : AT(ADDR(.text)-0xc0000000){
 		__stext = .;
 		*(.vtab)          		 /* Vector table */
 		*(.text .text.*)         /* Standard Code */
@@ -19,21 +22,22 @@ SECTIONS {
 		*(.glue_7)               /* Glue ARM to thumb code */
 		*(.glue_7t)              /* Glue thumb to ARM code */
 		__etext = .;
-	} >DDR_PS
+	}
 
-	.data : {
+	.data : AT(ADDR(.data)-0xc0000000){
 		. = ALIGN(0x1000);
 		__sdata = .;
 		*(.data .data.*)
 		__edata = .;
-	} >DDR_PS
+	}
 
-	.bss : {
-		. = ALIGN(0x1000);
-		__bss_start__ = .;              /* Used for zeroing bss on startup */
+	.bss : AT(ADDR(.data)-0xc0000000){
+		. = ALIGN(0x4000);		  /* Page directory MUST be 0x4000 bytes aligned */
+		__bss_start__ = .;
+		*(.bss.bootpd)
 		*(.bss .bss.*)
 		__bss_end__ = .;
-	} >DDR_PS
+	}
 
 	/DISCARD/ : {
 		*(.comment)
@@ -42,6 +46,7 @@ SECTIONS {
 	}
 
 	. = ALIGN(0x1000);
-	end = .;
+	__end = .;
+	__phys_end = . - 0xc0000000;
  
 }
