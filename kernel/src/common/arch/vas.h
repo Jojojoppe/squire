@@ -3,10 +3,17 @@
 
 #include <stddef.h>
 
-#define VAS_FLAGS_READ 0
-#define VAS_FLAGS_WRITE 2
-#define VAS_FLAGS_COW 4
-#define VAS_FLAGS_AOA 8
+#define VAS_FLAGS_COW 1
+#define VAS_FLAGS_AOA 2
+
+#define VAS_FLAGS_KREAD 4
+#define VAS_FLAGS_KWRITE 8
+#define VAS_FLAGS_KEXEC 16
+
+#define VAS_FLAGS_UREAD 32
+#define VAS_FLAGS_UWRITE 64
+#define VAS_FLAGS_UEXEC 128
+
 
 /*
  * Map a physical page to a virtual page

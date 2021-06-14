@@ -1,5 +1,4 @@
 #include "pmm.h"
-#include "../../common/kprintf.h"
 #include "../../common/arch/spinlock.h"
 #include "../../common/kmalloc.h"
 
@@ -30,8 +29,6 @@ pmm_region_t pmm_regions[_PMM_MEMORY_TYPE_SIZE];
 arch_spinlock_t pmm_lock;
 
 void arch_pmm_init(){
-    kprintf("      Initializing PMM\r");
-
     // Clean pmm region list
     for(int i=0; i<_PMM_MEMORY_TYPE_SIZE; i++){
         pmm_regions[i].start = 0;
@@ -49,24 +46,28 @@ void arch_pmm_init(){
         size_t length = platform_mem_regions_length[i+1];
 
         if(type==PMM_MEMORY_TYPE_NORMAL || type==PMM_MEMORY_TYPE_FAST){
+            // kprintf("Normal or fast memory found, type %d\r\n", type);
             arch_pmm_memory_available += length;
             // Add to region list
             if(pmm_regions[type].length==0){
+                // kprintf("Slot not yet used\r\n");
                 pmm_regions[type].length = length;
                 pmm_regions[type].start = base;
                 pmm_regions[type].next = 0;
+                // kprintf("%08x at %08x\r\n", length, base);
             }else{
+                // kprintf("Slot used, create new\r\n");
                 pmm_region_t * r = &pmm_regions[type];
                 while(r->next) r=r->next;
                 r->next = (pmm_region_t*) kmalloc(sizeof(pmm_region_t));
                 if(r->next==NULL){
-                    kprintf("[ER]\r\nERROR: Could not allocate new region descriptor\r\n");
                     // TODO PANIC
                     for(;;);
                 }
                 r->next->length = length;
                 r->next->start = base;
                 r->next->next = 0;
+                // kprintf("%08x at %08x\r\n", length, base);
             }
         }
     }
@@ -84,15 +85,19 @@ void arch_pmm_init(){
     pmm_region_t * r = &pmm_regions[PMM_MEMORY_TYPE_NORMAL];
     while(r){
         arch_pmm_unuse(r->start, r->length/arch_pmm_framesize);
+        // kprintf("region %08x [%08x]\r\n", r->start, r->length);
+        r = r->next;
+    }
+    r = &pmm_regions[PMM_MEMORY_TYPE_FAST];
+    while(r){
+        arch_pmm_unuse(r->start, r->length/arch_pmm_framesize);
+        // kprintf("region %08x [%08x]\r\n", r->start, r->length);
         r = r->next;
     }
 
     // Block off kernel memory
     // For simplicity use 4MiB kernel size
-    extern void * __stext;
-    arch_pmm_use((unsigned int)__stext/arch_pmm_framesize, 4*1024*1024/arch_pmm_framesize);
-
-    kprintf("[OK]\r\n");
+    arch_pmm_use(0x00100000, (1024*4096)/arch_pmm_framesize);
 }
 
 void * arch_pmm_alloc(unsigned int frames, pmm_memory_type_t type){
@@ -115,8 +120,9 @@ void * arch_pmm_alloc(unsigned int frames, pmm_memory_type_t type){
         // Check if region is big enough
         if(reg->length>=size){
             // Traverse region to find free memory
-            unsigned int byte = (unsigned int)reg->start/(arch_pmm_framesize*8);
-            unsigned int bit = (unsigned int)reg->start&0x07;
+            unsigned int frame = ((unsigned int)reg->start)/arch_pmm_framesize;
+            unsigned int byte = frame/8;
+            unsigned int bit = frame & 0x07;
             unsigned int start = 0;
             unsigned int streak = 0;
             for(int i=0; i<reg->length/arch_pmm_framesize; i++){
@@ -125,7 +131,7 @@ void * arch_pmm_alloc(unsigned int frames, pmm_memory_type_t type){
                     // Free frame found;
                     if(streak==0){
                         // First free frame, save start
-                        start = byte*8*arch_pmm_framesize+bit;
+                        start = (byte*8+bit)*arch_pmm_framesize;
                     }
                     streak++;
                     if(streak==frames){
@@ -156,9 +162,11 @@ void arch_pmm_free(void * base, unsigned int frames){
 }
 
 void arch_pmm_use(void * base, unsigned int frames){
+
     // Calculate offset and length in bitmap
-    unsigned int offset = (unsigned int)base/(arch_pmm_framesize*8);
-    unsigned int bitoffset = (unsigned int)base & 0x07;
+    unsigned int frame = (unsigned int)base/arch_pmm_framesize;
+    unsigned int offset = frame/8;
+    unsigned int bitoffset = frame & 0x07;
 
     if(frames==0){
         return;
@@ -172,7 +180,7 @@ void arch_pmm_use(void * base, unsigned int frames){
     for(int i=0; i<frames; i++){
         arch_pmm_memory_bitmap[offset] |= 1<<bitoffset;
         bitoffset++;
-        if(bitoffset==8){
+        if(bitoffset>=8){
             bitoffset = 0;
             offset++;
         }
@@ -181,8 +189,10 @@ void arch_pmm_use(void * base, unsigned int frames){
 }
 
 void arch_pmm_unuse(void * base, unsigned int frames){
-    unsigned int offset = (unsigned int)base/(arch_pmm_framesize*8);
-    unsigned int bitoffset = (unsigned int)base & 0x07;
+    // Calculate offset and length in bitmap
+    unsigned int frame = (unsigned int)base/arch_pmm_framesize;
+    unsigned int offset = frame>>3;
+    unsigned int bitoffset = frame & 0x07;
 
     if(frames==0){
         return;
@@ -196,7 +206,7 @@ void arch_pmm_unuse(void * base, unsigned int frames){
     for(int i=0; i<frames; i++){
         arch_pmm_memory_bitmap[offset] &= ~(1<<bitoffset);
         bitoffset++;
-        if(bitoffset==8){
+        if(bitoffset>=8){
             bitoffset = 0;
             offset++;
         }

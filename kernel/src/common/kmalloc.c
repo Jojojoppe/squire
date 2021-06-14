@@ -1,7 +1,6 @@
 #include "kmalloc.h"
 #include "arch/spinlock.h"
 #include "arch/pmm.h"
-#include "kprintf.h"
 
 typedef struct heap_block_s{
     struct heap_block_s * next;
@@ -23,7 +22,6 @@ unsigned int heap_size;
 arch_spinlock_t heap_lock;
 
 void kmalloc_init(void * base, size_t length){
-    kprintf("      Initializing kernel heap\r");
     // Create start of heap by allocating 16KiB
     heap_start = (heap_block_t*) base;
     heap_start->next = 0;
@@ -36,7 +34,6 @@ void kmalloc_init(void * base, size_t length){
     chunk->flags = HEAP_CHUNK_LAST;
 	
 	arch_spinlock_init(&heap_lock);
-    kprintf("[OK]\r\n");
 }
 
 void kmalloc_clean(){

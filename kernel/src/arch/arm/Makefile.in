@@ -110,7 +110,8 @@ libarch_a_LIBADD =
 am__dirstamp = $(am__leading_dot)dirstamp
 am_libarch_a_OBJECTS = boot.$(OBJEXT) spinlock.$(OBJEXT) \
 	archmain.$(OBJEXT) $(PLATFORM_DIR)/debugprint.$(OBJEXT) \
-	pmm.$(OBJEXT) $(PLATFORM_DIR)/memory_layout.$(OBJEXT)
+	pmm.$(OBJEXT) $(PLATFORM_DIR)/memory_layout.$(OBJEXT) \
+	vas.$(OBJEXT)
 libarch_a_OBJECTS = $(am_libarch_a_OBJECTS)
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
@@ -130,7 +131,7 @@ am__maybe_remake_depfiles = depfiles
 am__depfiles_remade = $(PLATFORM_DIR)/$(DEPDIR)/debugprint.Po \
 	$(PLATFORM_DIR)/$(DEPDIR)/memory_layout.Po \
 	./$(DEPDIR)/archmain.Po ./$(DEPDIR)/boot.Po ./$(DEPDIR)/pmm.Po \
-	./$(DEPDIR)/spinlock.Po
+	./$(DEPDIR)/spinlock.Po ./$(DEPDIR)/vas.Po
 am__mv = mv -f
 CPPASCOMPILE = $(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CCASFLAGS) $(CCASFLAGS)
@@ -295,7 +296,8 @@ libarch_a_SOURCES = \
 	spinlock.S \
 	archmain.c \
 	$(PLATFORM_DIR)/debugprint.c \
-	pmm.h pmm.c $(PLATFORM_DIR)/memory_layout.c
+	pmm.h pmm.c $(PLATFORM_DIR)/memory_layout.c \
+	vas.h vas.c
 
 all: all-am
 
@@ -363,6 +365,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/boot.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pmm.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spinlock.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/vas.Po@am__quote@ # am--include-marker
 
 $(am__depfiles_remade):
 	@$(MKDIR_P) $(@D)
@@ -534,6 +537,7 @@ distclean: distclean-am
 	-rm -f ./$(DEPDIR)/boot.Po
 	-rm -f ./$(DEPDIR)/pmm.Po
 	-rm -f ./$(DEPDIR)/spinlock.Po
+	-rm -f ./$(DEPDIR)/vas.Po
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
 	distclean-tags
@@ -585,6 +589,7 @@ maintainer-clean: maintainer-clean-am
 	-rm -f ./$(DEPDIR)/boot.Po
 	-rm -f ./$(DEPDIR)/pmm.Po
 	-rm -f ./$(DEPDIR)/spinlock.Po
+	-rm -f ./$(DEPDIR)/vas.Po
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 

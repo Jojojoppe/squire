@@ -28,7 +28,7 @@ boot_heap_start:
 
 // Boot time page directory
 // ------------------------
-// Identity maps first 1MB to 0x00000000 and 0xc0000000
+// Identity maps first 4MB to 0x00000000 and 0xc0000000
 .global boot_pd
 boot_pd:
 .long 0x00000083
@@ -89,7 +89,7 @@ _start:
 		lea 	(_start.high), %eax
 		jmp 	*%eax
 _start.high:
-		// Disable first 1Mb identity mapping
+		// Disable first 4Mb identity mapping
 		movl	$0, (boot_pd)
 		// Setup recursive mapping of page table itself
 		mov		$boot_pd-0xc0000000, %eax

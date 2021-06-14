@@ -1,5 +1,8 @@
 #include "../../../../common/arch/debugprint.h"
 #include "config.h"
+#include "../../vas.h"
+
+// UART is located at 0x00401000/4KB
 
 #ifdef KERNEL_LOG_PRINT_ENABLE
 
@@ -12,7 +15,6 @@
 #define XUARTPS_BAUDDIV_OFFSET  0x0034U  /**< Baud Rate Divider [7:0] */
 #define XUARTPS_FIFO_OFFSET     0x0030U  /**< FIFO [7:0] */
 #define XUARTPS_SR_OFFSET       0x002CU  /**< Channel Status [14:0] */
-#define XPS_UART1_BASEADDR      0xE0001000U
 
 #define XUARTPS_MR_CHMODE_NORM		0x00000000U /**< Normal mode */
 #define XUARTPS_MR_STOPMODE_1_BIT	0x00000000U /**< 1 stop bit */
@@ -31,7 +33,10 @@
 
 #define POINTER_TO_REGISTER(REG)  ( *((volatile unsigned int*)(REG)))
 
-#define UART_BASE      XPS_UART1_BASEADDR
+#define XPS_UART1_BASEADDR      0xe0001000U
+#define UART_VIRT_OFFSET        (0xe0000000U - 0x00400000U)
+
+#define UART_BASE      (XPS_UART1_BASEADDR-UART_VIRT_OFFSET)
 #define UART_CTRL      POINTER_TO_REGISTER(UART_BASE + XUARTPS_CR_OFFSET)      // Control Register
 #define UART_MODE      POINTER_TO_REGISTER(UART_BASE + XUARTPS_MR_OFFSET)      // Mode Register
 
@@ -48,6 +53,9 @@ void arch_debugprint_putc(char c){
 }
 
 void arch_debugprint_init(){
+
+    arch_vas_map(XPS_UART1_BASEADDR, UART_BASE, VAS_FLAGS_KWRITE);
+
     while (UART_STATUS & XUARTPS_SR_TACTIVE);
     while (UART_STATUS & XUARTPS_SR_TNFUL);
 

@@ -9,7 +9,7 @@ mkdir arm >/dev/null 2>/dev/null
 
 cd arm
 #../../configure --prefix=$PREFIX --exec-prefix=$(pwd)/output --host=arm-none-eabi platform=ebaz4205
-make && make install
+make clean && make && make install
 if test "X$?" != "X0" ; then
 	echo "BUILD ERROR arm"
 	cd ../..

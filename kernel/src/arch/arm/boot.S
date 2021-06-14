@@ -26,9 +26,6 @@
 .global boot_pd
 boot_pd:
 .skip 4*4096
-.global boot_pt
-boot_pt:
-.skip 4*256
 
 // -----------
 // SECTION BSS
@@ -89,10 +86,20 @@ cpu0_vtable:
 		hlt						// 04 UND: Undefined
 		hlt						// 08 SVC: SVC instruction
 		hlt						// 0c ABT: Invalid instruction address
-		hlt						// 10 ABT: R/W to invalid address
+		b		ab_rwinvalid	// 10 ABT: R/W to invalid address
 		hlt						// 14 HYP: Hypervisor
 		hlt						// 18 IRQ: IRQ interrupt
 		hlt						// 1c FIQ: FIQ interrupt
+
+// ------------
+// SECTION DATA
+.section .data
+.align 0x04
+
+.global boot_pd_c
+boot_pd_c:
+.long boot_pd
+// ------------
 
 // ------------
 // SECTION TEXT
@@ -100,10 +107,7 @@ cpu0_vtable:
 .align 0x04
 // ------------
 
-ex_abt_istr:
-		b 		.
-
-ex_abt_data:
+ab_rwinvalid:
 		b 		.
 
 // ENTRY
@@ -120,17 +124,24 @@ _start:
 		bic		r0, r0, #0x0004
 		mcr		p15, 0, r0, c1, c0, 0
 
-		// Fill pagetable with identity mapping and higher half
+		// Identity map first 4 MB to 0x00000000 and 0xc0000000
 		ldr		r0, =boot_pd-KERNEL_BASE
-		ldr 	r1, =0x00100402
-		str 	r1, [r0, #4]			// pt[001] = 00100402
-		add		r0, r0, #12288
-		str		r1, [r0, #4]			// pt[c01] = 00100402
-		// TODO place UART mapping in debugprint.c in platform
-		ldr		r0, =boot_pd-KERNEL_BASE
-		add 	r0, r0, #12288
-		ldr 	r1, =0xe0000402
-		str 	r1, [r0, #2048]			// pt[e00] = e0000402
+		ldr		r2, =boot_pd-KERNEL_BASE
+		add		r2, r2, #12288
+		ldr		r1, =0x00000402
+		str		r1, [r0, #0]			// pt[000] = 00000402
+		str		r1, [r2, #0]			// pt[c00] = 00000402
+		ldr		r1, =0x00100402
+		str		r1, [r0, #4]			// pt[001] = 00100402
+		str		r1, [r2, #4]			// pt[c01] = 00100402
+		ldr		r1, =0x00200402
+		str		r1, [r0, #8]			// pt[002] = 00200402
+		str		r1, [r2, #8]			// pt[c02] = 00200402
+		ldr		r1, =0x00300402
+		str		r1, [r0, #12]			// pt[003] = 00300402
+		str		r1, [r2, #12]			// pt[c03] = 00300402
+
+		// Setup paging on arm
 		// Domain 0 to Manager
 		mov		r0, #3
 		mcr 	p15, 0, r0, c3, c0, 0
@@ -151,7 +162,10 @@ _start:
 		// Disable lower half identity mapping
 		ldr		r0, =boot_pd
 		mov		r1, #0
+		str		r1, [r0, #0]			// pt[000] = 0
 		str		r1, [r0, #4]			// pt[001] = 0
+		str		r1, [r0, #8]			// pt[002] = 0
+		str		r1, [r0, #12]			// pt[003] = 0
 
 		// Load stack pointers
 		msr		CPSR, #(CPSR_IRQ | CPSR_FIQ | CPSR_MODE_IRQ)
