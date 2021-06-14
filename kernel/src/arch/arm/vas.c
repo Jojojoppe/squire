@@ -96,7 +96,7 @@ int arch_vas_map(void * physical, void * virtual, unsigned int flags){
             PTE |= 0x020;
             break;
 
-        // Full access -> 011
+        // Full access -> AP 011
         case VAS_FLAGS_KREAD | VAS_FLAGS_KWRITE | VAS_FLAGS_UREAD | VAS_FLAGS_UWRITE:
         case VAS_FLAGS_KWRITE | VAS_FLAGS_UREAD | VAS_FLAGS_UWRITE:
         case VAS_FLAGS_KREAD | VAS_FLAGS_KWRITE | VAS_FLAGS_UWRITE:
@@ -131,6 +131,28 @@ int arch_vas_map(void * physical, void * virtual, unsigned int flags){
 }
 
 int arch_vas_unmap(void * virtual){
+    unsigned int PT = ((unsigned int)virtual>>12)&0xff;
+    unsigned int PD = (unsigned int)virtual>>20;
+    unsigned int PDE = *((unsigned int*)(arch_vas_pd)+PD);
+
+    if((PDE&0x3)==0){
+        // There is no PD entry
+        return 1;
+    }else if((PDE&0x3)>=2){
+        // (super)section not supported for unmapping
+        return 1;
+    }
+
+    // Map page table into workable memory
+    unsigned int PT_addr = arch_vas_pd[PD]&0xfffffc00;
+    arch_vas_tmppt[1] = PT_addr | 0x013;
+
+    // Unmap page
+    unsigned int * newpt = (unsigned int*) 0xfff01000;
+    newpt[PT] = 0;
+
+    // Unmap page table from workable memory
+    arch_vas_tmppt[1] = 0;
 
     return 0;
 }

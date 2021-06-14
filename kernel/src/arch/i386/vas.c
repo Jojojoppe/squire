@@ -6,7 +6,6 @@
 #define KERNEL_PD 0xfffff000
 
 void arch_vas_init(){
-
 }
 
 unsigned int arch_vas_getcr3(){
@@ -51,11 +50,46 @@ int arch_vas_map(void * physical, void * virtual, unsigned int flags){
         PDE = *((unsigned int*)(KERNEL_PD)+PD) = (unsigned int)newpt_physical | 0x07;
     }
     // Set PTE
-    if((flags&VAS_FLAGS_WRITE)!=0){
-        *((unsigned int*)(KERNEL_PT)+PT) = (unsigned int)physical | 0x07;
-    }else{
-        *((unsigned int*)(KERNEL_PT)+PT) = (unsigned int)physical | 0x05;
+
+    unsigned int PTE = (unsigned int)physical | 0x1;
+
+    // Access permissions
+    switch(flags&0x6c){
+        // Priviledged read only
+        case VAS_FLAGS_KREAD:
+            break;
+
+        // Read only
+        case VAS_FLAGS_KREAD | VAS_FLAGS_UREAD:
+            PTE |= 0x6;
+            break;
+
+        // Priviledged access only
+        case VAS_FLAGS_KREAD | VAS_FLAGS_KWRITE:
+        case VAS_FLAGS_KWRITE:
+            PTE |= 0x2;
+            break;
+
+        // No user-mode write
+        case VAS_FLAGS_KREAD | VAS_FLAGS_KWRITE | VAS_FLAGS_UREAD:
+        case VAS_FLAGS_KWRITE | VAS_FLAGS_UREAD:
+            PTE |= 0x6;
+            break;
+
+        // Full access
+        case VAS_FLAGS_KREAD | VAS_FLAGS_KWRITE | VAS_FLAGS_UREAD | VAS_FLAGS_UWRITE:
+        case VAS_FLAGS_KWRITE | VAS_FLAGS_UREAD | VAS_FLAGS_UWRITE:
+        case VAS_FLAGS_KREAD | VAS_FLAGS_KWRITE | VAS_FLAGS_UWRITE:
+        case VAS_FLAGS_KWRITE | VAS_FLAGS_UWRITE:
+            PTE |= 0x6;
+            break;
+
+        default:
+            // Unknown combination of flags
+            return 1;
     }
+
+    *((unsigned int*)(KERNEL_PT)+PT) = PTE;
     
     __asm__ __volatile__("movl %cr3,%eax; movl %eax,%cr3");
     return 0;
