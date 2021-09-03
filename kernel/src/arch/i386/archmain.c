@@ -20,4 +20,6 @@ void archmain(void * mboot_info, void * boot_heap_base){
     kprintf("Amount of free memory:         %d Kb\r\n", arch_pmm_get_free()/1024);
     kprintf("Amount of used memory:         %d Kb\r\n", arch_pmm_get_used()/1024);
 
+    extern void main();
+    main();
 }

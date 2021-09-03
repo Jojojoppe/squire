@@ -85,11 +85,11 @@ cpu0_vtable:
 		b		_start			// 00 SVC: Reset
 		hlt						// 04 UND: Undefined
 		hlt						// 08 SVC: SVC instruction
-		hlt						// 0c ABT: Invalid instruction address
+		b 		ab_rwinvalid	// 0c ABT: Invalid instruction address
 		b		ab_rwinvalid	// 10 ABT: R/W to invalid address
 		hlt						// 14 HYP: Hypervisor
-		hlt						// 18 IRQ: IRQ interrupt
-		hlt						// 1c FIQ: FIQ interrupt
+		b		irq				// 18 IRQ: IRQ interrupt
+		b		irq				// 1c FIQ: FIQ interrupt
 
 // ------------
 // SECTION DATA
@@ -108,7 +108,15 @@ boot_pd_c:
 // ------------
 
 ab_rwinvalid:
+		mov r0, r14
+		.extern arch_rwinvalid
+		bl		arch_rwinvalid
 		b 		.
+
+irq:
+		.extern arch_irq
+		bl 		arch_irq
+		bl		.
 
 // ENTRY
 // -----
@@ -185,6 +193,8 @@ _start:
 		ldr		r0, =cpu0_vtable
 		mcr		p15, 0, r0, c12, c0, 0
 
+
+		cpsid 	if
 		ldr		r0, =boot_heap_start
 		.extern archmain
 		bl		archmain

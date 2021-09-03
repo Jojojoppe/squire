@@ -1,7 +1,9 @@
 {
     "files.exclude": {
         "**/aclocal.m4": true,
+        "**/autom4te.cache": true,
         "**/build": true,
+        "**/build-aux": true,
         "**/configure": true,
         "**/Makefile.in": true
     }

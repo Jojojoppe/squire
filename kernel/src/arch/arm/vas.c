@@ -121,12 +121,15 @@ int arch_vas_map(void * physical, void * virtual, unsigned int flags){
     // Map page table into workable memory
     unsigned int PT_addr = arch_vas_pd[PD]&0xfffffc00;
     arch_vas_tmppt[1] = PT_addr | 0x013;
+    invalidate_tlb();
 
     unsigned int * newpt = (unsigned int*) 0xfff01000;
     newpt[PT] = PTE;
 
     // Unmap page table from workable memory
     arch_vas_tmppt[1] = 0;
+    invalidate_tlb();
+
     return 0;
 }
 
@@ -146,6 +149,7 @@ int arch_vas_unmap(void * virtual){
     // Map page table into workable memory
     unsigned int PT_addr = arch_vas_pd[PD]&0xfffffc00;
     arch_vas_tmppt[1] = PT_addr | 0x013;
+    invalidate_tlb();
 
     // Unmap page
     unsigned int * newpt = (unsigned int*) 0xfff01000;
@@ -153,6 +157,7 @@ int arch_vas_unmap(void * virtual){
 
     // Unmap page table from workable memory
     arch_vas_tmppt[1] = 0;
+    invalidate_tlb();
 
     return 0;
 }

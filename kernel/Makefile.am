@@ -16,9 +16,10 @@ squire_SOURCES = \
 	src/common/arch/debugprint.h \
 	src/common/arch/pmm.h \
 	src/common/kmalloc.c src/common/kmalloc.h \
-	src/common/arch/vas.h
+	src/common/arch/vas.h \
+	src/common/arch/clocks.h src/common/sysclock.c src/common/sysclock.h
 
-include_HEADERS = include/squire.h
+include_HEADERS = include/squire/squire.h
 
 linker.ld : $(ARCH_DIR)/linker.ld
 	$(AM_V_at)rm -f $@

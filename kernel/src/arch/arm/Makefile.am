@@ -7,7 +7,10 @@ libarch_a_SOURCES = \
 	archmain.c \
 	$(PLATFORM_DIR)/debugprint.c \
 	pmm.h pmm.c $(PLATFORM_DIR)/memory_layout.c \
-	vas.h vas.c
+	vas.h vas.c \
+	$(PLATFORM_DIR)/sysclock.c sysclock.h \
+	gic.c gic.h \
+	cpu.h cpu.c
 
 linker.ld: $(PLATFORM_DIR)/linker.ld
 	$(AM_V_at)rm -f $@
