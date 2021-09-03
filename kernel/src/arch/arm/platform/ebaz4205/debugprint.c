@@ -31,6 +31,9 @@
 #define XUARTPS_CR_RX_DIS	0x00000008U  /**< RX disabled. */
 #define XUARTPS_CR_RX_EN	0x00000004U  /**< RX enabled */
 
+#define XUARTPS_IER_OFFSET  0x00000008
+#define XUARTPS_IMR_OFFSET  0x00000010
+
 #define POINTER_TO_REGISTER(REG)  ( *((volatile unsigned int*)(REG)))
 
 #define XPS_UART1_BASEADDR      0xe0001000U
@@ -45,6 +48,8 @@
 #define UART_FIFO      POINTER_TO_REGISTER(UART_BASE + XUARTPS_FIFO_OFFSET)    // FIFO
 #define UART_STATUS    POINTER_TO_REGISTER(UART_BASE + XUARTPS_SR_OFFSET)      // Channel Status
 
+#define UART_IER        POINTER_TO_REGISTER(UART_BASE + XUARTPS_IER_OFFSET)
+#define UART_IMR        POINTER_TO_REGISTER(UART_BASE + XUARTPS_IMR_OFFSET)
 
 void arch_debugprint_putc(char c){
     while (UART_STATUS & XUARTPS_SR_TNFUL);
@@ -83,6 +88,8 @@ void arch_debugprint_init(){
     r |= XUARTPS_CR_RX_EN | XUARTPS_CR_TX_EN; // Set TX & RX enabled
     r &= ~(XUARTPS_CR_RX_DIS | XUARTPS_CR_TX_DIS); // Clear TX & RX disabled
     UART_CTRL = r;
+
+    UART_IER = 1;   // Rec FIFO trigger
 }
 
 #endif

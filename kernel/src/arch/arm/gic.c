@@ -14,21 +14,32 @@ void gic_init(){
     arch_vas_map(gic_dregs, gic_dregs, VAS_FLAGS_KREAD | VAS_FLAGS_KWRITE);
     arch_vas_map(gic_ifregs, gic_ifregs, VAS_FLAGS_KREAD | VAS_FLAGS_KWRITE);
 
-    gic_ifregs->CCPMR = 0xffffu;            // Enable all interrupt priorities
-    gic_ifregs->CCTLR = 2;                  // Enable interrupt forwarding
-    gic_dregs->DCTLR = 2;                   // Enable interrupt disruptor
+
+    gic_dregs->DCTLR = 0;                   // Disable interrupt disruptor
+    gic_ifregs->CCTLR = 3|8;                // Enable interrupt forwarding @ FIQ
+    gic_ifregs->CCPMR = 0xff;               // Enable all interrupt priorities
+    gic_dregs->DCTLR = 1;                   // Enable interrupt disruptor
 }
 
-void gic_enable_interrupt(unsigned char number){
+void gic_enable_interrupt(unsigned char number, unsigned char priority){
     unsigned char reg = number/32;
     unsigned char bit = number%32;
 
+    gic_dregs->DCTLR = 0;                   // Disable interrupt disruptor
     gic_dregs->DISENABLER[reg] |= (1u<<bit);
+
+    // Set priority
+    reg = number/4;
+    bit = (number%4)*8;
+    gic_dregs->DIPRIORITY[reg] &= ~(0xff<<bit);
+    gic_dregs->DIPRIORITY[reg] |= (number&0xf8)<<bit;
 
     // Forward to CPU 0
     reg = number/4;
     bit = (number%4)*8;
+    gic_dregs->DITARGETSR[reg] &= ~(0x3<<bit);
     gic_dregs->DITARGETSR[reg] |= (1u<<bit);
+    gic_dregs->DCTLR = 1;                   // Enable interrupt disruptor
 }
 
 unsigned int gic_ack_interrupt(){

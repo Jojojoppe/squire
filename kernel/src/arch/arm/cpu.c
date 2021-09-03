@@ -8,8 +8,16 @@ unsigned int cpu_get_periphbase(){
 
 void cpu_enable_interrupts(){
     asm("cpsie if");
+    unsigned int cpsr_val;
+    asm("mrs %0, cpsr" : "=r"(cpsr_val));
+    cpsr_val |= 0x80;
+    asm("msr cpsr, %0" ::"r"(cpsr_val));
 }
 
 void cpu_disable_interrupts(){
     asm("cpsid if");        
+    unsigned int cpsr_val;
+    asm("mrs %0, cpsr" : "=r"(cpsr_val));
+    cpsr_val &= ~0x80;
+    asm("msr cpsr, %0" ::"r"(cpsr_val));
 }

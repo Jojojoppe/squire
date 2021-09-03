@@ -43,7 +43,7 @@ typedef volatile struct __attribute__((packed)) {
 
 void gic_init();
 
-void gic_enable_interrupt(unsigned char number);
+void gic_enable_interrupt(unsigned char number, unsigned char priority);
 
 unsigned int gic_ack_interrupt();
 

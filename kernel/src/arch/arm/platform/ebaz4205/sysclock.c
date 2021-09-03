@@ -18,12 +18,12 @@
 void arch_sysclock_init(){
     kprintf("arch_sysclock_init\r\n");
 
-    PRIVATE_TIMER_LOAD = 100;
+    PRIVATE_TIMER_LOAD = 1000000;
     PRIVATE_TIMER_CONTROL = PRIVATE_TIMER_ENABLE | PRIVATE_TIMER_INTERRUPT | PRIVATE_TIMER_AUTO;
 }
 
 void arch_sysclock_enable(){
-    gic_enable_interrupt(29);
+    gic_enable_interrupt(29, 0);
 }
 
 void arch_sysclock_disable(){

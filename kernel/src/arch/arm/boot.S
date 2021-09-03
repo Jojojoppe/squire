@@ -83,11 +83,11 @@ boot_heap_start:
 .global cpu0_vtable
 cpu0_vtable:
 		b		_start			// 00 SVC: Reset
-		hlt						// 04 UND: Undefined
-		hlt						// 08 SVC: SVC instruction
+		b		ab_rwinvalid	// 04 UND: Undefined
+		b		irq				// 08 SVC: SVC instruction
 		b 		ab_rwinvalid	// 0c ABT: Invalid instruction address
 		b		ab_rwinvalid	// 10 ABT: R/W to invalid address
-		hlt						// 14 HYP: Hypervisor
+		b		ab_rwinvalid	// 14 HYP: Hypervisor
 		b		irq				// 18 IRQ: IRQ interrupt
 		b		irq				// 1c FIQ: FIQ interrupt
 
@@ -116,7 +116,6 @@ ab_rwinvalid:
 irq:
 		.extern arch_irq
 		bl 		arch_irq
-		bl		.
 
 // ENTRY
 // -----

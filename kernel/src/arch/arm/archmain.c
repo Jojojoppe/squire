@@ -22,14 +22,16 @@ void archmain(void * boot_heap_base){
     kprintf("Amount of free memory:         %d Kb\r\n", arch_pmm_get_free()/1024);
     kprintf("Amount of used memory:         %d Kb\r\n", arch_pmm_get_used()/1024);
 
+
     gic_init();
 
     cpu_enable_interrupts();
 
-    gic_enable_interrupt(0);
-    gic_sgi(GIC_SGI_SELF, 0, 0);
+    gic_enable_interrupt(1, 16);
+    gic_enable_interrupt(59, 100);
+    gic_enable_interrupt(82, 100);
 
-    for(;;);
+    gic_sgi(GIC_SGI_SELF, 0, 10);
 
     extern void main();
     main();
@@ -39,6 +41,7 @@ void arch_irq(){
     unsigned int irq = gic_ack_interrupt();
     kprintf("IRQ %d\r\n", irq);
     gic_end_interrupt(irq);    
+    for(;;);
 }
 
 void arch_rwinvalid(unsigned int addr){
