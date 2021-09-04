@@ -2,56 +2,84 @@
 #include "cpu.h"
 #include "../../common/arch/vas.h"
 
-static gic_distributor_registers * gic_dregs;
-static gic_cpu_interface_registers * gic_ifregs;
+#define POINTER_TO_REGISTER(REG)	( *((volatile unsigned int*)(REG)))
+#define POINTER_TO_REG_ARRAY(REG)	((volatile unsigned int*)(REG))
+
+#define PERIPH_BASE					cpu_get_periphbase()
+#define PERIPH_VIRT_OFFSET			0
+#define PERIPH_VIRT_BASE			(PERIPH_BASE-PERIPH_VIRT_OFFSET)
+
+// Interrupt interface to CPU
+#define ICCICR						POINTER_TO_REGISTER(PERIPH_VIRT_BASE+0x0100)
+#define ICCPMR						POINTER_TO_REGISTER(PERIPH_VIRT_BASE+0x0104)
+#define ICCBPR						POINTER_TO_REGISTER(PERIPH_VIRT_BASE+0x0108)
+#define ICCIAR						POINTER_TO_REGISTER(PERIPH_VIRT_BASE+0x010c)
+#define ICCEOIR						POINTER_TO_REGISTER(PERIPH_VIRT_BASE+0x0110)
+#define ICCRPR						POINTER_TO_REGISTER(PERIPH_VIRT_BASE+0x0114)
+#define ICCHPIR						POINTER_TO_REGISTER(PERIPH_VIRT_BASE+0x0118)
+#define ICCABPR						POINTER_TO_REGISTER(PERIPH_VIRT_BASE+0x011c)
+#define ICCIDR						POINTER_TO_REGISTER(PERIPH_VIRT_BASE+0x01fc)
+
+// Interrupt disruptor
+#define ICDDCR						POINTER_TO_REGISTER(PERIPH_VIRT_BASE+0x1000)
+#define ICDICTR						POINTER_TO_REGISTER(PERIPH_VIRT_BASE+0x1004)
+#define ICDIIDR						POINTER_TO_REGISTER(PERIPH_VIRT_BASE+0x1008)
+#define ICDISRn						POINTER_TO_REG_ARRAY(PERIPH_VIRT_BASE+0x1080)
+#define ICDISERn					POINTER_TO_REG_ARRAY(PERIPH_VIRT_BASE+0x1100)
+#define ICDICERn					POINTER_TO_REG_ARRAY(PERIPH_VIRT_BASE+0x1180)
+#define ICDISPRn					POINTER_TO_REG_ARRAY(PERIPH_VIRT_BASE+0x1200)
+#define ICDICPRn					POINTER_TO_REG_ARRAY(PERIPH_VIRT_BASE+0x1280)
+#define ICDABRn						POINTER_TO_REG_ARRAY(PERIPH_VIRT_BASE+0x1300)
+#define ICDIPRn						POINTER_TO_REG_ARRAY(PERIPH_VIRT_BASE+0x1400)
+#define ICDIPTRn					POINTER_TO_REG_ARRAY(PERIPH_VIRT_BASE+0x1800)
+#define ICDICFRn					POINTER_TO_REG_ARRAY(PERIPH_VIRT_BASE+0x1c00)
+#define ppi_status					POINTER_TO_REGISTER(PERIPH_VIRT_BASE+0x1d00)
+#define spi_status0					POINTER_TO_REGISTER(PERIPH_VIRT_BASE+0x1d04)
+#define spi_status1					POINTER_TO_REGISTER(PERIPH_VIRT_BASE+0x1d08)
+#define ICDSGIR						POINTER_TO_REGISTER(PERIPH_VIRT_BASE+0x1f00)
 
 void gic_init(){
+	// Map peripherals to vspace
+	arch_vas_map(PERIPH_BASE, PERIPH_VIRT_BASE, VAS_FLAGS_KREAD|VAS_FLAGS_KWRITE);
+	arch_vas_map(PERIPH_BASE+0x1000, PERIPH_VIRT_BASE+0x1000, VAS_FLAGS_KREAD|VAS_FLAGS_KWRITE);
 
-    gic_dregs = (gic_distributor_registers*)(cpu_get_periphbase() + CPU_ICD_BASE);
-    gic_ifregs = (gic_cpu_interface_registers*)(cpu_get_periphbase() + CPU_ICC_BASE);
-
-    // Map GIC registers to VAS
-    arch_vas_map(gic_dregs, gic_dregs, VAS_FLAGS_KREAD | VAS_FLAGS_KWRITE);
-    arch_vas_map(gic_ifregs, gic_ifregs, VAS_FLAGS_KREAD | VAS_FLAGS_KWRITE);
-
-
-    gic_dregs->DCTLR = 0;                   // Disable interrupt disruptor
-    gic_ifregs->CCTLR = 3|8;                // Enable interrupt forwarding @ FIQ
-    gic_ifregs->CCPMR = 0xff;               // Enable all interrupt priorities
-    gic_dregs->DCTLR = 1;                   // Enable interrupt disruptor
+	// Disable interrupt disruptor
+	ICDDCR = 0;
+	// Enable interrupt CPU interfaces
+	ICCICR = 0x3;		// non-secure and secure enabled, using IRQ
+	// Set priority mask to lowest
+	ICCPMR = 0xffffffff;
+	// Enable disruptor
+	ICDDCR = 0x3;		// non-secure and secure mode enabled
 }
 
-void gic_enable_interrupt(unsigned char number, unsigned char priority){
-    unsigned char reg = number/32;
-    unsigned char bit = number%32;
+void gic_enable_interrupt(unsigned char number){
+	unsigned char reg = number/32;
+	unsigned char bit = number%32;
+	ICDISRn[reg] |= (1<<bit);
+}
 
-    gic_dregs->DCTLR = 0;                   // Disable interrupt disruptor
-    gic_dregs->DISENABLER[reg] |= (1u<<bit);
+void gic_disable_interrupt(unsigned char number){
+	unsigned char reg = number/32;
+	unsigned char bit = number%32;
+	ICDICERn[reg] &= ~(1<<bit);
+}
 
-    // Set priority
-    reg = number/4;
-    bit = (number%4)*8;
-    gic_dregs->DIPRIORITY[reg] &= ~(0xff<<bit);
-    gic_dregs->DIPRIORITY[reg] |= (number&0xf8)<<bit;
-
-    // Forward to CPU 0
-    reg = number/4;
-    bit = (number%4)*8;
-    gic_dregs->DITARGETSR[reg] &= ~(0x3<<bit);
-    gic_dregs->DITARGETSR[reg] |= (1u<<bit);
-    gic_dregs->DCTLR = 1;                   // Enable interrupt disruptor
+void gic_set_priority(unsigned char number, unsigned char priority){
+	unsigned char reg = number/4;
+	unsigned char bit = (number%4)*8;
+	ICDIPRn[reg] &= ~(0xff<<bit);
+	ICDIPRn[reg] |= priority<<bit;
 }
 
 unsigned int gic_ack_interrupt(){
-    return gic_ifregs->CIAR & 0x3ff;
+	return ICCIAR;
 }
 
 void gic_end_interrupt(unsigned char number){
-    gic_ifregs->CEOIR = number & 0x3ff;
+	ICCEOIR = number;
 }
 
 void gic_sgi(unsigned char target, unsigned char cpu, unsigned char irq){
-    unsigned int * dsgir = (unsigned int*)(cpu_get_periphbase() + 0x1f00);
-    *dsgir = target<<24 | cpu<<16 | irq&0xf;
-    *dsgir = target<<24 | cpu<<16;
+	ICDSGIR = (target&0x3)<<24 | (cpu&0xf)<<16 | 1<<15 | (irq&0xf);
 }

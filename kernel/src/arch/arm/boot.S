@@ -83,13 +83,13 @@ boot_heap_start:
 .global cpu0_vtable
 cpu0_vtable:
 		b		_start			// 00 SVC: Reset
-		b		ab_rwinvalid	// 04 UND: Undefined
-		b		irq				// 08 SVC: SVC instruction
+		b		.				// 04 UND: Undefined
+		b		.				// 08 SVC: SVC instruction
 		b 		ab_rwinvalid	// 0c ABT: Invalid instruction address
 		b		ab_rwinvalid	// 10 ABT: R/W to invalid address
-		b		ab_rwinvalid	// 14 HYP: Hypervisor
+		b		.				// 14 HYP: Hypervisor
 		b		irq				// 18 IRQ: IRQ interrupt
-		b		irq				// 1c FIQ: FIQ interrupt
+		b		.				// 1c FIQ: FIQ interrupt
 
 // ------------
 // SECTION DATA
@@ -192,8 +192,6 @@ _start:
 		ldr		r0, =cpu0_vtable
 		mcr		p15, 0, r0, c12, c0, 0
 
-
-		cpsid 	if
 		ldr		r0, =boot_heap_start
 		.extern archmain
 		bl		archmain

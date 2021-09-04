@@ -17,17 +17,20 @@
 
 void arch_sysclock_init(){
     kprintf("arch_sysclock_init\r\n");
-
-    PRIVATE_TIMER_LOAD = 1000000;
-    PRIVATE_TIMER_CONTROL = PRIVATE_TIMER_ENABLE | PRIVATE_TIMER_INTERRUPT | PRIVATE_TIMER_AUTO;
 }
 
 void arch_sysclock_enable(){
-    gic_enable_interrupt(29, 0);
+	gic_enable_interrupt(29);
+	gic_set_priority(29, 0);
+
+    PRIVATE_TIMER_LOAD = 5000000;
+    PRIVATE_TIMER_CONTROL = PRIVATE_TIMER_ENABLE | PRIVATE_TIMER_INTERRUPT | PRIVATE_TIMER_AUTO;
+
+	kprintf("arch_sysclock_enable\r\n");
 }
 
 void arch_sysclock_disable(){
-    //gic_disable_interrupt(29);
+    gic_disable_interrupt(29);
 }
 
 void arch_sysclock_isr(){
