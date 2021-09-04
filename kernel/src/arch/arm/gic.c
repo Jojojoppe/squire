@@ -2,13 +2,6 @@
 #include "cpu.h"
 #include "../../common/arch/vas.h"
 
-#define POINTER_TO_REGISTER(REG)	( *((volatile unsigned int*)(REG)))
-#define POINTER_TO_REG_ARRAY(REG)	((volatile unsigned int*)(REG))
-
-#define PERIPH_BASE					cpu_get_periphbase()
-#define PERIPH_VIRT_OFFSET			0
-#define PERIPH_VIRT_BASE			(PERIPH_BASE-PERIPH_VIRT_OFFSET)
-
 // Interrupt interface to CPU
 #define ICCICR						POINTER_TO_REGISTER(PERIPH_VIRT_BASE+0x0100)
 #define ICCPMR						POINTER_TO_REGISTER(PERIPH_VIRT_BASE+0x0104)
@@ -56,7 +49,7 @@ void gic_init(){
 void gic_enable_interrupt(unsigned char number){
 	unsigned char reg = number/32;
 	unsigned char bit = number%32;
-	ICDISRn[reg] |= (1<<bit);
+	ICDISERn[reg] |= (1<<bit);
 }
 
 void gic_disable_interrupt(unsigned char number){
@@ -70,6 +63,13 @@ void gic_set_priority(unsigned char number, unsigned char priority){
 	unsigned char bit = (number%4)*8;
 	ICDIPRn[reg] &= ~(0xff<<bit);
 	ICDIPRn[reg] |= priority<<bit;
+}
+
+void gic_set_target(unsigned char number, unsigned char target){
+	unsigned char reg = number/4;
+	unsigned char bit = (number%4)*8;
+	ICDIPTRn[reg] &= ~(0x3<<bit);
+	ICDIPTRn[reg] |= (target&0x3)<<bit;
 }
 
 unsigned int gic_ack_interrupt(){

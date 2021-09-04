@@ -88,8 +88,6 @@ void arch_debugprint_init(){
     r |= XUARTPS_CR_RX_EN | XUARTPS_CR_TX_EN; // Set TX & RX enabled
     r &= ~(XUARTPS_CR_RX_DIS | XUARTPS_CR_TX_DIS); // Clear TX & RX disabled
     UART_CTRL = r;
-
-    UART_IER = 1;   // Rec FIFO trigger
 }
 
 #endif

@@ -15,4 +15,11 @@ void cpu_disable_interrupts();
 #define CPU_WDT_BASE    0x0620
 #define CPU_ICD_BASE    0x1000
 
+
+#define POINTER_TO_REGISTER(REG)		( *((volatile unsigned int*)(REG)))
+#define POINTER_TO_REG_ARRAY(REG)		((volatile unsigned int*)(REG))
+#define PERIPH_BASE						cpu_get_periphbase()
+#define PERIPH_VIRT_OFFSET				0
+#define PERIPH_VIRT_BASE				(PERIPH_BASE-PERIPH_VIRT_OFFSET)
+
 #endif

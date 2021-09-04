@@ -8,7 +8,7 @@ libarch_a_SOURCES = \
 	$(PLATFORM_DIR)/debugprint.c \
 	pmm.h pmm.c $(PLATFORM_DIR)/memory_layout.c \
 	vas.h vas.c \
-	$(PLATFORM_DIR)/sysclock.c sysclock.h \
+	clocks.c \
 	gic.c gic.h \
 	cpu.h cpu.c
 

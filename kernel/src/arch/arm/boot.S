@@ -88,7 +88,7 @@ cpu0_vtable:
 		b 		ab_rwinvalid	// 0c ABT: Invalid instruction address
 		b		ab_rwinvalid	// 10 ABT: R/W to invalid address
 		b		.				// 14 HYP: Hypervisor
-		b		irq				// 18 IRQ: IRQ interrupt
+		b		arch_irq		// 18 IRQ: IRQ interrupt
 		b		.				// 1c FIQ: FIQ interrupt
 
 // ------------
@@ -112,10 +112,6 @@ ab_rwinvalid:
 		.extern arch_rwinvalid
 		bl		arch_rwinvalid
 		b 		.
-
-irq:
-		.extern arch_irq
-		bl 		arch_irq
 
 // ENTRY
 // -----

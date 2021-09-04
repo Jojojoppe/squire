@@ -26,21 +26,23 @@ void archmain(void * boot_heap_base){
     gic_init();
     cpu_enable_interrupts();
 
-	gic_end_interrupt(0);
-	gic_set_priority(0, 0);
-
-	gic_sgi(GIC_SGI_SELF, 0, 0);
-
 	extern void main();
 	main();
-	for(;;);
+	for(;;){
+	}
 }
 
-void arch_irq(){
+void __attribute__((interrupt("IRQ"))) arch_irq(){
     unsigned int irq = gic_ack_interrupt();
-    kprintf("IRQ %d\r\n", irq);
+	kprintf("IRQ %d\r\n", irq&0x3ff);
+	switch(irq&0x3ff){
+		case 29:
+			arch_sysclock_isr();
+			break;
+		default:
+			break;
+	}
     gic_end_interrupt(irq);    
-    for(;;);
 }
 
 void arch_rwinvalid(unsigned int addr){

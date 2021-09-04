@@ -11,6 +11,11 @@ void gic_disable_interrupt(unsigned char number);
 
 void gic_set_priority(unsigned char number, unsigned char priority);
 
+#define GIC_TARGET_CPU0 1
+#define GIC_TARGET_CPU1 2
+
+void gic_set_target(unsigned char number, unsigned char target);
+
 unsigned int gic_ack_interrupt();
 
 void gic_end_interrupt(unsigned char number);
@@ -18,11 +23,7 @@ void gic_end_interrupt(unsigned char number);
 #define GIC_SGI_SPECIFIC 0
 #define GIC_SGI_ALLOTHER 1
 #define GIC_SGI_SELF 2
-#define GIC_SGI_CPU0 1
-#define GIC_SGI_CPU1 2
-#define GIC_SGI_CPU3 4
-#define GIC_SGI_CPU4 8
 
-void gic_sgi(unsigned char target, unsigned char cpu, unsigned char irq);
+void gic_sgi(unsigned char target, unsigned char cpu_interface, unsigned char irq);
 
 #endif
