@@ -7,4 +7,5 @@ libarch_a_SOURCES = \
 	io.c io.h \
 	pmm.c pmm.h \
 	mboot.c mboot.h \
-	vas.c vas.h
+	vas.c vas.h \
+	clocks.c
