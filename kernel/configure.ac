@@ -9,7 +9,7 @@ dnl AM_SILENT_RULES([yes])
 
 hostarch=unkown
 hostplatform=unknown
-extracflags=""
+extracflags="-mgeneral-regs-only"
 
 case "$host_cpu" in
 	i*86)
@@ -43,6 +43,8 @@ AC_SUBST([ARCH_DIR])
 PLATFORM_DIR="platform/$hostplatform"
 AC_SUBST([PLATFORM_DIR])
 AC_SUBST([hostplatform])
+
+CFLAGS+=" "$extracflags
 
 LIBS=-lgcc
 LDFLAGS="${LDFLAGS} -nostdlib -static"

@@ -91,6 +91,7 @@ enum flags {
 	PAD_RIGHT	= 2,
 };
 
+/*
 #define MAX_PRECISION    50
 #define IsNaN(n) (n != n)
 static void print_double_float(double val, unsigned int precision){
@@ -131,16 +132,16 @@ static void print_double_float(double val, unsigned int precision){
     // remove the integer part
     val -= (double)((int)val);
    
-    /* on every iteration, make sure there are still decimal places left that are non-zero,
-       and make sure we're still within the user-defined precision range. */
+    // on every iteration, make sure there are still decimal places left that are non-zero,
+    // and make sure we're still within the user-defined precision range.
     while(val > (double)((int)val) && cur_prec++ < precision+1)
     {
         // move the next decimal into the integer portion and print it
         val *= 10;
 		kprintf("%d", (int)val);
        
-        /* if the value is == the floored value (integer portion),
-           then there are no more decimal places that are non-zero. */
+        // if the value is == the floored value (integer portion),
+		// then there are no more decimal places that are non-zero. 
         if(val == (double)((int)val))
             return;
        
@@ -148,6 +149,7 @@ static void print_double_float(double val, unsigned int precision){
         val -= (double)((int)val);
     }
 }
+*/
 
 static int prints(char **out, const char *string, int width, int flags){
 	int pc = 0, padchar = ' ';
@@ -296,10 +298,10 @@ static int simple_vsprintf(char **out, char *format, va_list ap){
 					pc += prints(out, scr, width, flags);
 					break;
 
-				case('f'):
-					u.d = va_arg(ap, double);
-					print_double_float(u.d, width);
-					break;
+				//case('f'):
+				//	u.d = va_arg(ap, double);
+				//	print_double_float(u.d, width);
+				//	break;
 
 				case('s'):
 					u.s = va_arg(ap, char *);

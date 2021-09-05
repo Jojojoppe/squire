@@ -89,6 +89,13 @@ GDTR:
     .short      GDT_END-GDT
     .long       GDT
 
+// Interrupt descriptor table
+// --------------------------
+.global IDTR
+IDTR:
+	.short		0x0000
+	.long		0x00000000
+
 // ------------
 // SECTION TEXT
 .section .mboot

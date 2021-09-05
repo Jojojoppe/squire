@@ -108,7 +108,8 @@ libarch_a_AR = $(AR) $(ARFLAGS)
 libarch_a_LIBADD =
 am_libarch_a_OBJECTS = boot.$(OBJEXT) spinlock.$(OBJEXT) \
 	debugprint.$(OBJEXT) archmain.$(OBJEXT) io.$(OBJEXT) \
-	pmm.$(OBJEXT) mboot.$(OBJEXT) vas.$(OBJEXT)
+	pmm.$(OBJEXT) mboot.$(OBJEXT) vas.$(OBJEXT) clocks.$(OBJEXT) \
+	pic.$(OBJEXT) idt.$(OBJEXT) cpu.$(OBJEXT)
 libarch_a_OBJECTS = $(am_libarch_a_OBJECTS)
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
@@ -126,8 +127,9 @@ DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/build-aux/depcomp
 am__maybe_remake_depfiles = depfiles
 am__depfiles_remade = ./$(DEPDIR)/archmain.Po ./$(DEPDIR)/boot.Po \
-	./$(DEPDIR)/debugprint.Po ./$(DEPDIR)/io.Po \
-	./$(DEPDIR)/mboot.Po ./$(DEPDIR)/pmm.Po \
+	./$(DEPDIR)/clocks.Po ./$(DEPDIR)/cpu.Po \
+	./$(DEPDIR)/debugprint.Po ./$(DEPDIR)/idt.Po ./$(DEPDIR)/io.Po \
+	./$(DEPDIR)/mboot.Po ./$(DEPDIR)/pic.Po ./$(DEPDIR)/pmm.Po \
 	./$(DEPDIR)/spinlock.Po ./$(DEPDIR)/vas.Po
 am__mv = mv -f
 CPPASCOMPILE = $(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
@@ -294,7 +296,11 @@ libarch_a_SOURCES = \
 	io.c io.h \
 	pmm.c pmm.h \
 	mboot.c mboot.h \
-	vas.c vas.h
+	vas.c vas.h \
+	clocks.c \
+	pic.h pic.c \
+	idt.h idt.c \
+	cpu.h cpu.c
 
 all: all-am
 
@@ -346,9 +352,13 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/archmain.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/boot.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/clocks.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cpu.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/debugprint.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/idt.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/io.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mboot.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pic.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pmm.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spinlock.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/vas.Po@am__quote@ # am--include-marker
@@ -516,9 +526,13 @@ clean-am: clean-generic clean-noinstLIBRARIES mostlyclean-am
 distclean: distclean-am
 		-rm -f ./$(DEPDIR)/archmain.Po
 	-rm -f ./$(DEPDIR)/boot.Po
+	-rm -f ./$(DEPDIR)/clocks.Po
+	-rm -f ./$(DEPDIR)/cpu.Po
 	-rm -f ./$(DEPDIR)/debugprint.Po
+	-rm -f ./$(DEPDIR)/idt.Po
 	-rm -f ./$(DEPDIR)/io.Po
 	-rm -f ./$(DEPDIR)/mboot.Po
+	-rm -f ./$(DEPDIR)/pic.Po
 	-rm -f ./$(DEPDIR)/pmm.Po
 	-rm -f ./$(DEPDIR)/spinlock.Po
 	-rm -f ./$(DEPDIR)/vas.Po
@@ -569,9 +583,13 @@ installcheck-am:
 maintainer-clean: maintainer-clean-am
 		-rm -f ./$(DEPDIR)/archmain.Po
 	-rm -f ./$(DEPDIR)/boot.Po
+	-rm -f ./$(DEPDIR)/clocks.Po
+	-rm -f ./$(DEPDIR)/cpu.Po
 	-rm -f ./$(DEPDIR)/debugprint.Po
+	-rm -f ./$(DEPDIR)/idt.Po
 	-rm -f ./$(DEPDIR)/io.Po
 	-rm -f ./$(DEPDIR)/mboot.Po
+	-rm -f ./$(DEPDIR)/pic.Po
 	-rm -f ./$(DEPDIR)/pmm.Po
 	-rm -f ./$(DEPDIR)/spinlock.Po
 	-rm -f ./$(DEPDIR)/vas.Po

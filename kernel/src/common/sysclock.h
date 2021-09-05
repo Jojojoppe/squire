@@ -21,4 +21,9 @@ void sysclock_disable();
  */
 void sysclock_cb();
 
+/*
+ * Get amount of elapsed jiffies
+ */
+unsigned long long sysclock_jiffies();
+
 #endif

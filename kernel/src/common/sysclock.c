@@ -1,10 +1,10 @@
 #include "sysclock.h"
 #include "arch/clocks.h"
 
-unsigned long long sysclock_jiffies;
+unsigned long long sysclock_jiffies_counter;
 
 void sysclock_init(){
-    sysclock_jiffies = 0;
+    sysclock_jiffies_counter = 0;
 
     arch_sysclock_init();
 }
@@ -18,5 +18,9 @@ void sysclock_disable(){
 }
 
 void sysclock_cb(){
-    sysclock_jiffies++;
+    sysclock_jiffies_counter++;
+}
+
+unsigned long long sysclock_jiffies(){
+	return sysclock_jiffies_counter;
 }

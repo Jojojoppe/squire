@@ -34,7 +34,6 @@ void archmain(void * boot_heap_base){
 
 void __attribute__((interrupt("IRQ"))) arch_irq(){
     unsigned int irq = gic_ack_interrupt();
-	kprintf("IRQ %d\r\n", irq&0x3ff);
 	switch(irq&0x3ff){
 		case 29:
 			arch_sysclock_isr();

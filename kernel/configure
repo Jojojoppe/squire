@@ -2990,7 +2990,7 @@ fi
 
 hostarch=unkown
 hostplatform=unknown
-extracflags=""
+extracflags="-mgeneral-regs-only"
 
 case "$host_cpu" in
 	i*86)
@@ -3024,6 +3024,8 @@ ARCH_DIR=src/arch/$hostarch
 PLATFORM_DIR="platform/$hostplatform"
 
 
+
+CFLAGS+=" "$extracflags
 
 LIBS=-lgcc
 LDFLAGS="${LDFLAGS} -nostdlib -static"
