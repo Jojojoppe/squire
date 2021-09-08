@@ -28,8 +28,7 @@ void archmain(void * boot_heap_base){
 
 	extern void main();
 	main();
-	for(;;){
-	}
+	for(;;);
 }
 
 void __attribute__((interrupt("IRQ"))) arch_irq(){

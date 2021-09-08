@@ -23,4 +23,6 @@ int kprintf(char * fmt, ...);
  */
 void kdebuglog_init();
 
+void khexdump(void * addr, unsigned int length);
+
 #endif

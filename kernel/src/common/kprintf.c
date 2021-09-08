@@ -428,3 +428,35 @@ out:
 	if (out) **out = '\0';
 	return pc;
 }
+
+void khexdump(void * addr, unsigned int length){
+	int i=0;
+	unsigned char * d = (unsigned char*)addr;
+	kprintf("+----------+-------------------------+----------+\r\n");
+	for(i=0; i<length;){
+		kprintf("| %08x | ", addr + i);
+		int i_now = i;
+		int i_end = i+8;
+		if(i_end>=length) i_end = length;
+		for(; i<i_end; i++){
+			kprintf("%02x ", d[i]);
+		}
+		if(i_now+8>=length) for(;i<i_now+8; i++){
+			kprintf("   ");
+		}
+		kprintf("| ");
+		i_end = i_now+8;
+		if(i_end>=length) i_end = length;
+		for(i=i_now; i<i_end; i++){
+			if(d[i]>=' ' && d[i]<='~')
+				kprintf("%c", d[i]);
+			else
+				kprintf(".");
+		}
+		if(i_now+8>=length) for(;i<i_now+8; i++){
+			kprintf(" ");
+		}
+		kprintf(" |\r\n");
+	}
+	kprintf("+----------+-------------------------+----------+\r\n");
+}
