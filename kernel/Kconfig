@@ -1,0 +1,6 @@
+mainmenu "Squire kernel configuration"
+
+config BOOT_HEAP_LENGTH
+    int "Boot time heap length in kB"
+    default 4
+    

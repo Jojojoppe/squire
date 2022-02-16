@@ -1,0 +1,41 @@
+mainmenu "Squire configuration"
+
+menu "Parts to build"
+    config BUILD_KERNEL
+        bool "Squire kernel"
+        default y
+endmenu
+
+menu "Architecture settings"
+    choice ARCH_SELECT
+        bool "Target architecture"
+        config ARCH_SELECT_ARM
+            bool "arm (32b)"
+        config ARCH_SELECT_I365
+            bool "i365"
+    endchoice
+
+    choice PLATFORM_SELECT
+        bool "Target platform"
+        config PLATFORM_SELECT_ARM_EBAZ4205
+            bool "EBAZ4205"
+        config PLATFORM_SELECT_I365_PC
+            bool "pc"
+    endchoice
+endmenu
+
+config ARCH
+    string
+    default "arm" if ARCH_SELECT_ARM
+    default "i365" if ARCH_SELECT_I365
+
+config PLATFORM
+    string
+    default "ebaz4205" if PLATFORM_SELECT_ARM_EBAZ4205
+    default "pc" if PLATFORM_SELECT_I365_PC
+
+if BUILD_KERNEL
+    menu "Kernel configuration"
+        source kernel/Kconfig
+    endmenu
+endif
