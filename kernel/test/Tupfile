@@ -1,0 +1,9 @@
+include_rules
+# Build test suites
+# -----------------
+
+ifeq (@(BUILD_TESTS),y)
+
+: foreach *.c |> gcc -o %o %f -lrt -lm |> %B
+
+endif

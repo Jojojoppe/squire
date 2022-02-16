@@ -4,6 +4,10 @@ menu "Parts to build"
     config BUILD_KERNEL
         bool "Squire kernel"
         default y
+
+    config BUILD_TESTS
+        bool "Build unit tests"
+        default n
 endmenu
 
 menu "Architecture settings"

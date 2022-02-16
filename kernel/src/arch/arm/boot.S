@@ -183,8 +183,8 @@ _start:
 		mcr		p15, 0, r0, c12, c0, 0
 
 		ldr		r0, =boot_heap_start
-		//.extern archmain
-		//bl		archmain
+		.extern archmain
+		bl		archmain
 
 		// Hang
 		b		.
