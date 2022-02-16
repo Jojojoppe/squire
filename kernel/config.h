@@ -1,0 +1,1 @@
+#define BOOT_HEAP_LENGTH 4

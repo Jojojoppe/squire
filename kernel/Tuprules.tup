@@ -1,0 +1,17 @@
+CC = $(TARGET)gcc
+AS = $(TARGET)gcc
+AR = $(TARGET)ar
+LD = $(TARGET)ld
+
+ifeq (@(ARCH),arm)
+ifeq (@(PLATFORM),ebaz4205)
+CFLAGS += -mcpu=cortex-a9
+endif
+endif
+
+CFLAGS += -ffreestanding -Wall -Werror
+CFLAGS += -I $(TUP_CWD)
+
+LDFLAGS += -nostdlib -static
+
+ASFLAGS = $(CFLAGS)

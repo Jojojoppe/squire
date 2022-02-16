@@ -1,0 +1,8 @@
+include_rules
+
+DIR = @(ARCH)
+include $(DIR)/tup.inc
+
+: foreach $(src_c) |> !cc |> arch_%B.o
+: foreach $(src_S) |> !as |> arch_%B.o
+: *.o |> !ar |> libarch.a

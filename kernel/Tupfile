@@ -1,0 +1,9 @@
+include_rules
+
+src_c = \
+    src/common/main.c
+
+LDFLAGS += -T src/arch/@(ARCH)/@(PLATFORM)/linker.ld
+
+: foreach $(src_c) |> !cc |> %B.o
+: *.o src/arch/libarch.a |> !ld |> kernel

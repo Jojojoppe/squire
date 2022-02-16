@@ -1,0 +1,14 @@
+ifeq (@(ARCH),arm)
+TARGET=arm-none-eabi-
+else
+ifeq (@ARCH),i386)
+TARGET=i386-elf
+endif
+endif
+
+!cc = |> ^ CC %o ^ $(CC) $(CFLAGS) -o %o -c %f |> %B.o
+!ar = |> ^ AR %o ^ $(AR) -rcs %o %f |>
+!as = |> ^ AS %o ^ $(AS) $(ASFLAGS) -o %o -c %f |> %B.o
+!ld = |> ^ LD %o ^ $(LD) $(LDFLAGS) -o %o %f |>
+
+.gitignore
